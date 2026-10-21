@@ -1,0 +1,47 @@
+target/
+__pycache__/
+
+# Disc sources and archive: the disc is an asset source, not a project file.
+# Games are extracted from these and baked into assets/ by tools/import.
+*.7z
+*.bin
+*.cue
+*.iso
+*.chd
+*.mcd
+*.mcr
+/extracted/
+
+# Every generated game asset and original-reference fixture is private,
+# including conversions to PNG/WAV/RON and numerical tables. Only authored
+# engine/ and mods/example/ assets belong in source control.
+/game/assets/
+/game/tests/data/original/
+/docs/overlays/
+/.private/
+*.provenance.json
+*.tro
+*.trp
+*.cdo
+*.cdp
+*.cno
+*.cnp
+*.tim
+*.tmd
+*.vol
+*.ovl
+*.gz
+*.zip
+*.exe
+*.psxstate
+/media/
+/external/
+
+# psx toolkit outputs (emulator runs, checkpoints, screenshots, caches).
+# /bios/ and symbols are shared state, not part of the port.
+.psx/
+/bios/
+
+# Ghidra analysis projects (the toolkit's cached decompiler databases),
+# which cannot live under .psx/ because Ghidra rejects hidden path components.
+ghidra-projects/

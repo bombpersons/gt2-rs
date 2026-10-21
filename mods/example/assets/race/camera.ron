@@ -1,0 +1,13 @@
+(
+    // Hand-authored camera, reusing the public driving-camera controller.
+    bumper_height_m: 1.0,
+    chase_offsets_m: ((2.6, 9.0), (3.4, 12.0)),
+    split_chase_offsets_m: ((2.6, 9.0), (3.4, 12.0)),
+    split_pitch_radians: 0.0,
+    lens: (
+        reference_size: (320.0, 240.0), focal_px: (216.0, 216.0),
+        centre_px: (160.0, 120.0), near_m: 0.1, far_m: 1000.0,
+    ),
+    initial_view: ChaseNear,
+    reference_subject: None,
+)

@@ -1,0 +1,6 @@
+[
+  {"frame": 2130, "buttons": ["CROSS"], "until": 2136},
+  {"frame": 2710, "buttons": ["RIGHT"], "until": 2716},
+  {"frame": 2800, "buttons": ["CROSS"], "until": 2806},
+  {"frame": 2920, "buttons": ["CROSS"], "until": 2926}
+]

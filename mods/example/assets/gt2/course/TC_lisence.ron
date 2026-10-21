@@ -1,0 +1,36 @@
+// Hand-authored 320 m square circuit, 10 m wide. No extracted content.
+// Same relative path as the game's course: the mod's asset layer wins.
+// flags = 0 and scale = 1 are authoring defaults for the unresolved fields;
+// neither affects the current renderer. See docs/formats.md.
+(
+    lap_length_m: 320.0,
+    level_wrap: 0,
+    nodes: [
+        (
+            previous: 3, next: 1, flags: 0, distance_m: 0.0,
+            scale: (1.0, 1.0), position_m: (0.0, 0.0, 0.0), direction: (1.0, 0.0, 0.0),
+            surface_m: ((-5.0, 0.0, -5.0), (5.0, 0.0, 5.0), (85.0, 0.0, -5.0), (75.0, 0.0, 5.0)),
+        ),
+        (
+            previous: 0, next: 2, flags: 0, distance_m: 80.0,
+            scale: (1.0, 1.0), position_m: (80.0, 0.0, 0.0), direction: (0.0, 0.0, 1.0),
+            surface_m: ((85.0, 0.0, -5.0), (75.0, 0.0, 5.0), (85.0, 0.0, 85.0), (75.0, 0.0, 75.0)),
+        ),
+        (
+            previous: 1, next: 3, flags: 0, distance_m: 160.0,
+            scale: (1.0, 1.0), position_m: (80.0, 0.0, 80.0), direction: (-1.0, 0.0, 0.0),
+            surface_m: ((85.0, 0.0, 85.0), (75.0, 0.0, 75.0), (-5.0, 0.0, 85.0), (5.0, 0.0, 75.0)),
+        ),
+        (
+            previous: 2, next: 0, flags: 0, distance_m: 240.0,
+            scale: (1.0, 1.0), position_m: (0.0, 0.0, 80.0), direction: (0.0, 0.0, -1.0),
+            surface_m: ((-5.0, 0.0, 85.0), (5.0, 0.0, 75.0), (-5.0, 0.0, -5.0), (5.0, 0.0, 5.0)),
+        ),
+    ],
+    spans: [
+        (kind: 0, min_level: 1, max_level: 1, node: 0, start_m: 0.0, end_m: 80.0),
+        (kind: 0, min_level: 1, max_level: 1, node: 1, start_m: 80.0, end_m: 160.0),
+        (kind: 0, min_level: 1, max_level: 1, node: 2, start_m: 160.0, end_m: 240.0),
+        (kind: 0, min_level: 1, max_level: 1, node: 3, start_m: 240.0, end_m: 320.0),
+    ],
+)

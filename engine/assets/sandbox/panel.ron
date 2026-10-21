@@ -1,0 +1,23 @@
+// A second game's hand-authored geometry. No source-game assets or ids.
+(
+    parts: [(
+        name: "Refined panel",
+        texture: Some("sandbox/panel-large.png"), blend: Opaque, double_sided: false,
+        positions_m: [(-3.0,0.0,-3.0),(3.0,0.0,-3.0),(3.0,3.0,-3.0),(-3.0,3.0,-3.0)],
+        uv: [(0.0,1.0),(1.0,1.0),(1.0,0.0),(0.0,0.0)],
+        colors: [(1.0,1.0,1.0,1.0),(1.0,1.0,1.0,1.0),(1.0,1.0,1.0,1.0),(1.0,1.0,1.0,1.0)],
+        triangles: [], quads: [(0,1,2,3)],
+        subdivision: Some((
+            max_twice_area_px2: 512.0, max_depth: 4,
+            uv_step: 0.03125, guard_band_px: 8.0,
+        )),
+        precision: Some((
+            position_step_m: 0.02, centre_m: (0.0,1.5,-3.0), radius_m: 4.0,
+            distances_m: (20.0,40.0),
+        )),
+        small_texture: Some((
+            max_twice_area_px2: 8192, texture: "sandbox/panel-small.png", blend: Opaque,
+            uv: [(0.0,1.0),(1.0,1.0),(1.0,0.0),(0.0,0.0)],
+        )),
+    )],
+)

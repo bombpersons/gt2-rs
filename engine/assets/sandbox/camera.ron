@@ -1,0 +1,9 @@
+// Hand-authored lens, independent of game content. Equal focal lengths are
+// an ordinary perspective; authors may change either axis or optical centre.
+(
+    reference_size: (320.0, 240.0),
+    focal_px: (289.70563, 289.70563),
+    centre_px: (160.0, 120.0),
+    near_m: 0.1,
+    far_m: 1000.0,
+)
