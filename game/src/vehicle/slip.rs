@@ -1,6 +1,6 @@
 //! Wheel-local direction and low-speed activation, evaluated before controls.
 //!
-//! Velocities are metres/second in each wheel's own forward/lateral axes;
+//! Velocities are metres/second at each contact in vehicle-local axes;
 //! direction is turns. `80039DE8` samples the prior wheel velocities before
 //! steering. Contact and force calculations that produce these inputs remain
 //! separate. See `docs/wheel-slip-evidence.md` for the exact rounding boundary.
@@ -12,8 +12,9 @@ use serde::{Deserialize, Serialize};
 
 pub const SLIP_TUNING: &str = "vehicle/slip.ron";
 
-/// Inputs from wheel/contact dynamics, in front-left, front-right, rear-left,
-/// rear-right order. Original wheel+0x2C/+0x30 are signed 1/4096 m/s words.
+/// Contact velocities in vehicle-local forward/lateral axes, before steering
+/// rotation, in front-left/right then rear-left/right order. Original
+/// wheel+0x2C/+0x30 are signed 1/4096 m/s words.
 #[derive(Component, Default, Debug, Clone, Copy, Reflect)]
 #[reflect(Component)]
 pub struct WheelLocalVelocities {

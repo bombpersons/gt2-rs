@@ -11,7 +11,10 @@ geometry. [Slip preprocessing](wheel-slip-evidence.md) matches 100 original
 boundary/holdout executions; brake allocation matches 133 original calls.
 [Brake assistance](brake-assist-evidence.md) matches 130 original calls,
 including independent holdouts and pedal-to-demand integration.
-Tyre/drivetrain/body force coupling, upstream wheel/yaw inputs, live wheel
+[Longitudinal wheel slip](longitudinal-slip-evidence.md) now matches 268
+original wheel executions and feeds brake assistance exactly in 36 natural
+physics ticks. All 4096 steering sine/cosine pairs match as well.
+Tyre/drivetrain/body force coupling, upstream contact/rotation/yaw inputs, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.
 

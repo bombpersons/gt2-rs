@@ -40,6 +40,10 @@ The tuning export verifies all 4097 original angle-table entries against its
 content, frame capture or emulator state is shipped as gameplay data. The
 exported table is a numerical direction curve, with named physical tuning.
 
+These velocities are sampled at the wheel contacts in vehicle-local axes,
+before steering rotation. The [longitudinal follow-up](longitudinal-slip-evidence.md)
+confirms that rotation at 80039508/39518 and supplies the next slip stage.
+
 ## Fields, units and rule
 
 The first car's physics base is `car = 800A96B4`; wheel records begin at
@@ -56,7 +60,7 @@ rear-right order. All offsets below are hexadecimal:
 The velocity dimensions agree with the wheel-transform/body-velocity route
 documented in the driving evidence. The port keeps these as explicit native
 inputs in m/s; it does not yet reconstruct that transform. The second local
-component's positive direction is the original wheel-local axis: the angle
+component's positive direction is the original vehicle-local axis: the angle
 calculation explicitly negates it. A complete contact model must preserve
 that sign when writing `WheelLocalVelocities`.
 

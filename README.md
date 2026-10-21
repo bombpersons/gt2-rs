@@ -56,7 +56,7 @@ mirror and intro/replay cameras remain unfinished.
 The decoded Vitz body and procedural wheels now appear in chase view, with
 hand-authored replacements in the example mod. Live wheel animation,
 reflections and shadows remain open.
-Verified pedals, digital/per-wheel steering, slip preprocessing, brake
+Verified pedals, digital/per-wheel steering, geometric and longitudinal slip, brake
 assistance/allocation, engine torque/fuel cut and
 velocity-to-step integration have original recordings; the coupled force
 model and playable driving session are still unfinished. See

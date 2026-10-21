@@ -110,6 +110,7 @@ Tests prove standalone use and copy -> assistance -> allocation order even
 when plugins are registered in the opposite order. A separate car in the
 same tests proves independent AI/replay channels remain unchanged.
 
-Wheel response, longitudinal-slip generation, the upstream yaw-signal rules,
+[Longitudinal-slip generation](longitudinal-slip-evidence.md) is now ported
+and connected. Wheel response generation, the upstream yaw-signal rules,
 other control writers, coupled tyre/drivetrain/body forces and actual braking
 deceleration remain unfinished. These rules alone cannot drive the live car.

@@ -124,6 +124,17 @@ def export_tuning(ram_path, assets):
         fuel_cut_hysteresis_rpm=65536 - immediate(0x3538C, 0x2442),
         torque_curve=curve(0x7C, 'speed_rev_s', 'torque', 4096)))
     write('vehicle/braking.ron', dict(front_capacity=car(0x414, 'i'), rear_capacity=car(0x418, 'i'), handbrake_capacity=car(0x41C, 'i')))
+    # Wheel steering uses a biased signed sine quantizer. Verify the native
+    # formula against every consumed sine/cosine table entry for this overlay.
+    for phase in range(5120):
+        expected = math.trunc(math.sin((phase % 4096) * math.tau / 4096) * 4096 + 0.5)
+        if read(0x93150 + phase * 2, 'h') != expected:
+            raise ValueError('Unsupported wheel steering direction curve')
+    write('vehicle/longitudinal_slip.ron', dict(
+        stationary_wheel_speed_mps=immediate(0x39528, 0x2642) / 4096,
+        full_response_speed_mps=immediate(0x396F8, 0x28C2) / 4096,
+        # 80039708..3971C constructs speed * ((3*8-1)*32+1).
+        response_per_mps=((3 * 8 - 1) * 32 + 1) / 4096))
     write('vehicle/brake_assist.ron', dict(
         slip_target=(car(0x1FE) / 4096, car(0x2D6) / 4096),
         slip_feedback=(car(0x424, 'i') / 4096, car(0x428, 'i') / 4096),

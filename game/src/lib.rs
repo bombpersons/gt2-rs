@@ -50,6 +50,7 @@ impl PluginGroup for GamePlugins {
             .add(vehicle::VehicleRulesPlugin)
             .add(vehicle::engine_torque::EngineTorqueRulesPlugin)
             .add(vehicle::slip::WheelSlipRulesPlugin)
+            .add(vehicle::longitudinal_slip::LongitudinalSlipRulesPlugin)
             .add(vehicle::braking::BrakingRulesPlugin)
             .add(vehicle::brake_assist::BrakeAssistRulesPlugin)
             .add(vehicle::presentation::VehiclePresentationPlugin)

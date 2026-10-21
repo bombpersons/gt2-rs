@@ -564,8 +564,9 @@ this format. Other primitive-group refinements and the editor remain work.
 ## Vehicle rules and body assets
 
 Vehicle rules load layered tuning from `vehicle/pedals.ron`,
-`vehicle/steering.ron`, `vehicle/slip.ron`, `vehicle/braking.ron` and
-`vehicle/brake_assist.ron` and `vehicle/engine.ron`. A mod can replace these
+`vehicle/steering.ron`, `vehicle/slip.ron`, `vehicle/braking.ron`,
+`vehicle/brake_assist.ron`, `vehicle/longitudinal_slip.ron` and
+`vehicle/engine.ron`. A mod can replace these
 files or insert their public tuning resources before adding the plugins.
 Pedal rates are fractions of full travel per 30 Hz tick. Steering uses
 turns, turns/second, a speed curve in km/h, spring coefficients, per-wheel
@@ -582,6 +583,13 @@ throttle to torque, and world velocity/yaw rate to the step builder.
 The named `VehicleSystems` sets preserve preparation → controls → wheel
 commands → forces → step construction → integration, all before the engine's
 camera phase. No complete tyre/drivetrain model is implied by these interfaces.
+
+`LongitudinalSlipRulesPlugin` reads wheel surface speed, contact velocities
+and wheel steering, producing signed slip, a velocity-reference enum and
+prospective force direction. Its optional assistance connection supplies fresh
+slip before brake adjustment. Tuning specifies stopped-wheel and full-response
+speeds in m/s and a low-speed response slope. See
+[longitudinal slip evidence](longitudinal-slip-evidence.md).
 
 `BrakeAssistRulesPlugin` opts cars with `BrakeAssistInput` into per-wheel
 slip/yaw adjustment after shared-pedal copying and before demand allocation.

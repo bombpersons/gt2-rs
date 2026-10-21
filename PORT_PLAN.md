@@ -65,8 +65,11 @@ See `docs/assets.md`; run the public history audit before every push.
   matches 133 original calls, including asymmetric inputs and signed rear
   handbrake edge cases. The intervening per-wheel brake assistance now matches 130 original calls,
   including independent holdouts and complete pedal-to-demand integration.
-  Wheel/contact and upstream yaw-correction signals remain measured inputs;
-  their producers and coupled braking deceleration remain unported.
+  Longitudinal wheel slip now matches 268 original wheel executions, with
+  all 4096 steering bases verified, and supplies assistance in 36 natural
+  physics ticks exactly. Wheel/contact rotation and upstream yaw-correction
+  signals remain inputs; their producers and coupled braking deceleration
+  remain unported. See docs/longitudinal-slip-evidence.md.
 
 ## Work order
 

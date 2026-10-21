@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 pub mod brake_assist;
 pub mod braking;
 pub mod engine_torque;
+pub mod longitudinal_slip;
 pub mod presentation;
 pub mod slip;
 mod steering;
@@ -170,6 +171,7 @@ pub enum VehicleSystems {
     ReadInput,
     Pedals,
     SteerWheels,
+    ContactSlip,
     Forces,
     BuildStep,
     Integrate,
@@ -195,6 +197,7 @@ impl Plugin for VehicleRulesPlugin {
                     VehicleSystems::ReadInput,
                     VehicleSystems::Pedals,
                     VehicleSystems::SteerWheels,
+                    VehicleSystems::ContactSlip,
                     VehicleSystems::Forces,
                     VehicleSystems::BuildStep,
                     VehicleSystems::Integrate,
