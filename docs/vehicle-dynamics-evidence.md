@@ -80,7 +80,7 @@ current integration duration copied from the current car's `+0x6FE`.
 | `8003A368` -> `800397D0` | Sample longitudinal response and cornering limit from signed longitudinal slip | Ported; tyre-force evidence |
 | `8003A380..A450` | Scale response by grip capacity; split wheel-reference/ground-reference force channels using the longitudinal slip enum | Ported; these flags do not mean grounded/airborne |
 | `8003A45C..A6F4` | Calculate lateral force from folded relative steering/slip angle, activation and cornering limit, plus low-speed correction | Ported; grip/contact production remains separate |
-| `8003A710..A938` | Sum longitudinal force, derive effective inverse mass, update body forward velocity; prevent resistance from crossing through zero | Full coupled wheel/brake behavior |
+| `8003A710..A938` | Sum wheel-reference force/resistance, derive effective reciprocal mass, update forward speed, apply the ground-reference/lateral channel with a signed stopping clamp | Ported; drivetrain coupling remains separate |
 | `8003A93C` -> `80046B58` | Calls `80045688`, `800457B0`, `80045AE8`, `800465E0` in order | Complete transmission/differential interpretation |
 | `8003A964..AEA0` | Update engine state; mode `+0x372 == 1` uses `80039994`, mode 2/other have separate branches; update integer RPM then gear-selection path | Shift timing, mode names, and all gear logic |
 | `8003AEB8..B0C8` | Accumulate lateral/yaw effects from wheel forces; update angular-motion input `+0x64C` | Yaw-force scale and inertia parameters |
@@ -247,10 +247,12 @@ result for positive forward speed and keeping it positive for negative
 speed. Zero speed produces zero. This is a signed resistance term, rather
 than an automatic shift band or RPM rule.
 
-The curve coordinates/ordinates are exported locally through that descriptor. The same clamped
-linear-interpolation helper `80075D2C` is used. Surface names and load/force
-scaling remain open, so this is a map for follow-up rather than a complete
-rolling-resistance implementation contract.
+The curve coordinates/ordinates are exported locally through that descriptor.
+The same clamped linear-interpolation helper `80075D2C` is used.
+This resistance rule and the complete pre-drivetrain forward phase are now
+ported and checked against 183 original car executions; see
+[forward dynamics evidence](forward-dynamics-evidence.md). Surface names,
+contact/load production and final body/drivetrain coupling remain open.
 
 The next broad dependency is `80046B58` and its four callees. This path
 couples effective engine torque, gear ratios, wheel state and body forward

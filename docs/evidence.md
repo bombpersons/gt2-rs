@@ -17,6 +17,9 @@ physics ticks. All 4096 steering sine/cosine pairs match as well.
 [Tyre response and force preparation](tyre-force-evidence.md) now matches
 972 original wheel executions, including independent holdouts, with both slip
 stages computed natively in the same tick.
+[Surface resistance and forward integration](forward-dynamics-evidence.md)
+match 183 original car executions before drivetrain coupling, with native tyre
+forces, all wheel-contact combinations and exact signed stopping behavior.
 Drivetrain/body force coupling, upstream contact/rotation/yaw inputs, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.

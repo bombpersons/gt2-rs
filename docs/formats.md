@@ -608,6 +608,18 @@ retain explicit original internal units; correction velocity thresholds are
 m/s. Source tables are exported locally. See
 [tyre-force evidence](tyre-force-evidence.md).
 
+`ForwardDynamicsRulesPlugin` consumes tyre forces, steering, body-forward
+speed from `TyreContactState`, per-car duration and `ForwardDynamicsInput`
+(wheel load, surface indices and prepared aerodynamic force). It produces
+`ForwardDynamics`: surface resistance, effective reciprocal mass, accumulated
+force, acceleration and body-forward speed before drivetrain coupling.
+`ForwardDynamicsTuning` names body mass/reciprocal, per-axle rotational mass,
+surface coefficients and a clamped speed/response curve. Mass is in normalized
+original units, without a claimed kilogram conversion; forces retain original
+internal units. Tuning is exported locally to `vehicle/forward_dynamics.ron`.
+This intermediate output does not yet supply world `VehicleVelocity`. See
+[forward dynamics evidence](forward-dynamics-evidence.md).
+
 `VehiclePresentationPlugin` renders an ordinary `GeometryData` body asset
 on a subject marked `VehicleBody`, as a child under that subject's metre
 Transform. Model-local X is right, Y up and -Z forward. Its public resource

@@ -7,6 +7,10 @@ emulator states, generated numerical tables or original reference fixtures.
 All `game/assets/` and `game/tests/data/original/` content is private and ignored.
 The old development history contained imported data and must never be pushed;
 the public repository starts with a fresh source-only history.
+The audit also rejects known tuning-array copies formerly embedded in an
+investigation note, including historical and whitespace-only copies. Describing
+formats and rules is public; complete source parameter arrays stay in local
+exports. The automated checks complement manual provenance review.
 
 ## Export the current runtime assets
 
@@ -34,7 +38,8 @@ course/model/paint files, then exports:
 - Vitz high-detail body, paint slot 5 and all decoded wheel detail levels;
 - Checkpoint wheel placements and camera setup;
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
-  brake-assistance tuning, plus axle tyre curves and low-speed force settings.
+  brake-assistance tuning, axle tyre curves, low-speed force settings, and
+  body/wheel mass plus surface-resistance tuning.
 
 The game reads native RON/PNG files from `game/assets/` and does not use an
 emulator at runtime. The exporter's intermediate files and checkpoints stay

@@ -18,6 +18,15 @@ ROOT_FILES = {'AGENTS.md', 'Cargo.toml', 'Cargo.lock', 'PORT_PLAN.md', 'README.m
 AUTHORED_IMAGES = {'engine/assets/sandbox/panel-large.png', 'engine/assets/sandbox/panel-small.png'}
 PRIVATE = ('game/assets/', 'game/tests/data/', 'docs/overlays/', '.psx/', '.private/',
            'extracted/', 'bios/', 'media/', 'external/', 'ghidra-projects/', 'target/')
+# Complete tuning arrays previously copied into an investigation note. Store
+# only digests, so the guard itself does not publish the source table data.
+# This catches their historical copies as well as whitespace-only variants;
+# provenance review is still required for other embedded data.
+PRIVATE_TABLE_DIGESTS = {
+    '6f6aa1814ac93edac914af4e61d3a3392af690a640f95f9b44046b8a68d5a765',
+    'e56acfe9e863970beec342c9c8f81ba1222c46268a2010b84532c54a8bb2c667',
+    '76866826c4d3acadaa9120f900b800c9d62d75fddd425e0d52c61aca693391d1',
+}
 
 
 def allowed(name):
@@ -57,6 +66,10 @@ def check_blob(name, data):
         raise ValueError(f'Binary content in text file: {name}')
     if re.search(r'[A-Za-z0-9+/]{512,}={0,2}', text):
         raise ValueError(f'Long encoded payload requires review: {name}')
+    for sequence in re.finditer(r'(?<![\w])[-+]?\d+(?:\s*,\s*[-+]?\d+){7,}(?![\w])', text):
+        canonical = ','.join(re.findall(r'[-+]?\d+', sequence.group()))
+        if hashlib.sha256(canonical.encode()).hexdigest() in PRIVATE_TABLE_DIGESTS:
+            raise ValueError(f'Copied private source tuning table: {name}')
 
 
 def git(root, *args):

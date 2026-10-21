@@ -75,6 +75,11 @@ See `docs/assets.md`; run the public history audit before every push.
   correction and independent holdouts. Both slip stages feed forces natively;
   grip capacity and contact/rotation/body inputs remain measured. Body and
   drivetrain integration remain unfinished. See docs/tyre-force-evidence.md.
+- Surface resistance and the complete forward phase before drivetrain
+  coupling now match 183 original car executions. Native slip and tyre forces
+  feed the phase; all contact masks, surfaces and signed stopping branches
+  are covered. Load/grip, aerodynamic preparation and final body/drivetrain
+  coupling remain unfinished. See docs/forward-dynamics-evidence.md.
 
 ## Work order
 

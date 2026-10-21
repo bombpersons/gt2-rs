@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 pub mod brake_assist;
 pub mod braking;
 pub mod engine_torque;
+pub mod forward_dynamics;
 pub mod longitudinal_slip;
 pub mod presentation;
 pub mod slip;

@@ -184,7 +184,7 @@ fn interpolate(x: f32, x0: f32, x1: f32, y0: f32, y1: f32) -> f32 {
 
 /// Signed low-word multiplication with the source's sign-dependent bias
 /// before division by 4096 (8007596C), retained at the force-unit boundary.
-fn scaled_force(response: f32, force: f32) -> f32 {
+pub(super) fn scaled_force(response: f32, force: f32) -> f32 {
     let product = (response as f64 * 4096.0).round() * (force as f64).round();
     let bias = if response.is_sign_negative() != force.is_sign_negative() { 4095.0 } else { 0.0 };
     let signed = (product + bias + 2147483648.0).rem_euclid(4294967296.0) - 2147483648.0;
@@ -232,7 +232,13 @@ impl Plugin for TyreForcesRulesPlugin {
                 .in_set(engine::prelude::EngineSet::Control)
                 .in_set(GameSystems::Game),
         )
-        .add_systems(FixedUpdate, calculate.in_set(VehicleSystems::Forces).after(BrakingSystems::Allocate));
+        .add_systems(
+            FixedUpdate,
+            calculate
+                .in_set(VehicleSystems::Forces)
+                .after(BrakingSystems::Allocate)
+                .before(super::forward_dynamics::ForwardDynamicsSystems::Integrate),
+        );
     }
 }
 

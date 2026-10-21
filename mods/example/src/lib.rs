@@ -21,4 +21,5 @@ pub fn plugins() -> bevy::app::PluginGroupBuilder {
         .disable::<game::vehicle::braking::BrakingRulesPlugin>()
         .disable::<game::vehicle::brake_assist::BrakeAssistRulesPlugin>()
         .disable::<game::vehicle::tyre_forces::TyreForcesRulesPlugin>()
+        .disable::<game::vehicle::forward_dynamics::ForwardDynamicsRulesPlugin>()
 }

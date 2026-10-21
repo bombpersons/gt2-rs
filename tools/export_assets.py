@@ -124,6 +124,16 @@ def export_tuning(ram_path, assets):
         fuel_cut_hysteresis_rpm=65536 - immediate(0x3538C, 0x2442),
         torque_curve=curve(0x7C, 'speed_rev_s', 'torque', 4096)))
     write('vehicle/braking.ron', dict(front_capacity=car(0x414, 'i'), rear_capacity=car(0x418, 'i'), handbrake_capacity=car(0x41C, 'i')))
+    # Global resistance curve uses the same word-coordinate descriptor as
+    # engine torque, but is not relative to this car's physics base.
+    resistance_curve = curve(0x1C8730 - BASE, 'speed_mps', 'response', 4096)
+    for knot in resistance_curve:
+        knot['response'] /= 4096
+    write('vehicle/forward_dynamics.ron', dict(
+        body_mass=car(0x28) / 4096, body_inverse_mass=car(0x2A) / 4096,
+        wheel_rotational_mass=(car(0x410, 'H') / 4096, car(0x412, 'H') / 4096),
+        surface_resistance=[v / 4096 for v in values(0x46E00, 8, 'i', 4)],
+        resistance_curve=resistance_curve))
     # Wheel steering uses a biased signed sine quantizer. Verify the native
     # formula against every consumed sine/cosine table entry for this overlay.
     for phase in range(5120):
