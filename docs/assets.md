@@ -34,7 +34,7 @@ course/model/paint files, then exports:
 - Vitz high-detail body, paint slot 5 and all decoded wheel detail levels;
 - Checkpoint wheel placements and camera setup;
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
-  brake-assistance tuning.
+  brake-assistance tuning, plus axle tyre curves and low-speed force settings.
 
 The game reads native RON/PNG files from `game/assets/` and does not use an
 emulator at runtime. The exporter's intermediate files and checkpoints stay

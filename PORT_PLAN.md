@@ -70,6 +70,11 @@ See `docs/assets.md`; run the public history audit before every push.
   physics ticks exactly. Wheel/contact rotation and upstream yaw-correction
   signals remain inputs; their producers and coupled braking deceleration
   remain unported. See docs/longitudinal-slip-evidence.md.
+- Paired tyre responses and full per-wheel longitudinal/lateral force
+  preparation now match 972 original wheel executions, including low-speed
+  correction and independent holdouts. Both slip stages feed forces natively;
+  grip capacity and contact/rotation/body inputs remain measured. Body and
+  drivetrain integration remain unfinished. See docs/tyre-force-evidence.md.
 
 ## Work order
 

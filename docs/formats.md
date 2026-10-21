@@ -566,7 +566,7 @@ this format. Other primitive-group refinements and the editor remain work.
 Vehicle rules load layered tuning from `vehicle/pedals.ron`,
 `vehicle/steering.ron`, `vehicle/slip.ron`, `vehicle/braking.ron`,
 `vehicle/brake_assist.ron`, `vehicle/longitudinal_slip.ron` and
-`vehicle/engine.ron`. A mod can replace these
+`vehicle/engine.ron` and `vehicle/tyres.ron`. A mod can replace these
 files or insert their public tuning resources before adding the plugins.
 Pedal rates are fractions of full travel per 30 Hz tick. Steering uses
 turns, turns/second, a speed curve in km/h, spring coefficients, per-wheel
@@ -597,6 +597,16 @@ Its tuning contains axle slip targets, slip/grip feedback gains and yaw
 strength. Its state supplies wheel speed/grip/slip responses and yaw correction
 signals; those producers remain work. All response units are dimensionless,
 with quantized product boundaries. See [assistance evidence](brake-assist-evidence.md).
+
+`TyreForcesRulesPlugin` consumes the two slip components, wheel motion,
+steering, contact velocities and `TyreContactState`. It exposes paired tyre
+responses, separate longitudinal solver channels, absolute cornering response
+and final lateral force. `TyreTuning` has two axle curves with shared slip
+coordinates and longitudinal/cornering-limit ordinates, folded slip-angle
+curves, and named low-speed correction settings. Force capacity and outputs
+retain explicit original internal units; correction velocity thresholds are
+m/s. Source tables are exported locally. See
+[tyre-force evidence](tyre-force-evidence.md).
 
 `VehiclePresentationPlugin` renders an ordinary `GeometryData` body asset
 on a subject marked `VehicleBody`, as a child under that subject's metre

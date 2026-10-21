@@ -13,7 +13,7 @@ stride `0xB40` and add `0x2C` to reach their physics base.
 | Question | Result | Evidence boundary |
 |---|---|---|
 | What executes under `80039FC8`? | Phased wheel/body/drivetrain processing, mapped below | Instructions in the checkpoint overlay, plus existing two-tick execution trace |
-| Is there a cohesive next subsystem? | Yes: torque-curve sampling, engine drag and hysteretic fuel cut | All arithmetic and thresholds identified; absolute torque units remain open |
+| Which force rules are now ported? | Paired tyre curves, longitudinal channels, lateral force and low-speed correction | 972 original wheel executions; grip/contact inputs remain measured |
 | Can wheel braking preparation be ported independently? | Yes: allocate effective brake travel to wheels and add rear handbrake | Exact normal-driver source and calculation identified; tyre/ABS effects still separate |
 | Are complete body forces understood? | No | Tyre, transmission, coupled wheel and contact paths remain incomplete |
 
@@ -59,6 +59,11 @@ The checkpoint's earlier value 6074 is consistent with its earlier engine
 speed, not with treating adjacent `5604` as a fraction. The update mechanism
 of `+0x6AE/+0x6F8` is not established here.
 
+The paired tyre response and per-wheel force phases described below are now
+ported and checked against 972 original wheel executions. See
+[tyre force evidence](tyre-force-evidence.md). Their grip/contact inputs and
+subsequent drivetrain/body coupling remain unfinished.
+
 ## Dispatcher phases and ordering
 
 `80039FC8(a0=containing_car_records, a1=count)` loops over all cars in each
@@ -72,9 +77,9 @@ current integration duration copied from the current car's `+0x6FE`.
 | `8003A014..A198` | Dispatch drivetrain state preparation by `+0x372` and `+0x619`; some paths call `8003932C` or `80039470` | Complete state enum and all transmission variants |
 | `8003A19C..A278` | Per-wheel brake allocation, rear handbrake, initial wheel flags | Subsequent assists may alter wheel flags |
 | `8003A2A0..A364` | Clear force/acceleration accumulators; calculate signed longitudinal surface resistance into temporary `+0x88` | Physical unit calibration and surface enum names |
-| `8003A368` -> `800397D0` | For each wheel, interpolate two response tables through `8003D940` using a signed halfword temporary; write outputs including wheel `+0x46` | Meaning of every curve and temporary input |
-| `8003A380..A450` | Convert curve output and wheel `+0x494+i*0x68` to force terms; split grounded/other paths by signed temporary flags | Contact-state enum |
-| `8003A45C..A6F4` | Calculate lateral wheel force at wheel `+0x54`, including a separate low-speed correction | Full tyre model and steering transform |
+| `8003A368` -> `800397D0` | Sample longitudinal response and cornering limit from signed longitudinal slip | Ported; tyre-force evidence |
+| `8003A380..A450` | Scale response by grip capacity; split wheel-reference/ground-reference force channels using the longitudinal slip enum | Ported; these flags do not mean grounded/airborne |
+| `8003A45C..A6F4` | Calculate lateral force from folded relative steering/slip angle, activation and cornering limit, plus low-speed correction | Ported; grip/contact production remains separate |
 | `8003A710..A938` | Sum longitudinal force, derive effective inverse mass, update body forward velocity; prevent resistance from crossing through zero | Full coupled wheel/brake behavior |
 | `8003A93C` -> `80046B58` | Calls `80045688`, `800457B0`, `80045AE8`, `800465E0` in order | Complete transmission/differential interpretation |
 | `8003A964..AEA0` | Update engine state; mode `+0x372 == 1` uses `80039994`, mode 2/other have separate branches; update integer RPM then gear-selection path | Shift timing, mode names, and all gear logic |

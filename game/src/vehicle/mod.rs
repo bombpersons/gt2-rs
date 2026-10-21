@@ -21,6 +21,7 @@ pub mod longitudinal_slip;
 pub mod presentation;
 pub mod slip;
 mod steering;
+pub mod tyre_forces;
 pub use steering::{
     DigitalSteeringInput, STEERING_TUNING, SteeringKinematics, SteeringKnot, SteeringResponse, SteeringTuning,
     WheelSteering,

@@ -135,6 +135,33 @@ def export_tuning(ram_path, assets):
         full_response_speed_mps=immediate(0x396F8, 0x28C2) / 4096,
         # 80039708..3971C constructs speed * ((3*8-1)*32+1).
         response_per_mps=((3 * 8 - 1) * 32 + 1) / 4096))
+    def tyre_curve(offset):
+        count = car(offset, 'H')
+        xs, ys = car(offset + 4, 'I'), car(offset + 8, 'I')
+        if not 2 <= count <= 128:
+            raise ValueError('Invalid tyre curve point count')
+        x = values(xs, count, 'h', 2)
+        y = values(ys, count, 'h', 2)
+        if any(a >= b for a, b in zip(x, x[1:])):
+            raise ValueError('Unordered tyre curve coordinates')
+        return x, y
+    axles = []
+    for offset in [0x194, 0x26C]:
+        angles, lateral = tyre_curve(offset)
+        slips, longitudinal = tyre_curve(offset + 0x2C)
+        limits_x, limits = tyre_curve(offset + 0x6C)
+        if limits_x != slips or any(v < 0 for v in limits):
+            raise ValueError('Unsupported paired tyre curve or negative cornering limit')
+        axles.append(dict(
+            slip_curve=[dict(slip=x / 4096, longitudinal=y / 4096, cornering_limit=z / 4096)
+                        for x, y, z in zip(slips, longitudinal, limits)],
+            cornering_curve=[dict(angle_turns=x / 4096, response=y / 4096) for x, y in zip(angles, lateral)]))
+    write('vehicle/tyres.ron', dict(axles=tuple(axles), low_speed=dict(
+        tread_limit_mps=immediate(0x3A690, 0x2402) / 4096,
+        body_tread_difference_limit_mps=(immediate(0x3A5F0, 0x2862) - 1) / 4096,
+        saturation_speed_mps=immediate(0x3A650, 0x28A2) / 4096,
+        force_per_lateral_mps=immediate(0x3A684, 0x2404),
+        max_force=immediate(0x3A660, 0x2405), fade_per_mps=(((3 * 8 - 1) * 32 + 1) * 4) / 4096)))
     write('vehicle/brake_assist.ron', dict(
         slip_target=(car(0x1FE) / 4096, car(0x2D6) / 4096),
         slip_feedback=(car(0x424, 'i') / 4096, car(0x428, 'i') / 4096),

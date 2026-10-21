@@ -128,7 +128,8 @@ slip and speed response; other cars do not require the braking feature.
 The source-only example mod disables this unused dynamics feature and keeps
 its handmade course/body/camera assets independent of private tuning.
 
-Wheel surface speed/response generation, contact/rotation dynamics, grip and
-yaw signals, tyre-force curves, coupled drivetrain/body acceleration and a
+[Tyre-force curves and preparation](tyre-force-evidence.md) now consume these
+outputs natively. Wheel surface speed/response generation, contact/rotation
+dynamics, grip and yaw signals, coupled drivetrain/body acceleration and a
 playable B-1 session are still unfinished. These exact subsystem observations
 do not establish whole-vehicle or all-car parity.

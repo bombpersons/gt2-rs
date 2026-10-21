@@ -57,7 +57,7 @@ The decoded Vitz body and procedural wheels now appear in chase view, with
 hand-authored replacements in the example mod. Live wheel animation,
 reflections and shadows remain open.
 Verified pedals, digital/per-wheel steering, geometric and longitudinal slip, brake
-assistance/allocation, engine torque/fuel cut and
+assistance/allocation, per-wheel tyre forces, engine torque/fuel cut and
 velocity-to-step integration have original recordings; the coupled force
 model and playable driving session are still unfinished. See
 [the evidence](docs/evidence.md), [cameras](docs/camera-evidence.md), [road subdivision](docs/subdivision-evidence.md), [texture detail](docs/material-variant-evidence.md), [course meshes](docs/course-mesh-evidence.md)

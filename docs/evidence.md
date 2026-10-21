@@ -14,7 +14,10 @@ including independent holdouts and pedal-to-demand integration.
 [Longitudinal wheel slip](longitudinal-slip-evidence.md) now matches 268
 original wheel executions and feeds brake assistance exactly in 36 natural
 physics ticks. All 4096 steering sine/cosine pairs match as well.
-Tyre/drivetrain/body force coupling, upstream contact/rotation/yaw inputs, live wheel
+[Tyre response and force preparation](tyre-force-evidence.md) now matches
+972 original wheel executions, including independent holdouts, with both slip
+stages computed natively in the same tick.
+Drivetrain/body force coupling, upstream contact/rotation/yaw inputs, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.
 
