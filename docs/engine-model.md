@@ -554,8 +554,12 @@ heading delta into `car+0x648` before the wrap. `0x80030330` constructs
 those steps from post-force world velocity and yaw rate. The native step
 builder and integrator now match 300 consecutive original ticks, given
 measured force outputs. Digital steering, wheel steering commands, engine
-torque and fuel cut are also ported independently; the full dynamics model
-that connects them is unfinished. `0x80043388` and
+torque and fuel cut are also ported. Native slip, tyre force, forward integration,
+axle/wheel coupling and ordinary transmission feedback now connect those
+component rules; transmission comparisons retain engine/gear/timer state over
+consecutive ticks. Lateral/yaw/world acceleration, contact production and the
+full body dynamics model remain unfinished. See [transmission evidence](transmission-evidence.md).
+`0x80043388` and
 `0x8003D498` build four per-wheel GTE matrices from the position, the heading
 and per-wheel offsets.
 

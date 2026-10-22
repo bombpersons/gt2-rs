@@ -30,8 +30,14 @@ those standalone wheel tests retain measured axle-drive inputs.
 original car executions (1,352 wheels), including native ordinary engine
 torque, clutch-speed feedback, all seven drive layouts, persistent centre
 state, adaptive angle/brake boundaries and signed stopping aliases.
-Alternate torque controllers, engagement/gear decisions, post-coupling engine
-feedback, body force coupling, upstream contact/load/yaw inputs, live wheel
+[Ordinary engine feedback and transmission timing](transmission-evidence.md)
+now match 723 original car calls (2,892 wheels), including first-gear and
+repeat/reengagement timers, engagement preparation/feedback, RPM refresh,
+automatic/manual gear selection and all seven layouts' slip/contact gates.
+Engine, gear, engagement, request, timer and fuel-cut state carry natively
+across consecutive recordings; a final independent sequence passes as well.
+Alternate torque controllers, logical control-request production and physical
+bindings, body force coupling, upstream contact/load/yaw inputs, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.
 

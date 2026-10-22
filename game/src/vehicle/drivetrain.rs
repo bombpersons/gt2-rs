@@ -481,6 +481,10 @@ fn product_word_negative(a: f32, b: f32) -> bool {
 }
 
 pub struct DrivetrainRulesPlugin;
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum DrivetrainSystems {
+    Prepare,
+}
 impl Plugin for DrivetrainRulesPlugin {
     fn build(&self, app: &mut App) {
         if !app.world().contains_resource::<DrivetrainTuning>() {
@@ -493,7 +497,13 @@ impl Plugin for DrivetrainRulesPlugin {
                 .in_set(engine::prelude::EngineSet::Control)
                 .in_set(GameSystems::Game),
         )
-        .add_systems(FixedUpdate, prepare.in_set(VehicleSystems::Forces).before(EngineTorqueSystems::Prepare))
+        .add_systems(
+            FixedUpdate,
+            prepare
+                .in_set(DrivetrainSystems::Prepare)
+                .in_set(VehicleSystems::Forces)
+                .before(EngineTorqueSystems::Prepare),
+        )
         .add_systems(
             FixedUpdate,
             advance

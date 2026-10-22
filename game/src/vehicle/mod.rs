@@ -23,6 +23,7 @@ pub mod longitudinal_slip;
 pub mod presentation;
 pub mod slip;
 mod steering;
+pub mod transmission;
 pub mod tyre_forces;
 pub mod wheel_rotation;
 pub use steering::{

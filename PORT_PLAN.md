@@ -51,7 +51,8 @@ See `docs/assets.md`; run the public history audit before every push.
   a new mixed-control holdout. Forces are still measured inputs in those tests.
 - Engine torque curve/drag and hysteretic fuel cut match 168 original calls,
   including independent curve, fractional-throttle and limiter holdouts.
-  Torque-to-wheel/body coupling remains open. RPM storage is corrected:
+  Ordinary torque-to-axle coupling and transmission feedback are ported below;
+  body/contact coupling remains open. RPM storage is corrected:
   +0x6AC/+0x6AE are separate halfwords; +0x624 is engine rev/s ×4096.
 - The decoded Vitz high-LOD body renders at the reference pose in chase
   views, using checkpoint paint slot 5. The example mod supplies a handmade body
@@ -94,10 +95,20 @@ See `docs/assets.md`; run the public history audit before every push.
   ordinary engine torque, clutch-speed feedback, persistent centre/axle/wheel
   history and independent angle/brake/stopping holdouts. Separate contact
   resets at 80030830 remain observed inputs. Alternate torque controllers and
-  induction remain external. Next: ordinary post-coupling engine feedback /
-  engagement transitions at 8003AC24..AE90 and preparation, gear timing, then
-  lateral/yaw/world acceleration and contact production.
+  induction remain external. Ordinary post-coupling engine feedback,
+  engagement preparation/transitions and gear timing are now ported below.
   See docs/drivetrain-evidence.md.
+- Ordinary engine feedback, engagement request/transition rules, RPM refresh,
+  automatic/manual selection and first-gear/repeat/reengagement timing match
+  723 original car calls (2,892 wheels). The tests retain engine, gear,
+  engagement, request, timers and fuel-cut state across consecutive ticks,
+  including a final independent held-out sequence. All seven layouts permit
+  and block shifts at their actual wheel-slip/contact boundaries. The rules
+  run alone with handmade data and support per-car transmission setups.
+  Logical request production/physical bindings and alternate torque paths
+  remain separate. Next force target: lateral/yaw/world acceleration at
+  8003AEB8..8003B30C, then contact/load/grip production and collision.
+  See docs/transmission-evidence.md.
 
 ## Work order
 

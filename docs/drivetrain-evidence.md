@@ -9,8 +9,9 @@ differentials. Clutch-speed feedback at `8003932C` and fixed-clutch throttle
 selection at `8003A178..194` are native too.
 
 The source's alternate torque controllers `80045138` / `8004530C`, induction
-response, engagement/gear selection, post-coupling engine feedback and body
-motion remain separate work. The live scene still uses its checkpoint pose;
+response and body motion remain separate work. Ordinary engagement/gear
+selection and post-coupling engine feedback are now ported in
+[transmission timing](transmission-evidence.md). The live scene still uses its checkpoint pose;
 these subsystem comparisons do not establish playable driving.
 
 ## Identity and reproduction
@@ -190,9 +191,9 @@ collapsible-if warning in the earlier wheel-rotation test remains unchanged.
 Current-source and reachable-history publication audits pass, with all
 original assets, numerical fixtures and emulator outputs ignored.
 
-Next: port ordinary post-coupling engine feedback and engagement transitions
-(`8003AC24..AE90` and the corresponding preparation), actual gear-selection
-timing, then lateral/yaw/world acceleration and contact production. Alternate
+Ordinary post-coupling engine feedback, engagement transitions and gear timing
+are now covered by the transmission feature. Next: lateral/yaw/world
+acceleration and contact production. Alternate
 torque controllers, induction and their effects remain unverified producers.
 Live wheel animation, a playable B-1 session and the rest of the game remain
 unfinished.

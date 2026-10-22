@@ -159,6 +159,28 @@ def export_tuning(ram_path, assets):
         adaptive_taper_intercept=immediate(0x459E4, 0x2402) / 4096,
         lock_brake_travel=(immediate(0x45A40, 0x2842)-1) / 4096))
     write('vehicle/braking.ron', dict(front_capacity=car(0x414, 'i'), rear_capacity=car(0x418, 'i'), handbrake_capacity=car(0x41C, 'i')))
+    gears = car(0x372, 'B')
+    if not 1 <= gears <= 7:
+        raise ValueError('Unsupported original forward gear count')
+    write('vehicle/transmission.ron', dict(
+        forward_gears=gears, minimum_shift_rpm=car(0x394, 'H'), upshift_rpm=car(0x396, 'H'),
+        downshift_rpm=[car(0x398+i*2, 'H') for i in range(gears-1)],
+        engine_rev_s_per_mps=[car(0x3C4+i*4, 'i') /4096 for i in range(8)],
+        downshift_slip_limit=tuple(car(0x1FE+i*0xD8) /4096 for i in range(2)),
+        upshift_slip_limit=tuple(car(0x1FC+i*0xD8) /4096 for i in range(2)),
+        launch_speed_mps=(immediate(0x3A098, 0x2862)-1) /4096,
+        launch_throttle=(immediate(0x3A0D4, 0x2842)-1) /4096,
+        forward_select_speed_mps=immediate(0x44AB0, 0x2842) /4096,
+        reverse_select_speed_mps=(65536-immediate(0x44AD4, 0x2842)) /4096,
+        forward_return_speed_mps=immediate(0x44A84, 0x2842) /4096,
+        full_throttle_threshold=(immediate(0x44BD4, 0x2863)-1) /4096,
+        throttle_downshift_margin_rpm=65536-immediate(0x44BE4, 0x2484),
+        redline_speed_margin_rpm=immediate(0x44B14, 0x2463),
+        first_downshift_rpm=immediate(0x44B98, 0x2404)-65536,
+        top_upshift_rpm=immediate(0x44BB8, 0x2405),
+        feedback_redline_margin_rpm=immediate(0x3AE50, 0x2442),
+        braking_idle_margin_rpm=immediate(0x3ADFC, 0x2442),
+        reengagement_delay_ticks=int(read(0x1C8570, 'i') /5) %256))
     # Global resistance curve uses the same word-coordinate descriptor as
     # engine torque, but is not relative to this car's physics base.
     resistance_curve = curve(0x1C8730 - BASE, 'speed_mps', 'response', 4096)

@@ -40,7 +40,8 @@ course/model/paint files, then exports:
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
   brake-assistance tuning, axle tyre curves, low-speed force settings, and
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,
-  gear ratios, engine/axle inertias and centre coupling parameters.
+  gear ratios, engine/axle inertias, centre coupling parameters, transmission
+  RPM/speed/slip bands and engagement/timer thresholds.
 
 The game reads native RON/PNG files from `game/assets/` and does not use an
 emulator at runtime. The exporter's intermediate files and checkpoints stay

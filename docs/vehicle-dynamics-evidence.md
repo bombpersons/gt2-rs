@@ -2,6 +2,9 @@
 
 The central ordinary engine/clutch/gear/centre/axle phase is now ported with
 338 original car comparisons; see [drivetrain evidence](drivetrain-evidence.md).
+Ordinary engagement preparation, post-coupling engine feedback and shift
+timing now match 723 calls with consecutive engine/gear/timer state; see
+[transmission evidence](transmission-evidence.md).
 The notes below retain the original investigation context and source map.
 
 This is an evidence ledger for the next dynamics work, not a claim that the
@@ -86,7 +89,7 @@ current integration duration copied from the current car's `+0x6FE`.
 | `8003A45C..A6F4` | Calculate lateral force from folded relative steering/slip angle, activation and cornering limit, plus low-speed correction | Ported; grip/contact production remains separate |
 | `8003A710..A938` | Sum wheel-reference force/resistance, derive effective reciprocal mass, update forward speed, apply the ground-reference/lateral channel with a signed stopping clamp | Ported; drivetrain coupling remains separate |
 | `8003A93C` -> `80046B58` | Calls `80045688`, `800457B0`, `80045AE8`, `800465E0` in order | Outer wheel and central ordinary drivetrain phases ported; alternate torque controllers remain external |
-| `8003A964..AEA0` | Update engine state; mode `+0x372 == 1` uses `80039994`, mode 2/other have separate branches; update integer RPM then gear-selection path | Shift timing, mode names, and all gear logic |
+| `8003A964..AEA0` | Update engine state; mode `+0x372 == 1` uses `80039994`, mode 2/other have separate branches; update integer RPM then gear-selection path | Ordinary feedback, RPM refresh and automatic/manual gear logic ported; special torque-controller producers remain external |
 | `8003AEB8..B0C8` | Accumulate lateral/yaw effects from wheel forces; update angular-motion input `+0x64C` | Yaw-force scale and inertia parameters |
 | `8003B0D0..B30C` | Transform body acceleration into world horizontal velocity `+0x628/+0x62C`; special immobilization and zero-speed branches | All lock/contact flags |
 | `8003B310..B444` | Conditional per-wheel accumulation at wheel `+0x64` and byte output `+0x3E` | Wear/heat interpretation not proven |
