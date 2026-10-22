@@ -11,7 +11,10 @@ use game::vehicle::transmission::*;
 use game::vehicle::tyre_forces::*;
 use game::vehicle::wheel_rotation::*;
 use game::vehicle::{VehicleStepDuration, VehicleSystems, WheelSteering};
+use game::vehicle::{VehicleVelocity, body_dynamics::*};
 use std::collections::{HashMap, HashSet};
+#[path = "support/body_dynamics.rs"]
+mod body_support;
 
 type Row = HashMap<String, i32>;
 fn rows(name: &str) -> Vec<Row> {
@@ -88,6 +91,7 @@ fn check(name: &str, count: usize) {
     assert_eq!(original.len(), count * 4);
     let mut app = headless_app(game::tick_rate(game::REGION));
     app.add_plugins((
+        BodyDynamicsRulesPlugin,
         TransmissionRulesPlugin,
         DrivetrainRulesPlugin,
         WheelRotationRulesPlugin,
@@ -220,6 +224,14 @@ fn check(name: &str, count: usize) {
         };
         if previous == Some(r["sequence"]) {
             let native = current(app.world(), car);
+            if name == "body_holdout" {
+                drive.adaptive_angle_turns = native.drive.adaptive_angle_turns;
+                assert_eq!(
+                    drive.adaptive_angle_turns * 4096.0,
+                    before("angle"),
+                    "{label}: body feedback carries to drivetrain"
+                );
+            }
             // Effective throttle is a fresh control input; all actual engine,
             // gear, engagement, timer and fuel-cut state must persist natively.
             engine.speed_rev_s = native.engine.speed_rev_s;
@@ -295,12 +307,26 @@ fn check(name: &str, count: usize) {
                 VehicleStepDuration(r["fd_duration"] as f32 / 65536.0),
             ),
         ));
+        if name == "body_holdout" {
+            let (input, velocity, body) = body_support::original_inputs(r);
+            app.world_mut().entity_mut(car).insert((input, velocity, body));
+        }
         app.run_tick(&[]);
         let phases = app.world().get::<Phases>(car).unwrap();
         for (i, prefix) in ["prepared", "rotation", "selection"].iter().enumerate() {
             compare(r, prefix, phases.0[i], &label);
         }
         compare(r, "final", current(app.world(), car), &label);
+        if name == "body_holdout" {
+            body_support::compare(
+                r,
+                "after",
+                *app.world().get::<BodyDynamics>(car).unwrap(),
+                *app.world().get::<VehicleVelocity>(car).unwrap(),
+                *app.world().get::<ForwardDynamics>(car).unwrap(),
+                &label,
+            );
+        }
         for (i, value) in app.world().get::<WheelSurfaceMotion>(car).unwrap().tread_speed_mps.iter().enumerate() {
             assert_eq!(*value * 4096.0, r[&format!("rot_after_tread{i}")] as f32, "{label}: wheel {i} tread");
         }
@@ -361,6 +387,12 @@ fn final_original_exact_shift_slip_load_and_engine_boundaries() {
 #[cfg_attr(not(gt2_private_data), ignore = "requires private original transmission fixtures; see docs/assets.md")]
 fn final_independent_original_alternating_transmission_sequence() {
     check("final_holdout", 52);
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires private original combined body fixtures; see docs/assets.md")]
+fn connected_original_engine_wheels_transmission_body_and_next_tick_feedback() {
+    check("body_holdout", 52);
 }
 
 #[test]

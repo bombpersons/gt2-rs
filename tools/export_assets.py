@@ -159,6 +159,13 @@ def export_tuning(ram_path, assets):
         adaptive_taper_intercept=immediate(0x459E4, 0x2402) / 4096,
         lock_brake_travel=(immediate(0x45A40, 0x2842)-1) / 4096))
     write('vehicle/braking.ron', dict(front_capacity=car(0x414, 'i'), rear_capacity=car(0x418, 'i'), handbrake_capacity=car(0x41C, 'i')))
+    write('vehicle/body_dynamics.ron', dict(
+        wheel_levers_m=((-car(0x18)/4096, car(0x0C)/4096), (car(0x18)/4096, car(0x0C)/4096),
+                        (-car(0x1A)/4096, -car(0x0E)/4096), (car(0x1A)/4096, -car(0x0E)/4096)),
+        yaw_response_turns_per_torque_second2=car(0x68, 'i') /4096 /524288,
+        inverse_mass=car(0x2A)/4096, lateral_feedback_response=car(0x34)/4096,
+        maximum_yaw_turns_per_second=immediate(0x3B048, 0x3C04)*65536 /524288,
+        brake_stop_speed_mps=immediate(0x3B160, 0x2442) /4096))
     gears = car(0x372, 'B')
     if not 1 <= gears <= 7:
         raise ValueError('Unsupported original forward gear count')

@@ -25,4 +25,5 @@ pub fn plugins() -> bevy::app::PluginGroupBuilder {
         .disable::<game::vehicle::wheel_rotation::WheelRotationRulesPlugin>()
         .disable::<game::vehicle::drivetrain::DrivetrainRulesPlugin>()
         .disable::<game::vehicle::transmission::TransmissionRulesPlugin>()
+        .disable::<game::vehicle::body_dynamics::BodyDynamicsRulesPlugin>()
 }

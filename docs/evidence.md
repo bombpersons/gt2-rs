@@ -36,8 +36,14 @@ repeat/reengagement timers, engagement preparation/feedback, RPM refresh,
 automatic/manual gear selection and all seven layouts' slip/contact gates.
 Engine, gear, engagement, request, timer and fuel-cut state carry natively
 across consecutive recordings; a final independent sequence passes as well.
+[Lateral/yaw force and horizontal world velocity](body-dynamics-evidence.md)
+now match 513 original car calls (2,052 wheels), including both yaw clamps,
+reset/bypass/brake-stop gates, external forces and signed feedback narrowing.
+The combined transmission/body check carries native lateral feedback into
+the next drivetrain call. Contact/body velocity remains an observed input
+boundary; no closed driving trajectory is claimed yet.
 Alternate torque controllers, logical control-request production and physical
-bindings, body force coupling, upstream contact/load/yaw inputs, live wheel
+bindings, upstream contact/orientation/load/grip inputs, collision, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.
 

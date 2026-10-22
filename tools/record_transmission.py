@@ -206,17 +206,18 @@ def main():
     p.add_argument('--holdout', action='store_true')
     p.add_argument('--shift-holdout', action='store_true')
     p.add_argument('--final-holdout', action='store_true')
+    p.add_argument('--body-holdout', action='store_true', help='Record the combined transmission and body force pipeline')
     args = p.parse_args()
     original = args.state.with_name('ram.bin').read_bytes()
-    assert sum([args.holdout,args.shift_holdout,args.final_holdout])<=1
-    name = 'final_holdout' if args.final_holdout else 'shift_holdout' if args.shift_holdout else 'holdout' if args.holdout else 'boundaries'
-    probes=shift_cases(original) if args.shift_holdout else cases(args.holdout,args.final_holdout)
+    assert sum([args.holdout,args.shift_holdout,args.final_holdout,args.body_holdout])<=1
+    name = 'body_holdout' if args.body_holdout else 'final_holdout' if args.final_holdout else 'shift_holdout' if args.shift_holdout else 'holdout' if args.holdout else 'boundaries'
+    probes=shift_cases(original) if args.shift_holdout else cases(args.holdout,args.final_holdout or args.body_holdout)
     jobs = [(f'{i:03}', 2, [], case) for i, case in enumerate(probes)]
     scenarios = [('alternating',[dict(frame=0,buttons=['CROSS']),dict(frame=10,buttons=['CROSS','SQUARE','RIGHT']),
-        dict(frame=26,buttons=[]),dict(frame=36,buttons=['SQUARE','LEFT']),dict(frame=54,buttons=['CROSS','CIRCLE'])])] if args.final_holdout else [] if args.shift_holdout else [('mixed', ['CROSS', 'SQUARE', 'RIGHT'])] if args.holdout else [
+        dict(frame=26,buttons=[]),dict(frame=36,buttons=['SQUARE','LEFT']),dict(frame=54,buttons=['CROSS','CIRCLE'])])] if args.final_holdout or args.body_holdout else [] if args.shift_holdout else [('mixed', ['CROSS', 'SQUARE', 'RIGHT'])] if args.holdout else [
         ('gas', ['CROSS']), ('brake', ['SQUARE']), ('turn', ['CROSS', 'LEFT'])]
     jobs += [(label, 80, buttons, None) for label, buttons in scenarios]
-    if not args.holdout and not args.shift_holdout and not args.final_holdout:
+    if not args.holdout and not args.shift_holdout and not args.final_holdout and not args.body_holdout:
         jobs.append(('first-gear-countdown',20,[],dict(mode=1,gear=3,engagement=4,requested=1,
             rpm=3000,speed=200001,forward=102605,throttle=4096,cooldown=0,shift=0,reverse=1,force_first=4)))
         for request in [-1, 1]:
@@ -236,6 +237,8 @@ def main():
                 '80045688-80046B58', '8003AC24-8003AEA4', '8003941C-8003946C',
                 '8003991C-80039994', '800448C8-80044EA4']:
             command += ['--trace-range', region]
+        if args.body_holdout:
+            command += ['--trace-range','8003AEDC-8003B310']
         requests = None
         target=None
         angular=0
@@ -288,6 +291,13 @@ def main():
                     struct.pack_into('<i',actual_initial,(BASE&0x1FFFFF)+0x634+i*4,angular)
             subprocess.run(actual_command, check=True, capture_output=True, text=True)
             actual = export(actual_folder, frames, actual_initial, requests)
+            if args.body_holdout:
+                from record_body_dynamics import export as body_rows
+                body = body_rows(actual_folder,frames,actual_initial)
+                assert len(actual)==len(body)
+                for row, other in zip(actual,body):
+                    assert (row['run_frame'],row['wheel'])==(other['run_frame'],other['wheel'])
+                    row.update({key:value for key,value in other.items() if key.startswith('bd_')})
             attempts.append(dict(command=actual_command,report=str(actual_folder/'report.json')))
             if not case or not case.get('isolated') or target is None and case.get('target_clutch') is None:break
             observed=actual[0]['tr_selection_rpm'] if target is not None else actual[0]['tr_prepared_clutch_shaft']
@@ -320,7 +330,8 @@ def main():
         state_sha256=hashlib.sha256(args.state.read_bytes()).hexdigest(),
         ram_sha256=hashlib.sha256(original).hexdigest(),
         psx_version=subprocess.check_output(['psx', '--version'], text=True).strip(),
-        scope='Ordinary preparation, coupling, engine feedback, RPM refresh and gear selection; contact/body/control request inputs observed'
+        scope='Ordinary preparation, coupling, engine feedback, RPM refresh and gear selection; contact/body/control request inputs observed',
+        body_phase_recorded=args.body_holdout
     ), indent=2)+'\n')
     print(f'{len(rows)//4} original {name} transmission calls exported')
 

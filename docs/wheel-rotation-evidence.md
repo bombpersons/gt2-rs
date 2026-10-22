@@ -169,8 +169,10 @@ The handmade example mod disables this unused physics feature.
 
 These are connected subsystem comparisons with explicit external inputs,
 not a closed vehicle trajectory. Alternate engine torque controllers,
-post-coupling feedback, auxiliary-force/yaw production, contact and load/grip production,
-aerodynamics, lateral/yaw/world acceleration and collisions remain
+auxiliary-force/yaw production, contact and load/grip production,
+aerodynamics and collisions remain
 unfinished. Live wheel steering/spin/suspension presentation and a playable
 B-1 driving session also remain open. The new drivetrain evidence records
 the connected centre/axle phase and its remaining producer boundaries.
+Ordinary post-coupling feedback and gear timing are covered by transmission;
+lateral/yaw/world acceleration is covered by body-dynamics evidence.

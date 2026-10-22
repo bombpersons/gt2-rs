@@ -177,8 +177,10 @@ Source/history audits keep all generated tuning, numerical originals and
 emulator outputs private. Clippy completes with the unchanged earlier
 wheel-rotation test's collapsible-if warning.
 
-The next force boundary is lateral/yaw/world acceleration
-(`8003AEB8..8003B30C`), followed by contact/load/grip production and collision.
+Lateral/yaw/world acceleration (`8003AEB8..8003B30C`) is now covered by
+[body dynamics](body-dynamics-evidence.md), including 52 additional combined
+transmission/body calls and next-tick feedback. Contact/load/grip production
+and collision remain next.
 Special torque-controller/induction behavior, logical request production and
 their physical bindings, live wheel animation, a playable B-1 session and
 the wider game remain unfinished.

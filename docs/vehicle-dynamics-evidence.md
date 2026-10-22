@@ -90,8 +90,8 @@ current integration duration copied from the current car's `+0x6FE`.
 | `8003A710..A938` | Sum wheel-reference force/resistance, derive effective reciprocal mass, update forward speed, apply the ground-reference/lateral channel with a signed stopping clamp | Ported; drivetrain coupling remains separate |
 | `8003A93C` -> `80046B58` | Calls `80045688`, `800457B0`, `80045AE8`, `800465E0` in order | Outer wheel and central ordinary drivetrain phases ported; alternate torque controllers remain external |
 | `8003A964..AEA0` | Update engine state; mode `+0x372 == 1` uses `80039994`, mode 2/other have separate branches; update integer RPM then gear-selection path | Ordinary feedback, RPM refresh and automatic/manual gear logic ported; special torque-controller producers remain external |
-| `8003AEB8..B0C8` | Accumulate lateral/yaw effects from wheel forces; update angular-motion input `+0x64C` | Yaw-force scale and inertia parameters |
-| `8003B0D0..B30C` | Transform body acceleration into world horizontal velocity `+0x628/+0x62C`; special immobilization and zero-speed branches | All lock/contact flags |
+| `8003AEB8..B0C8` | Accumulate lateral/yaw effects from wheel forces; update angular-motion input `+0x64C` | Ported; lever/yaw tuning, both clamps and lateral feedback verified; body-dynamics evidence |
+| `8003B0D0..B30C` | Transform body acceleration into world horizontal velocity `+0x628/+0x62C`; special immobilization and zero-speed branches | Ported; reset/bypass/brake-stop/external-force gates verified; orientation/contact producers remain separate |
 | `8003B310..B444` | Conditional per-wheel accumulation at wheel `+0x64` and byte output `+0x3E` | Wear/heat interpretation not proven |
 | `8003B448..B564` | Conditional checks and updates to `+0x78D` flags | Meaning of end-state flags |
 

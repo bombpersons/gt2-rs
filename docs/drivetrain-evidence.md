@@ -192,8 +192,9 @@ Current-source and reachable-history publication audits pass, with all
 original assets, numerical fixtures and emulator outputs ignored.
 
 Ordinary post-coupling engine feedback, engagement transitions and gear timing
-are now covered by the transmission feature. Next: lateral/yaw/world
-acceleration and contact production. Alternate
+are now covered by the transmission feature. Lateral/yaw/world acceleration
+and next-tick feedback are covered by the body-dynamics feature. Next:
+contact/orientation/load/grip production and collision. Alternate
 torque controllers, induction and their effects remain unverified producers.
 Live wheel animation, a playable B-1 session and the rest of the game remain
 unfinished.

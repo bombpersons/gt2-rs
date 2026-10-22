@@ -557,8 +557,11 @@ measured force outputs. Digital steering, wheel steering commands, engine
 torque and fuel cut are also ported. Native slip, tyre force, forward integration,
 axle/wheel coupling and ordinary transmission feedback now connect those
 component rules; transmission comparisons retain engine/gear/timer state over
-consecutive ticks. Lateral/yaw/world acceleration, contact production and the
-full body dynamics model remain unfinished. See [transmission evidence](transmission-evidence.md).
+consecutive ticks. Lateral/yaw/world acceleration now feeds VehicleVelocity,
+including original reset/brake-stop branches, and lateral feedback carries
+into the next drivetrain call. Contact/orientation/load/grip production and
+collision remain unfinished; body velocity is still initialized at observed
+boundaries in these tests. See [body evidence](body-dynamics-evidence.md).
 `0x80043388` and
 `0x8003D498` build four per-wheel GTE matrices from the position, the heading
 and per-wheel offsets.

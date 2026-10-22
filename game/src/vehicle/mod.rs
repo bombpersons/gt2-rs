@@ -5,15 +5,16 @@
 //! systems twice per physics tick. See `docs/driving-evidence.md` for original
 //! recordings, the input boundary, and the remaining tyre/drivetrain work.
 //!
-//! A future force model joins [`VehicleSystems::Forces`] and supplies
-//! [`VehicleVelocity`] before step construction. Pedals and engine torque
-//! alone do not accelerate a car: wheel/contact coupling is still unported.
+//! Force rules join [`VehicleSystems::Forces`]; body dynamics supplies
+//! [`VehicleVelocity`] before step construction. Contact/orientation/load
+//! production and collision remain separate, so live driving is unfinished.
 use bevy::prelude::*;
 use engine::controller::{Button, ControllerState};
 use engine::prelude::TuningPlugin;
 use engine::shell::GameSystems;
 use serde::{Deserialize, Serialize};
 
+pub mod body_dynamics;
 pub mod brake_assist;
 pub mod braking;
 pub mod drivetrain;

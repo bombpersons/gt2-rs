@@ -106,9 +106,18 @@ See `docs/assets.md`; run the public history audit before every push.
   and block shifts at their actual wheel-slip/contact boundaries. The rules
   run alone with handmade data and support per-car transmission setups.
   Logical request production/physical bindings and alternate torque paths
-  remain separate. Next force target: lateral/yaw/world acceleration at
-  8003AEB8..8003B30C, then contact/load/grip production and collision.
+  remain separate. Lateral/yaw/world acceleration is now ported below;
+  contact/load/grip production and collision remain next.
   See docs/transmission-evidence.md.
+- Lateral force, lever-arm yaw torque, signed yaw clamps, lateral feedback,
+  reset/bypass/brake-stop branches and horizontal world velocity now match
+  513 original car calls (2,052 wheels), including a fresh holdout and a
+  combined transmission/body sequence. Native lateral feedback carries into
+  the next drivetrain call. Per-car setups and a rules-only handmade test
+  prove the extension boundary. Body/contact velocities are still observed
+  inputs at this boundary. Next: contact/orientation/load/grip production
+  and collision, then a closed B-1 trajectory and live driving.
+  See docs/body-dynamics-evidence.md.
 
 ## Work order
 
