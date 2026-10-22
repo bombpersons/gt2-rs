@@ -26,4 +26,6 @@ pub fn plugins() -> bevy::app::PluginGroupBuilder {
         .disable::<game::vehicle::drivetrain::DrivetrainRulesPlugin>()
         .disable::<game::vehicle::transmission::TransmissionRulesPlugin>()
         .disable::<game::vehicle::body_dynamics::BodyDynamicsRulesPlugin>()
+        .disable::<game::vehicle::tyre_grip::TyreGripRulesPlugin>()
+        .disable::<game::vehicle::contact_motion::ContactMotionRulesPlugin>()
 }

@@ -167,7 +167,9 @@ movement/material checks pass; screenshots were inspected. No new visual
 parity is claimed. Clippy has only the existing wheel-rotation test warning.
 Current-source and history audits pass; all generated/reference data stays ignored.
 
-Next work is contact/orientation/load/grip production and collision, followed
+Grip conversion and late contact-motion refresh are now covered by
+[contact inputs](contact-input-evidence.md). Next work is road/suspension
+load, surface/orientation production and collision, followed
 by a closed B-1 trajectory and live presentation. Alternate torque controllers,
 induction, physical request production, wheel animation, audio, licence flow,
 the wider game and the authoring editor remain unfinished.

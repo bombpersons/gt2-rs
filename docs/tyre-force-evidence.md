@@ -144,7 +144,9 @@ The plugin runs after geometric preprocessing, steering, longitudinal slip
 and brake allocation, before step construction. Source operations are grouped
 as a pure per-car calculation because these phases read no other car's tyre
 outputs. Public tuning, components and the plugin remain independently usable.
-Wheel load/contact response, suspension, rotation/drivetrain coupling, body
-acceleration and yaw, collision and a playable driving session remain open.
+Load/camber/surface grip now has a native producer, with late contact motion,
+speed response and wheel/axle synchronization; see contact-input evidence.
+Ordinary drivetrain/transmission/body phases are ported separately. Suspension
+load, road surface/orientation, collision and a playable driving session remain open.
 The live B-1 subject is still static; these tests do not establish free-driving
 or all-car parity.

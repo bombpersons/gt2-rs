@@ -85,7 +85,7 @@ record starts at `0x800A9688`, has stride `0xB40`, and adds `0x2C` for physics.
 | `+0x64C` | Yaw rate | signed word, 524288 units/(turn/s), inferred dimensionally from the step builder dividing its product with 16.16 dt by `2^23` into 1/4096-turn steps |
 | `+0x65C/+0x660/+0x664` | World position `(x,z,y)` | signed words, 4096 units/m; `80033EAC..80033ECC` |
 | `+0x6A4/+0x6A8` | Forward/lateral velocity components | signed words, 4096 units/m/s; `+0x6A4` starts at 102605, close to the opposite world-x velocity on this straight |
-| `+0x6AC`, `+0x6AE`, `+0x6F8` | Integer RPM, separate RPM-related state, display RPM | first two are separate halfwords, not a 16.16 word; see [dynamics corrections](vehicle-dynamics-evidence.md) |
+| `+0x6AC`, `+0x6AE`, `+0x6F8` | Integer RPM, scaled absolute local speed, maximum scaled speed | three separate halfwords; `80030594/598` prove the latter two are speed-derived, not RPM; see [contact inputs](contact-input-evidence.md) |
 | `+0x6FE` | Physics integration duration | signed halfword, 16.16 seconds; 2184 = 0.0333251953125 s at this checkpoint |
 
 The old interpretation of `+0x6A4/+0x6A8` as RPM was wrong. `8003CEC8..CEF4`
@@ -99,10 +99,13 @@ Likewise `+0x45D` was previously called the gear. In `8003E270..8003E2CC`,
 value 0 selects live control processing, while value 2 takes another path.
 The exact control-mode enum is still open; the evidence does not identify
 this as a gear number. The earlier 16.16 interpretation of the word at
-`+0x6AC` was also wrong: the original writes a halfword, with separate RPM
-state at `+0x6AE`. Finding velocity components also means an earlier exhaustive failed
+`+0x6AC` was also wrong: the original writes a halfword, with a separate
+speed-derived state at `+0x6AE`. Finding velocity components also means an earlier exhaustive failed
 search for a scalar dash-speed value cannot establish that the dash works
-by differentiating position. The actual dash-speed calculation is open.
+by differentiating position. The contact-motion producer now establishes
+scaled absolute forward speed and its maximum; final dash formatting remains
+open. New driving recordings use corrected speed field names/widths;
+historical fixtures retain their old unused RPM-related column labels.
 
 ## Digital controls
 

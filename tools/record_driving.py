@@ -27,8 +27,8 @@ SAMPLES = {
     "heading": (0x648, "i16"), "yaw_rate": (0x64C, "i32"),
     "x": (0x65C, "i32"), "z": (0x660, "i32"), "y": (0x664, "i32"),
     "forward_velocity": (0x6A4, "i32"), "sideways_velocity": (0x6A8, "i32"),
-    "engine_rpm": (0x6AC, "i16"), "engine_rpm_aux": (0x6AE, "i16"),
-    "engine_rpm_display": (0x6F8, "i32"),
+    "engine_rpm": (0x6AC, "i16"), "speed_readout": (0x6AE, "u16"),
+    "maximum_speed_readout": (0x6F8, "u16"),
     "step_duration": (0x6FE, "i16"),
     "steering_negative_limit": (0x70A, "i16"), "steering_positive_limit": (0x70C, "i16"),
 }

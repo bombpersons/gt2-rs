@@ -166,6 +166,30 @@ def export_tuning(ram_path, assets):
         inverse_mass=car(0x2A)/4096, lateral_feedback_response=car(0x34)/4096,
         maximum_yaw_turns_per_second=immediate(0x3B048, 0x3C04)*65536 /524288,
         brake_stop_speed_mps=immediate(0x3B160, 0x2442) /4096))
+    write('vehicle/contact_motion.ron',dict(
+        wheel_levers_m=((-car(0x18)/4096,car(0x0C)/4096),(car(0x18)/4096,car(0x0C)/4096),
+                        (-car(0x1A)/4096,-car(0x0E)/4096),(car(0x1A)/4096,-car(0x0E)/4096)),
+        inverse_radius_per_m=(car(0x3E8)/4096,car(0x3EA)/4096),
+        radians_per_turn=immediate(0x3059C,0x2405)/4096,
+        turns_per_radian=immediate(0x30890,0x2405)/4096,
+        speed_readout_units_per_mps=(immediate(0x30570,0x3C05)*65536+immediate(0x30574,0x34A5))/4096,
+        full_response_speed_mps=(immediate(0x305A8,0x3C15)*65536+immediate(0x305AC,0x36B5))/4096,
+        response_gain_per_mps=immediate(0x30670,0x2405)/4096,
+        base_speed_response=immediate(0x3067C,0x2445)/4096))
+    grip_axles=[]
+    for axle in range(2):
+        offset=axle*0xD8
+        camber_curve=curve(0x250+offset,'angle_turns','response',4096,'h')
+        for point in camber_curve:point['response']/=4096
+        grip_axles.append(dict(load_curve=curve(0x224+offset,'load','capacity',1),
+                               camber_curve=camber_curve,camber_turns=car(0x368+axle*2)/4096))
+    condition=None
+    if read(0x46F48,'i')!=0:
+        condition=RonVariant('Some('+ron(dict(maximum=read(0x46F48,'i'),warm_start=read(0x46F5C,'i'),
+            cold_limit=read(0x46F54,'i'),maximum_load_loss=read(0x46F4C,'i')/4096,
+            warm_load_loss=read(0x46F60,'i')/4096,cold_load_loss=read(0x46F58,'i')/4096))+')')
+    write('vehicle/tyre_grip.ron',dict(axles=tuple(grip_axles),
+        surface_response=[car(0x348+i*2)/256 for i in range(16)],condition=condition if condition else RonVariant('None')))
     gears = car(0x372, 'B')
     if not 1 <= gears <= 7:
         raise ValueError('Unsupported original forward gear count')

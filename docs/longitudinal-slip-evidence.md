@@ -132,7 +132,9 @@ its handmade course/body/camera assets independent of private tuning.
 
 [Tyre-force curves and preparation](tyre-force-evidence.md) now consume these
 outputs natively. [Wheel rotation](wheel-rotation-evidence.md) now supplies
-the tread integration rule, with the intervening axle solver still open.
-Contact motion, speed-response generation, grip and yaw signals, coupled drivetrain/body acceleration and a
+the tread integration rule, with ordinary axle/transmission/body phases now
+ported separately. [Contact inputs](contact-input-evidence.md) supplies grip,
+late contact velocity/speed response, free-wheel/axle synchronization and spin.
+Road/suspension load, surface/orientation, collision and upstream yaw signals, and a
 playable B-1 session are still unfinished. These exact subsystem observations
 do not establish whole-vehicle or all-car parity.

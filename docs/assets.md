@@ -42,7 +42,9 @@ course/model/paint files, then exports:
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,
   gear ratios, engine/axle inertias, centre coupling parameters, transmission
   RPM/speed/slip bands and engagement/timer thresholds, body force lever arms,
-  yaw response, lateral feedback and world-motion thresholds.
+  yaw response, lateral feedback and world-motion thresholds, load/camber grip
+  curves, surface responses, optional condition parameters, inverse wheel
+  radii, contact speed response and wheel-spin/readout conversion factors.
 
 The game reads native RON/PNG files from `game/assets/` and does not use an
 emulator at runtime. The exporter's intermediate files and checkpoints stay

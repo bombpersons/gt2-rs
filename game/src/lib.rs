@@ -59,6 +59,8 @@ impl PluginGroup for GamePlugins {
             .add(vehicle::drivetrain::DrivetrainRulesPlugin)
             .add(vehicle::transmission::TransmissionRulesPlugin)
             .add(vehicle::body_dynamics::BodyDynamicsRulesPlugin)
+            .add(vehicle::tyre_grip::TyreGripRulesPlugin)
+            .add(vehicle::contact_motion::ContactMotionRulesPlugin)
             .add(vehicle::presentation::VehiclePresentationPlugin)
     }
 }

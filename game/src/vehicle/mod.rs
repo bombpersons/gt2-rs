@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 pub mod body_dynamics;
 pub mod brake_assist;
 pub mod braking;
+pub mod contact_motion;
 pub mod drivetrain;
 pub mod engine_torque;
 pub mod forward_dynamics;
@@ -26,6 +27,7 @@ pub mod slip;
 mod steering;
 pub mod transmission;
 pub mod tyre_forces;
+pub mod tyre_grip;
 pub mod wheel_rotation;
 pub use steering::{
     DigitalSteeringInput, STEERING_TUNING, SteeringKinematics, SteeringKnot, SteeringResponse, SteeringTuning,
@@ -181,6 +183,7 @@ pub enum VehicleSystems {
     Forces,
     BuildStep,
     Integrate,
+    RefreshContact,
 }
 
 /// Rules-only verified subset. Requires the tuning file unless the caller
@@ -207,6 +210,7 @@ impl Plugin for VehicleRulesPlugin {
                     VehicleSystems::Forces,
                     VehicleSystems::BuildStep,
                     VehicleSystems::Integrate,
+                    VehicleSystems::RefreshContact,
                 )
                     .chain()
                     .in_set(engine::prelude::EngineSet::Control)

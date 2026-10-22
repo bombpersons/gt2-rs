@@ -5,6 +5,10 @@ The central ordinary engine/clutch/gear/centre/axle phase is now ported with
 Ordinary engagement preparation, post-coupling engine feedback and shift
 timing now match 723 calls with consecutive engine/gear/timer state; see
 [transmission evidence](transmission-evidence.md).
+Load/camber/surface grip and late world-to-contact motion now match 380 calls,
+including the next-tick contact inputs and wheel/axle synchronization; see
+[contact-input evidence](contact-input-evidence.md). Body force phases are
+covered separately by [body evidence](body-dynamics-evidence.md).
 The notes below retain the original investigation context and source map.
 
 This is an evidence ledger for the next dynamics work, not a claim that the
@@ -42,8 +46,8 @@ halves of that word are distinct fields:
 |---|---|---:|
 | `+0x624` | signed word, engine revolutions/second ×4096 | 414689 (101.24243 rev/s) |
 | `+0x6AC` | signed halfword, calculated integer engine RPM | 6074 |
-| `+0x6AE` | signed halfword, separate RPM-related state | 5604 |
-| `+0x6F8` | signed word, RPM presentation copy | 5604 |
+| `+0x6AE` | unsigned halfword, scaled absolute local forward speed (`80030594`) | 5604 |
+| `+0x6F8` | unsigned halfword, maximum of that speed quantity (`80030598`) | 5604 |
 | `+0x108` | unsigned halfword, fuel-cut threshold in RPM | 6800 |
 | `+0x10A` | unsigned halfword, engine idle RPM parameter | 600 |
 
@@ -64,7 +68,10 @@ shows the real calculation after this tick's drivetrain phase:
 `+0x624 = 0x6194E = 399694` -> `5854 RPM = 0x16DE`, stored at `80039458`.
 The checkpoint's earlier value 6074 is consistent with its earlier engine
 speed, not with treating adjacent `5604` as a fraction. The update mechanism
-of `+0x6AE/+0x6F8` is not established here.
+of `+0x6AE/+0x6F8` is now established by the contact-motion producer and
+runtime comparisons: `floor(abs(forward_q12) * 0xDFBDD / 2^24)`, narrowed
+to a halfword, followed by an unsigned maximum. These are not RPM fields.
+Their final HUD formatting remains separate; see contact-input evidence.
 
 The paired tyre response and per-wheel force phases described below are now
 ported and checked against 972 original wheel executions. See

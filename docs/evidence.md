@@ -42,8 +42,15 @@ reset/bypass/brake-stop gates, external forces and signed feedback narrowing.
 The combined transmission/body check carries native lateral feedback into
 the next drivetrain call. Contact/body velocity remains an observed input
 boundary; no closed driving trajectory is claimed yet.
+[Grip preparation and late contact motion](contact-input-evidence.md) now
+match 380 original car calls (1,520 wheels), including a fresh holdout.
+Load/camber/surface grip feeds native tyre forces. Corrected world/yaw motion
+produces contact velocities, speed response, wheel/axle synchronization, spin
+and speed readouts, with contact motion carried into the next tick's rules.
+Suspension/load, surface/orientation and corrected world inputs remain observed.
 Alternate torque controllers, logical control-request production and physical
-bindings, upstream contact/orientation/load/grip inputs, collision, live wheel
+bindings, upstream contact/orientation/load inputs, collision, condition
+accumulation, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.
 

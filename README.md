@@ -61,11 +61,12 @@ assistance/allocation, per-wheel tyre forces, surface resistance and forward
 integration before drivetrain coupling, wheel reaction/differential rotation,
 engine torque/fuel cut, engine/clutch/gear/centre/axle coupling, ordinary
 engine feedback and automatic/manual transmission timing, lateral/yaw force
-accumulation and horizontal world acceleration, and
+accumulation and horizontal world acceleration, load/camber/surface grip,
+late contact-motion refresh and wheel/axle synchronization, and
 velocity-to-step integration have original recordings; the coupled force
 model and playable driving session are still unfinished. See
 [the evidence](docs/evidence.md), [cameras](docs/camera-evidence.md), [road subdivision](docs/subdivision-evidence.md), [texture detail](docs/material-variant-evidence.md), [course meshes](docs/course-mesh-evidence.md)
-and [body dynamics](docs/body-dynamics-evidence.md) for coverage and remaining work.
+and [contact inputs](docs/contact-input-evidence.md) for coverage and remaining work.
 
 `game::GamePlugins` exposes the feature plugins so another crate can disable
 or replace them. [The example mod](mods/example/README.md) reuses the course

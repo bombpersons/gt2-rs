@@ -118,6 +118,16 @@ See `docs/assets.md`; run the public history audit before every push.
   inputs at this boundary. Next: contact/orientation/load/grip production
   and collision, then a closed B-1 trajectory and live driving.
   See docs/body-dynamics-evidence.md.
+- Load/camber/surface grip (including optional condition scaling), corrected
+  world-to-contact motion, speed response, free-wheel/axle synchronization and
+  signed wheel spin now match 380 original car calls (1,520 wheels), including
+  a fresh holdout. Contact motion refreshes after movement/collision and
+  carries into the next tick's slip/forces. Native grip feeds tyre forces and
+  optional assistance/forward inputs. Speed-derived +6AE/+6F8 halfwords are
+  corrected from earlier RPM labels. Next: road/suspension load, surface and
+  orientation producers (the observed wheel-load writer is 80043A74), collision
+  and the condition accumulator, then a
+  closed B-1 trajectory and live presentation. See docs/contact-input-evidence.md.
 
 ## Work order
 

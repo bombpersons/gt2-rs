@@ -559,9 +559,15 @@ axle/wheel coupling and ordinary transmission feedback now connect those
 component rules; transmission comparisons retain engine/gear/timer state over
 consecutive ticks. Lateral/yaw/world acceleration now feeds VehicleVelocity,
 including original reset/brake-stop branches, and lateral feedback carries
-into the next drivetrain call. Contact/orientation/load/grip production and
+into the next drivetrain call. Road/suspension load, surface/orientation and
 collision remain unfinished; body velocity is still initialized at observed
 boundaries in these tests. See [body evidence](body-dynamics-evidence.md).
+Load/camber/surface-to-grip conversion and the later corrected-world-to-contact
+motion refresh are now ported, including wheel/axle synchronization and spin.
+The refresh runs after movement/collision and supplies the next tick's local
+inputs. Road/suspension load, surface/orientation and collision corrections
+remain separate producers. +6AE/+6F8 are speed-derived halfwords, not RPM.
+See [contact input evidence](contact-input-evidence.md).
 `0x80043388` and
 `0x8003D498` build four per-wheel GTE matrices from the position, the heading
 and per-wheel offsets.
