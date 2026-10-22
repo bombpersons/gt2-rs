@@ -191,5 +191,7 @@ collision correction, the condition accumulator producer and a closed B-1
 trajectory, then live wheel animation and the playable session. The full
 game, alternate torque controllers, induction, audio, licence flow and editor
 remain unfinished.
-The seed run's write watch identifies `80043A74` as the next load producer:
-it writes wheel+8 for all four wheels after integration/contact processing.
+The seed run's load producer at `80043A74` is now ported, together with
+travel sampling and anti-roll/body-force preparation. See
+[suspension evidence](suspension-evidence.md) for 221 original comparisons,
+next-tick load carry and the remaining road/orientation/collision boundaries.

@@ -568,6 +568,11 @@ The refresh runs after movement/collision and supplies the next tick's local
 inputs. Road/suspension load, surface/orientation and collision corrections
 remain separate producers. +6AE/+6F8 are speed-derived halfwords, not RPM.
 See [contact input evidence](contact-input-evidence.md).
+Suspension now samples road-relative travel, evaluates spring/damper/preload,
+prepares anti-roll/body-force transfer and supplies next tick's grip load.
+Descriptors and levers export as normal-unit tuning; persistent travel/rate
+belong to the vehicle rules. Road sampling, orientation, vertical integration
+and collision remain separate. See [suspension evidence](suspension-evidence.md).
 `0x80043388` and
 `0x8003D498` build four per-wheel GTE matrices from the position, the heading
 and per-wheel offsets.

@@ -47,9 +47,13 @@ match 380 original car calls (1,520 wheels), including a fresh holdout.
 Load/camber/surface grip feeds native tyre forces. Corrected world/yaw motion
 produces contact velocities, speed response, wheel/axle synchronization, spin
 and speed readouts, with contact motion carried into the next tick's rules.
-Suspension/load, surface/orientation and corrected world inputs remain observed.
+[Suspension travel, load and body-force preparation](suspension-evidence.md)
+now match 221 original calls (884 wheels), including a fresh holdout. Native
+spring/damper loads carry into next tick's grip, with travel/rate histories
+retained. Road sampling, surface/orientation, vertical integration and corrected
+world inputs remain observed.
 Alternate torque controllers, logical control-request production and physical
-bindings, upstream contact/orientation/load inputs, collision, condition
+bindings, upstream road/orientation inputs, vertical integration, collision, condition
 accumulation, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.

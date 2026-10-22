@@ -166,6 +166,20 @@ def export_tuning(ram_path, assets):
         inverse_mass=car(0x2A)/4096, lateral_feedback_response=car(0x34)/4096,
         maximum_yaw_turns_per_second=immediate(0x3B048, 0x3C04)*65536 /524288,
         brake_stop_speed_mps=immediate(0x3B160, 0x2442) /4096))
+    suspension_axles = []
+    for axle in range(2):
+        offset = 0x12C + axle*0x34
+        def damper(start):
+            return dict(threshold_mps=car(offset+start, 'i')/4096,
+                        base_force=car(offset+start+4, 'i'), square_root_response=car(offset+start+8, 'i'))
+        suspension_axles.append(dict(bump_start_m=car(offset)/4096,
+            minimum_travel_m=car(offset+2)/4096, maximum_travel_m=car(offset+4)/4096,
+            travel_offset_m=(car(offset+8)-car(0x3E4+axle*2))/4096,
+            spring_force_per_m=car(offset+12, 'i'), bump_force_per_m2=car(offset+44, 'i'),
+            antiroll_force_per_m2=car(offset+40, 'i'), preload_force=car(offset+50),
+            rebound=damper(16), compression=damper(28)))
+    write('vehicle/suspension.ron',dict(axles=tuple(suspension_axles),
+        lateral_lever_m=car(0x1E)/4096, forward_lever_m=car(0x20)/4096))
     write('vehicle/contact_motion.ron',dict(
         wheel_levers_m=((-car(0x18)/4096,car(0x0C)/4096),(car(0x18)/4096,car(0x0C)/4096),
                         (-car(0x1A)/4096,-car(0x0E)/4096),(car(0x1A)/4096,-car(0x0E)/4096)),

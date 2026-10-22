@@ -128,6 +128,15 @@ See `docs/assets.md`; run the public history audit before every push.
   orientation producers (the observed wheel-load writer is 80043A74), collision
   and the condition accumulator, then a
   closed B-1 trajectory and live presentation. See docs/contact-input-evidence.md.
+- Suspension travel, linear/progressive spring and damper forces, compression
+  flags, anti-roll and body-force transfer now match 221 original calls (884
+  wheels), including a fresh holdout. Natural sequences retain native travel,
+  rate and load and feed next tick's native grip. Tuning exports locally and
+  supports per-car overrides; an authored test runs the plugin alone. Road
+  sampling/surface/orientation, vertical body integration and collision remain
+  observed boundaries. Next: decode those producers/consumers, then close
+  the B-1 trajectory and animate the live body/wheels.
+  See docs/suspension-evidence.md.
 
 ## Work order
 

@@ -6,8 +6,8 @@
 //! recordings, the input boundary, and the remaining tyre/drivetrain work.
 //!
 //! Force rules join [`VehicleSystems::Forces`]; body dynamics supplies
-//! [`VehicleVelocity`] before step construction. Contact/orientation/load
-//! production and collision remain separate, so live driving is unfinished.
+//! [`VehicleVelocity`] before step construction. Suspension supplies next-tick
+//! loads; road/orientation and vertical collision remain unfinished.
 use bevy::prelude::*;
 use engine::controller::{Button, ControllerState};
 use engine::prelude::TuningPlugin;
@@ -25,6 +25,7 @@ pub mod longitudinal_slip;
 pub mod presentation;
 pub mod slip;
 mod steering;
+pub mod suspension;
 pub mod transmission;
 pub mod tyre_forces;
 pub mod tyre_grip;
@@ -183,6 +184,7 @@ pub enum VehicleSystems {
     Forces,
     BuildStep,
     Integrate,
+    Suspension,
     RefreshContact,
 }
 
@@ -210,6 +212,7 @@ impl Plugin for VehicleRulesPlugin {
                     VehicleSystems::Forces,
                     VehicleSystems::BuildStep,
                     VehicleSystems::Integrate,
+                    VehicleSystems::Suspension,
                     VehicleSystems::RefreshContact,
                 )
                     .chain()
