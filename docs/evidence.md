@@ -25,8 +25,13 @@ match 230 original car executions (920 wheels), including all eight source
 modes, persistent clutch history, a fresh mixed-axle holdout and exact consumed
 yaw-gate boundaries with nonzero suppressed inputs. Both slip
 stages, tyre force, brakes and forward dynamics feed these checks natively;
-the intervening engine/transmission/axle solver remains a measured boundary.
-Drivetrain/body force coupling, upstream contact/load/yaw inputs, live wheel
+those standalone wheel tests retain measured axle-drive inputs.
+[Engine/gear/centre/axle coupling](drivetrain-evidence.md) now matches 338
+original car executions (1,352 wheels), including native ordinary engine
+torque, clutch-speed feedback, all seven drive layouts, persistent centre
+state, adaptive angle/brake boundaries and signed stopping aliases.
+Alternate torque controllers, engagement/gear decisions, post-coupling engine
+feedback, body force coupling, upstream contact/load/yaw inputs, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.
 

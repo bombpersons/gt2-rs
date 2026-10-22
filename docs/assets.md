@@ -39,7 +39,8 @@ course/model/paint files, then exports:
 - Checkpoint wheel placements and camera setup;
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
   brake-assistance tuning, axle tyre curves, low-speed force settings, and
-  body/wheel mass, surface resistance and differential/wheel-rotation tuning.
+  body/wheel mass, surface resistance, differential/wheel-rotation tuning,
+  gear ratios, engine/axle inertias and centre coupling parameters.
 
 The game reads native RON/PNG files from `game/assets/` and does not use an
 emulator at runtime. The exporter's intermediate files and checkpoints stay

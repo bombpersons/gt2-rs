@@ -1,7 +1,8 @@
 //! Wheel reaction torque and differential-controlled tread-speed integration.
 //!
 //! Original 80045688, 800457B0 and 800465E0. The intervening axle/engine
-//! coupling (80045AE8) supplies AxleDrive; it is not approximated here.
+//! coupling (80045AE8) supplies AxleDrive through the drivetrain feature;
+//! this plugin can also consume an explicitly supplied axle-drive boundary.
 //! Speeds are metres/second; force/torque retain the original normalized
 //! units. See docs/wheel-rotation-evidence.md for the observed boundaries.
 use super::{

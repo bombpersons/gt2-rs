@@ -85,11 +85,19 @@ See `docs/assets.md`; run the public history audit before every push.
   differential modes now match 230 original car executions (920 wheels),
   including consecutive clutch history, an independent mixed-axle
   holdout and exact consumed yaw-gate boundaries. Both slip stages, tyre force, brake allocation and forward
-  dynamics feed this phase natively. The intervening engine/transmission/axle
-  solver at 80045AE8 remains an explicit measured boundary, including its
-  right-wheel angular history slots. It is the next coupling target;
-  contact/load/grip, auxiliary/yaw inputs, body coupling and live wheel
+  dynamics feed this phase natively. Those standalone tests retain measured
+  axle-drive inputs; the intervening solver is now ported below.
+  Contact/load/grip, auxiliary/yaw inputs, body coupling and live wheel
   animation remain open. See docs/wheel-rotation-evidence.md.
+- Engine engagement, gear multiplication and all seven centre/axle layouts
+  now match 338 original car executions (1,352 wheels), including native
+  ordinary engine torque, clutch-speed feedback, persistent centre/axle/wheel
+  history and independent angle/brake/stopping holdouts. Separate contact
+  resets at 80030830 remain observed inputs. Alternate torque controllers and
+  induction remain external. Next: ordinary post-coupling engine feedback /
+  engagement transitions at 8003AC24..AE90 and preparation, gear timing, then
+  lateral/yaw/world acceleration and contact production.
+  See docs/drivetrain-evidence.md.
 
 ## Work order
 

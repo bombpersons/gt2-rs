@@ -118,20 +118,45 @@ impl EngineFuelCut {
 /// output components on a car; missing drivetrain inputs do not move a car.
 pub struct EngineTorqueRulesPlugin;
 
+#[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum EngineTorqueSystems {
+    Prepare,
+}
+
 impl Plugin for EngineTorqueRulesPlugin {
     fn build(&self, app: &mut App) {
         if !app.world().contains_resource::<EngineTorqueTuning>() {
             app.add_plugins(TuningPlugin::<EngineTorqueTuning>::new(ENGINE_TORQUE_TUNING));
         }
-        app.add_systems(FixedUpdate, advance_engine_torque.in_set(VehicleSystems::Forces).in_set(GameSystems::Game));
+        app.add_systems(
+            FixedUpdate,
+            advance_engine_torque
+                .in_set(EngineTorqueSystems::Prepare)
+                .in_set(VehicleSystems::Forces)
+                .in_set(GameSystems::Game),
+        );
     }
 }
 
 fn advance_engine_torque(
     tuning: Res<EngineTorqueTuning>,
-    mut cars: Query<(&EngineTorqueInput, &mut EngineFuelCut, &mut EngineTorque)>,
+    mut cars: Query<(
+        &EngineTorqueInput,
+        &mut EngineFuelCut,
+        &mut EngineTorque,
+        Option<&super::drivetrain::DrivetrainInput>,
+    )>,
 ) {
-    for (input, mut cut, mut torque) in &mut cars {
+    for (input, mut cut, mut torque, drivetrain) in &mut cars {
+        if let Some(drive) = drivetrain {
+            if drive.externally_produced_torque {
+                continue;
+            }
+            if drive.engagement == super::drivetrain::EngineEngagement::Disconnected {
+                *torque = EngineTorque::default();
+                continue;
+            }
+        }
         *torque = cut.advance(*input, &tuning);
     }
 }

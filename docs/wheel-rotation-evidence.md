@@ -4,8 +4,11 @@
 (`80045688`), yaw-sensitive differential preparation (`800457B0`), and
 differential tread-speed integration (`800465E0`). These are the three
 outer phases of `80046B58`. Its intervening engine/transmission/axle solver
-at `80045AE8` remains unported and supplies measured angular speeds and
-drive torques in these comparisons. This does not yet move the live car.
+at `80045AE8` supplies measured angular speeds and drive torques in these
+standalone comparisons. It is now ported separately in
+[drivetrain coupling](drivetrain-evidence.md), with ordinary engine torque
+and clutch-speed feedback feeding the connected tests natively. This does
+not yet move the live car.
 
 ## Identity and reproduction
 
@@ -165,9 +168,9 @@ phase order after forward dynamics and before motion-step construction.
 The handmade example mod disables this unused physics feature.
 
 These are connected subsystem comparisons with explicit external inputs,
-not a closed vehicle trajectory. The intervening engine/transmission/axle
-solver, auxiliary-force/yaw production, contact and load/grip production,
+not a closed vehicle trajectory. Alternate engine torque controllers,
+post-coupling feedback, auxiliary-force/yaw production, contact and load/grip production,
 aerodynamics, lateral/yaw/world acceleration and collisions remain
 unfinished. Live wheel steering/spin/suspension presentation and a playable
-B-1 driving session also remain open. The next coupling boundary is
-`80045AE8`, including its right-slot angular history and undriven-axle paths.
+B-1 driving session also remain open. The new drivetrain evidence records
+the connected centre/axle phase and its remaining producer boundaries.

@@ -56,6 +56,8 @@ def capture(disc, bios, work):
 def ron(value):
     if isinstance(value, RonVariant):
         return str(value)
+    if isinstance(value, bool):
+        return 'true' if value else 'false'
     if isinstance(value, dict):
         return '(' + ', '.join(k + ': ' + ron(v) for k, v in value.items()) + ')'
     if isinstance(value, tuple):
@@ -129,6 +131,33 @@ def export_tuning(ram_path, assets):
         drag_per_rev_s=car(0x10C, 'i'), redline_rpm=car(0x108, 'H'), idle_rpm=car(0x10A, 'H'),
         fuel_cut_hysteresis_rpm=65536 - immediate(0x3538C, 0x2442),
         torque_curve=curve(0x7C, 'speed_rev_s', 'torque', 4096)))
+    layout_kind = car(0x370, 'B')
+    if layout_kind in [0, 1, 2, 3, 5]:
+        layout = {0: 'Rear', 1: 'Front', 2: 'Viscous', 3: 'Open', 5: 'AdaptiveClutch'}[layout_kind]
+    elif layout_kind in [4, 6]:
+        layout = ('Clutch' if layout_kind == 4 else 'Split') + ron(dict(front_fraction=car(0x374) / 4096))
+    else:
+        raise ValueError('Unsupported original drive layout')
+    reference = car(0x373, 'B')
+    if reference not in [0, 1]:
+        raise ValueError('Unsupported original reference axle')
+    write('vehicle/drivetrain.ron', dict(
+        layout=RonVariant(layout), reference_axle=RonVariant(['Front', 'Rear'][reference]),
+        gear_ratios=[car(0x3A4 + i * 4, 'i') / 4096 for i in range(8)],
+        axle_inertia=tuple(car(0x400 + i * 4, 'i') / 16 for i in range(2)),
+        engine_inertia=car(0x378) / 16, centre_rotation_response=car(0x408, 'i') / 256,
+        centre_viscosity=car(0x374), adaptive_lock=car(0x376) != 0,
+        centre_lock_torque=car(0x376), engine_rotation_response=car(0x40C, 'i') / 4096,
+        revolutions_per_radian=immediate(0x39400, 0x2404) / 4096,
+        fixed_clutch_torque=car(0x3F4), coast_clutch_torque=car(0x3F6),
+        clutch_free_difference_rev_s=(65536-immediate(0x392EC, 0x3442)) / 4096,
+        clutch_gain_per_rev_s=immediate(0x39304, 0x2405) / 4096,
+        max_clutch_gain=immediate(0x39318, 0x2404) / 4096,
+        adaptive_full_angle_turns=(immediate(0x459C8, 0x2882)-1) / 4096,
+        adaptive_min_angle_turns=immediate(0x459DC, 0x2882) / 4096,
+        adaptive_min_response=immediate(0x459EC, 0x2411) / 4096,
+        adaptive_taper_intercept=immediate(0x459E4, 0x2402) / 4096,
+        lock_brake_travel=(immediate(0x45A40, 0x2842)-1) / 4096))
     write('vehicle/braking.ron', dict(front_capacity=car(0x414, 'i'), rear_capacity=car(0x418, 'i'), handbrake_capacity=car(0x41C, 'i')))
     # Global resistance curve uses the same word-coordinate descriptor as
     # engine torque, but is not relative to this car's physics base.
