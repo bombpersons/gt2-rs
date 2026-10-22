@@ -16,8 +16,8 @@ pub fn compare(
         ("vx", velocity.linear_mps.x * 4096.0),
         ("vy", -velocity.linear_mps.z * 4096.0),
         ("vz", velocity.linear_mps.y * 4096.0),
-        ("secondary0", body.secondary_angular_motion.x * 4096.0),
-        ("secondary1", body.secondary_angular_motion.y * 4096.0),
+        ("secondary0", body.tilt_turns_per_second.x * 65536.0),
+        ("secondary1", body.tilt_turns_per_second.y * 65536.0),
         ("feedback", body.lateral_feedback_turns * 4096.0),
         ("lateral_acceleration", body.lateral_acceleration_mps2 * 4096.0),
         ("lateral_speed", body.local_lateral_mps * 4096.0),
@@ -51,7 +51,7 @@ pub fn original_inputs(r: &Row) -> (BodyDynamicsInput, VehicleVelocity, BodyDyna
         local_lateral_mps: before("lateral_speed") / 4096.0,
         lateral_acceleration_mps2: before("lateral_acceleration") / 4096.0,
         lateral_feedback_turns: before("feedback") / 4096.0,
-        secondary_angular_motion: Vec2::new(before("secondary0"), before("secondary1")) / 4096.0,
+        tilt_turns_per_second: Vec2::new(before("secondary0"), before("secondary1")) / 65536.0,
         ..default()
     };
     (input, velocity, body)

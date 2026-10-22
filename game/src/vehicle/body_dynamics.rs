@@ -42,7 +42,7 @@ pub struct BodyDynamicsSetup(pub BodyDynamicsTuning);
 #[reflect(Component)]
 pub struct BodyDynamicsInput {
     /// Physics+6B1 !=0 skips tyre acceleration, but still applies external force.
-    /// Its upstream state producer is outside this feature.
+    /// VerticalBody supplies the airborne gate when present.
     pub bypass_tyre_acceleration: bool,
     /// Physics+718 !=0 or +786 ==7. First-gear override is separate below.
     pub reset_motion: bool,
@@ -76,9 +76,9 @@ pub struct BodyDynamics {
     /// Physics+64A /4096; consumed by the drivetrain next tick. Its exact
     /// physical angle interpretation remains open.
     pub lateral_feedback_turns: f32,
-    /// Physics+650/+652 /4096; retained normally and cleared by a full reset.
-    /// The upstream meaning of these secondary angular quantities is unported.
-    pub secondary_angular_motion: Vec2,
+    /// Physics+650/+652 /65536: pitch and roll turns/s. Vertical body
+    /// integration updates them; a full motion reset clears them.
+    pub tilt_turns_per_second: Vec2,
     pub lateral_force: f32,
     pub yaw_torque: f32,
     /// The low-speed, inactive-slip, nonzero-brake gate cleared local motion.
@@ -140,7 +140,7 @@ impl BodyDynamicsTuning {
             velocity.linear_mps.z = 0.0;
             if !input.first_gear_override {
                 velocity.linear_mps.y = 0.0;
-                body.secondary_angular_motion = Vec2::ZERO;
+                body.tilt_turns_per_second = Vec2::ZERO;
             }
             // 8003B130 jumps directly past external forces too.
             return;

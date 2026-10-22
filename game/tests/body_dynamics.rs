@@ -226,9 +226,9 @@ fn handmade_body_rules_run_alone_with_per_car_tuning() {
         .entity_mut(a)
         .insert(game::vehicle::transmission::TransmissionState { first_gear_ticks: 1, ..default() });
     app.world_mut().get_mut::<VehicleVelocity>(a).unwrap().linear_mps.y = 2.0;
-    app.world_mut().get_mut::<BodyDynamics>(a).unwrap().secondary_angular_motion = Vec2::ONE;
+    app.world_mut().get_mut::<BodyDynamics>(a).unwrap().tilt_turns_per_second = Vec2::ONE;
     app.run_tick(&[]);
     assert_eq!(app.world().get::<VehicleVelocity>(a).unwrap().linear_mps, Vec3::Y * 2.0);
     assert_eq!(app.world().get::<VehicleVelocity>(a).unwrap().yaw_turns_per_second, 0.0);
-    assert_eq!(app.world().get::<BodyDynamics>(a).unwrap().secondary_angular_motion, Vec2::ONE);
+    assert_eq!(app.world().get::<BodyDynamics>(a).unwrap().tilt_turns_per_second, Vec2::ONE);
 }

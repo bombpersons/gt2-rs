@@ -14,7 +14,8 @@ a closed B-1 driving trajectory. The visible car still has its checkpoint pose.
 The following [road-contact stage](road-contact-evidence.md) now derives those
 road inputs natively from decoded polygons and retains the original basis
 ordering. Its 257 comparisons include this native suspension stage; corrected
-body motion/angles and force inputs remain explicit.
+body motion/angles are now produced by the [vertical body stage](vertical-body-evidence.md);
+its connected tests replace the corrected-pose injection. Force inputs remain explicit.
 
 ## Identity and reproduction
 

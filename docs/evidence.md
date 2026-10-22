@@ -55,10 +55,14 @@ match 257 original calls (1,028 wheel queries), including a fresh holdout.
 Actual selected polygon identity, smoothed heights, surface/offsets and bases
 feed native suspension. All 126 course collision grids validate structurally;
 the engine-only sandbox authors and walks a ramp in the same format.
-Corrected body pose/angles, vertical integration and body collision remain
-observed boundaries.
+[Vertical body motion and suspension-stop correction](vertical-body-evidence.md)
+now match 221 original body calls, including a fresh 60-call holdout. Native
+road, suspension, body correction and late attachment/frame refresh run
+together across the 257 road calls, replacing the corrected-pose injection.
+Movement-entry position/velocity, suspension force channels and reset event
+selection remain observed boundaries.
 Alternate torque controllers, logical control-request production and physical
-bindings, corrected body motion/angles, vertical integration, collision, condition
+bindings, aerodynamic/body-force production, broader collision/reset and condition
 accumulation, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.

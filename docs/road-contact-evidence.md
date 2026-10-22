@@ -9,12 +9,14 @@ All **257 original car calls (1,028 wheel queries)** match exactly, including
 a fresh 53-call holdout. Tests compare the actual selected node and polygon,
 height and metadata, smoothed wheel heights, offsets, attachments, body/road
 bases and the resulting **native suspension travel, spring/damper and loads**.
-Natural sequences retain heights, node seeds, bases and suspension histories.
+Natural sequences retain heights, node seeds, bases, suspension and tilt histories.
+The [vertical body rules](vertical-body-evidence.md) now also produce corrected
+pose/angles and velocity natively before the late attachment/frame refresh.
 
-Corrected body pose/angles and the body-force inputs to suspension remain
-observed boundaries. Vertical integration, collision response and the licence
-outcome/reset actions are unfinished. This is a connected road/suspension
-comparison, not a closed B-1 trajectory or a playable session.
+Movement-entry position/velocity and the body-force inputs to suspension remain
+observed boundaries. Broader collision/reset and licence outcome actions are
+unfinished. This is a connected road/suspension/body comparison, not a closed
+B-1 trajectory or a playable session.
 
 ## Identity and reproduction
 
@@ -135,14 +137,15 @@ still pass unchanged. No original tuning arrays are published.
 `RoadContactState` owns node/raw-height history and **retained** body/road
 bases. `SampleRoad` follows horizontal integration and precedes suspension.
 It supplies actual road heights/surfaces/offsets/attachments, but suspension
-still uses the prior road basis. `RefreshFrame` follows the future body
-correction stage and precedes contact-motion refresh: it rebuilds body/road
+still uses the prior road basis. `RefreshFrame` follows native body
+correction and precedes contact-motion refresh: it first refreshes attachments
+with the retained integrated body basis (`8004335C`), then rebuilds body/road
 bases from corrected body angles and current heights. Refreshing the road
 basis during sampling would use the wrong tick.
 
 Optional bridges update `SuspensionInput`, `TyreGripInput`,
 `BodyDynamicsInput` and `ContactMotionInput`. `BodyOrientation` is explicit
-corrected pitch/roll input, with heading from `VehiclePose`.
+pitch/roll state, updated by the vertical body feature, with heading from `VehiclePose`.
 `RoadContactInput::condition_surfaces_enabled` represents `80041AB8`'s mode
 gate; it is false in B-1. True gating has binary evidence and an authored
 test, not an alternate race-mode runtime comparison. The standalone authored
@@ -175,8 +178,7 @@ checks and the engine sandbox pass. Screenshots were inspected. Clippy has
 only the existing wheel-rotation test warning. Current-source/history audits
 pass; all generated assets and numerical evidence remain ignored.
 
-Next: the vertical body integrator/collision stage beginning at `80043F18`,
-followed by aerodynamic/condition producers and a closed B-1 trajectory.
+Next: aerodynamic/body-force and condition producers, then a closed B-1 trajectory.
 The licence reset/outcome code after `80043780`, live car/wheel animation,
 alternate torque/induction paths, request production, audio, wider game flow
 and authoring editor remain unfinished. The native scene still displays its

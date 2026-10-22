@@ -1,5 +1,5 @@
 //! Decoded polygon queries through native road preparation and suspension.
-//! Corrected body pose/angles between suspension and late frames are observed.
+//! Native vertical body motion corrects pose/angles before the late frames.
 use bevy::prelude::*;
 use engine::{
     course::CourseData,
@@ -7,8 +7,14 @@ use engine::{
     testing::{TickApp, headless_app},
 };
 use game::vehicle::{
-    VehiclePose, VehicleSystems, body_dynamics::BodyDynamicsInput, contact_motion::ContactMotionInput, road_contact::*,
-    slip::WheelLocalVelocities, suspension::*, tyre_grip::TyreGripInput,
+    VehiclePose, VehicleStepDuration, VehicleVelocity,
+    body_dynamics::{BodyDynamics, BodyDynamicsInput},
+    contact_motion::ContactMotionInput,
+    road_contact::*,
+    slip::WheelLocalVelocities,
+    suspension::*,
+    tyre_grip::TyreGripInput,
+    vertical_body::*,
 };
 use std::collections::{HashMap, HashSet};
 type Row = HashMap<String, i32>;
@@ -60,17 +66,6 @@ fn modified(course: &CourseData, r: &Row) -> CourseData {
     }
     result
 }
-#[derive(Component)]
-struct CorrectedBody {
-    pose: VehiclePose,
-    orientation: BodyOrientation,
-}
-fn correct_body(mut cars: Query<(&CorrectedBody, &mut VehiclePose, &mut BodyOrientation)>) {
-    for (boundary, mut pose, mut orientation) in &mut cars {
-        *pose = boundary.pose;
-        *orientation = boundary.orientation;
-    }
-}
 fn pose(r: &Row, phase: &str) -> VehiclePose {
     let v = |key: &str| r[&format!("{phase}_{key}")] as f32 / 4096.0;
     VehiclePose { position_m: Vec3::new(v("x"), v("z"), -v("y")), heading_turns: v("heading") }
@@ -80,12 +75,7 @@ fn check(name: &str, count: usize) {
     assert_eq!(rows.len(), count);
     let original: CourseData = load_ron(game::race::COURSE_ASSET).unwrap();
     let mut app = headless_app(game::tick_rate(game::REGION));
-    app.add_plugins((RoadContactRulesPlugin, SuspensionRulesPlugin));
-    app.configure_sets(FixedUpdate, VehicleSystems::Suspension.before(VehicleSystems::RefreshContact));
-    app.add_systems(
-        FixedUpdate,
-        correct_body.in_set(VehicleSystems::RefreshContact).before(RoadContactSystems::RefreshFrame),
-    );
+    app.add_plugins((RoadContactRulesPlugin, SuspensionRulesPlugin, VerticalBodyRulesPlugin));
     let car = app
         .world_mut()
         .spawn((
@@ -164,6 +154,7 @@ fn check(name: &str, count: usize) {
             variant: four("before", "variant", 1.0).map(|v| v as u8),
             body_basis: basis(r, "before", "body"),
             road_basis: basis(r, "before", "road"),
+            road_height_m: v("before", "road_height") / 4096.0,
             ..default()
         };
         let mut suspension = Suspension {
@@ -171,6 +162,14 @@ fn check(name: &str, count: usize) {
             travel_rate_mps: four("suspension_before", "rate", 4096.0),
             ..default()
         };
+        let mut dynamics = BodyDynamics {
+            tilt_turns_per_second: Vec2::new(v("suspension_after", "pitch_rate"), v("suspension_after", "roll_rate"))
+                / 65536.0,
+            ..default()
+        };
+        let mut vertical = VerticalBody { airborne: v("suspension_after", "airborne") != 0.0, ..default() };
+        let mut orientation =
+            BodyOrientation { pitch_turns: v("before", "pitch") / 4096.0, roll_turns: v("before", "roll") / 4096.0 };
         if previous == Some(r["sequence"]) {
             let old = *app.world().get::<RoadContactState>(car).unwrap();
             assert_eq!(old.node, state.node, "{label}: node seed carry");
@@ -181,6 +180,15 @@ fn check(name: &str, count: usize) {
                 assert_eq!(actual.lateral, expected.lateral, "{label}: basis lateral carry");
                 assert_eq!(actual.up, expected.up, "{label}: basis up carry");
             }
+            let old_rates = app.world().get::<BodyDynamics>(car).unwrap().tilt_turns_per_second;
+            assert_eq!(old_rates, dynamics.tilt_turns_per_second, "{label}: native tilt-rate carry");
+            dynamics.tilt_turns_per_second = old_rates;
+            let old_angle = *app.world().get::<BodyOrientation>(car).unwrap();
+            assert_eq!(old_angle.pitch_turns, orientation.pitch_turns, "{label}: pitch carry");
+            assert_eq!(old_angle.roll_turns, orientation.roll_turns, "{label}: roll carry");
+            orientation = old_angle;
+            assert_eq!(app.world().get::<VerticalBody>(car).unwrap().airborne, vertical.airborne);
+            vertical = *app.world().get::<VerticalBody>(car).unwrap();
             state = old;
             let old = *app.world().get::<Suspension>(car).unwrap();
             assert_eq!(old.travel_m, suspension.travel_m, "{label}: suspension travel carry");
@@ -193,7 +201,7 @@ fn check(name: &str, count: usize) {
             state,
             suspension,
             pose(r, "before"),
-            BodyOrientation { pitch_turns: v("before", "pitch") / 4096.0, roll_turns: v("before", "roll") / 4096.0 },
+            orientation,
             WheelLocalVelocities {
                 forward_mps: four("before", "forward", 4096.0),
                 lateral_mps: four("before", "lateral", 4096.0),
@@ -206,15 +214,32 @@ fn check(name: &str, count: usize) {
                 forward_force: v("suspension_before", "forward_force"),
                 ..default()
             },
-            CorrectedBody {
-                pose: pose(r, "frame_before"),
-                orientation: BodyOrientation {
-                    pitch_turns: v("frame_before", "pitch") / 4096.0,
-                    roll_turns: v("frame_before", "roll") / 4096.0,
-                },
+            dynamics,
+            vertical,
+            VerticalBodyInput { reset_ticks: v("suspension_after", "reset_ticks") as u16, ..default() },
+            VehicleStepDuration(v("suspension_after", "duration") / 65536.0),
+            VehicleVelocity {
+                linear_mps: Vec3::new(
+                    v("suspension_after", "vx"),
+                    v("suspension_after", "vz"),
+                    -v("suspension_after", "vy"),
+                ) / 4096.0,
+                ..default()
             },
         ));
         app.run_tick(&[]);
+        let actual_pose = app.world().get::<VehiclePose>(car).unwrap();
+        assert_eq!(actual_pose.position_m, pose(r, "frame_before").position_m, "{label}: native corrected pose");
+        assert_eq!(actual_pose.heading_turns, pose(r, "frame_before").heading_turns);
+        let angle = app.world().get::<BodyOrientation>(car).unwrap();
+        assert_eq!(angle.pitch_turns * 4096.0, v("frame_before", "pitch"), "{label}: native corrected pitch");
+        assert_eq!(angle.roll_turns * 4096.0, v("frame_before", "roll"), "{label}: native corrected roll");
+        let velocity = app.world().get::<VehicleVelocity>(car).unwrap().linear_mps;
+        assert_eq!(
+            velocity * 4096.0,
+            Vec3::new(v("frame_before", "vx"), v("frame_before", "vz"), -v("frame_before", "vy")),
+            "{label}: native vertical impulses"
+        );
         let state = app.world().get::<RoadContactState>(car).unwrap();
         assert_eq!(state.node, v("after", "node") as u16, "{label} car node");
         assert_eq!(
@@ -230,9 +255,9 @@ fn check(name: &str, count: usize) {
         assert_eq!(state.bypass_condition, (r["after_condition_flags"] & 16) != 0, "{label}: condition bypass");
         for i in 0..4 {
             let attachment = Vec3::new(
-                v("queried", &format!("attachment{i}_0")),
-                v("queried", &format!("attachment{i}_2")),
-                -v("queried", &format!("attachment{i}_1")),
+                v("frame_before", &format!("attachment{i}_0")),
+                v("frame_before", &format!("attachment{i}_2")),
+                -v("frame_before", &format!("attachment{i}_1")),
             ) / 4096.0;
             assert_eq!(state.attachment_m[i], attachment, "{label}: wheel attachment {i}");
             assert_eq!(
@@ -276,7 +301,7 @@ fn check(name: &str, count: usize) {
                 );
             }
         }
-        assert_eq!(suspension.compressed_mask, r["suspension_after_compressed_mask"] as u8);
+        assert_eq!(suspension.compressed_mask, r["frame_before_compressed_mask"] as u8);
         let grip = app.world().get::<TyreGripInput>(car).unwrap();
         assert_eq!(grip.surface, state.surface.map(usize::from));
         assert_eq!(grip.load, suspension.tyre_load.map(|v| v as f32));

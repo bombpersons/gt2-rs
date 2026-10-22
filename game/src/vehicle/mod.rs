@@ -8,7 +8,7 @@
 //! Force rules join [`VehicleSystems::Forces`]; body dynamics supplies
 //! [`VehicleVelocity`] before step construction. Suspension supplies next-tick
 //! loads; decoded road contact supplies surface/heights and retained bases.
-//! Corrected body angles and vertical collision remain unfinished.
+//! Vertical body rules update tilt/velocity and correct compression stops.
 use bevy::prelude::*;
 use engine::controller::{Button, ControllerState};
 use engine::prelude::TuningPlugin;
@@ -32,6 +32,7 @@ pub mod suspension;
 pub mod transmission;
 pub mod tyre_forces;
 pub mod tyre_grip;
+pub mod vertical_body;
 pub mod wheel_rotation;
 pub use steering::{
     DigitalSteeringInput, STEERING_TUNING, SteeringKinematics, SteeringKnot, SteeringResponse, SteeringTuning,
@@ -189,6 +190,7 @@ pub enum VehicleSystems {
     Integrate,
     SampleRoad,
     Suspension,
+    CorrectBody,
     RefreshContact,
 }
 
@@ -218,6 +220,7 @@ impl Plugin for VehicleRulesPlugin {
                     VehicleSystems::Integrate,
                     VehicleSystems::SampleRoad,
                     VehicleSystems::Suspension,
+                    VehicleSystems::CorrectBody,
                     VehicleSystems::RefreshContact,
                 )
                     .chain()

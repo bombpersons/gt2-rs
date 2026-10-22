@@ -144,11 +144,25 @@ See `docs/assets.md`; run the public history audit before every push.
   bumps, attachments and body/road bases feed native suspension and match
   257 original calls (1,028 wheel queries), including a fresh holdout.
   Actual selected polygon identity and neighbor fallback are checked. Native
-  histories and bases carry over natural sequences; corrected body pose/angles
-  and suspension body forces remain observed. The engine sandbox authors and
-  walks a ramp in this collision format. Next: vertical integration/collision,
-  then remaining force producers and the closed B-1 session.
+  histories and bases carry over natural sequences. Native vertical body
+  correction now replaces the observed corrected-pose boundary in these tests.
+  Suspension body-force inputs remain observed. The engine sandbox authors
+  and walks a ramp in this collision format. Next: remaining force producers
+  and the closed B-1 session.
   See docs/road-contact-evidence.md.
+
+
+- Pitch/roll integration, vertical spring/damper impulses, gravity, airborne
+  feedback, reset height/heading and suspension-stop correction now match
+  221 original body calls, including a fresh 60-call holdout. All 257 road
+  comparisons now connect decoded polygons -> suspension -> native body
+  correction -> late attachment/frame refresh without injected corrected
+  pose/angles. Tilt rates are correctly interpreted as /65536 turns/s.
+  The plugin runs alone with authored/per-car tuning and optional bridges.
+  Movement-entry velocity/position, suspension force channels and reset event
+  selection remain observed. Next: aerodynamic/body-force and condition
+  producers, then a closed B-1 trajectory and live vehicle presentation.
+  See docs/vertical-body-evidence.md.
 
 ## Work order
 

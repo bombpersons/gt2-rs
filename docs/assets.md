@@ -46,7 +46,8 @@ course/model/paint files, then exports:
   curves, surface responses, optional condition parameters, inverse wheel
   radii, contact speed response and wheel-spin/readout conversion factors,
   suspension travel limits, spring/damper/preload/anti-roll responses and
-  body-force transfer levers, road-height plane-fit dimensions, procedural
+  body-force transfer levers, vertical mass/tilt response and compression-stop/reset
+  tuning, road-height plane-fit dimensions, procedural
   surface-bump settings and shared direction-curve thresholds.
 
 The game reads native RON/PNG files from `game/assets/` and does not use an

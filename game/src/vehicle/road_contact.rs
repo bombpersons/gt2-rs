@@ -52,8 +52,8 @@ pub struct RoadContactSetup(pub RoadContactTuning);
 #[derive(Component, Default, Clone, Copy, Debug, Reflect)]
 #[reflect(Component)]
 pub struct BodyOrientation {
-    /// Physics+644/+646 /4096 turns. Their vertical/angular integrator is
-    /// still external; yaw comes from VehiclePose.
+    /// Physics+644/+646 /4096 turns, updated by vertical body integration;
+    /// yaw comes from VehiclePose.
     pub pitch_turns: f32,
     pub roll_turns: f32,
 }
@@ -128,20 +128,9 @@ fn low_product(a: f32, b: f32) -> f32 {
 }
 
 impl RoadContactTuning {
-    pub fn sample(
-        &self,
-        course: &CourseData,
-        pose: VehiclePose,
-        local: WheelLocalVelocities,
-        input: RoadContactInput,
-        state: &mut RoadContactState,
-    ) {
-        state.missing_mask = 0;
-        state.offroad_wheels = 0;
-        state.special_wheels = 0;
-        state.reset_surface_wheels = 0;
-        let seed = state.node;
-        let mut surface_flags = 0;
+    /// 8004335C refreshes all lever attachments using the retained body
+    /// basis before the later angle-to-basis rebuild at 8003E7EC.
+    pub fn refresh_attachments(&self, state: &mut RoadContactState) {
         for i in 0..4 {
             let [side, forward] = self.wheel_levers_m[i];
             // 800431A0/4323C project each lever separately, then narrow the
@@ -155,6 +144,25 @@ impl RoadContactTuning {
                 short_m((if forward < 0.0 { -f } else { f }) as f64 + (if side < 0.0 { -s } else { s }) as f64)
             };
             state.attachment_m[i] = Vec3::new(project(0), project(1), project(2));
+        }
+    }
+
+    pub fn sample(
+        &self,
+        course: &CourseData,
+        pose: VehiclePose,
+        local: WheelLocalVelocities,
+        input: RoadContactInput,
+        state: &mut RoadContactState,
+    ) {
+        state.missing_mask = 0;
+        state.offroad_wheels = 0;
+        state.special_wheels = 0;
+        state.reset_surface_wheels = 0;
+        self.refresh_attachments(state);
+        let seed = state.node;
+        let mut surface_flags = 0;
+        for i in 0..4 {
             state.query_m[i] =
                 std::array::from_fn(|axis| pose.position_m[axis] as f64 + state.attachment_m[i][axis] as f64);
             let a = local.forward_mps[i].abs();
@@ -309,6 +317,7 @@ struct FrameCar {
 }
 fn refresh_frame(tuning: Res<RoadContactTuning>, mut cars: Query<FrameCar>) {
     for mut car in &mut cars {
+        car.setup.map(|v| &v.0).unwrap_or(&tuning).refresh_attachments(&mut car.state);
         car.state.body_basis =
             vehicle_basis(car.orientation.pitch_turns, car.orientation.roll_turns, car.pose.heading_turns);
         car.setup.map(|v| &v.0).unwrap_or(&tuning).refresh_frame(car.pose.heading_turns, &mut car.state);

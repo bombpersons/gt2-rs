@@ -320,6 +320,21 @@ def export_tuning(ram_path, assets):
         bumps=[dict(amplitude_m=read(0x46F88+i*2,'h')/4096,cycles_per_m=read(0x46F98+i*2,'h')/256,
                     scale_with_speed=read(0x46FA8+i,'B')!=0) for i in range(8)],
         angle_threshold_ratios=[v/4096 for v in thresholds]))
+    write('vehicle/vertical_body.ron', dict(
+        pitch_response=tuple(car(0x6C+i*4,'i')/4096/65536 for i in range(2)),
+        roll_response=tuple(car(0x74+i*4,'i')/4096/65536 for i in range(2)),
+        inverse_mass=car(0x2C)/4096,
+        minimum_tilt_rate=-16384/65536, maximum_tilt_rate=16383/65536,
+        maximum_tilt_turns=immediate(0x4418C,0x2402)/4096,
+        gravity_mps2=40141/4096,
+        minimum_travel_m=tuple(car(0x12E+i*0x34)/4096 for i in range(2)),
+        travel_offset_m=tuple((car(0x134+i*0x34)-car(0x3E4+i*2))/4096 for i in range(2)),
+        wheel_levers_m=((-car(0x18)/4096,car(0x0C)/4096),(car(0x18)/4096,car(0x0C)/4096),
+                        (-car(0x1A)/4096,-car(0x0E)/4096),(car(0x1A)/4096,-car(0x0E)/4096)),
+        wheelbase_m=car(0x10)/4096, track_m=car(0x12)/4096, rear_height_fraction=car(0x14)/4096,
+        angle_threshold_ratios=[v/4096 for v in thresholds],
+        reset_height_m=immediate(0x35870,0x2402)/4096, reset_seconds=5.0,
+        reset_ramp_seconds=0.5, reset_heading_turns_per_second=341/4096))
     offsets = [v / 65536 for v in values(0x2F350, 8, 'i', 4)]
     focal = read(0x2F370 + 2 * read(0x1C9992, 'B'), 'h')
     outer = BASE - 0x2C

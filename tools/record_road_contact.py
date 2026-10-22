@@ -46,6 +46,8 @@ def export(folder,frames,initial):
         def car(off,fmt='i'):return struct.unpack_from('<'+fmt,ram,(BASE&0x1FFFFF)+off)[0]
         result={k:car(o,f) for k,o,f in [('x',0x65C,'i'),('y',0x660,'i'),('z',0x664,'i'),
             ('pitch',0x644,'h'),('roll',0x646,'h'),('heading',0x648,'h'),('node',0x600,'H'),
+            ('pitch_rate',0x650,'h'),('roll_rate',0x652,'h'),('vx',0x628,'i'),('vy',0x62C,'i'),('vz',0x630,'i'),
+            ('duration',0x6FE,'h'),('reset_ticks',0x78E,'H'),('airborne',0x6B1,'b'),('mode',0x786,'B'),
             ('condition_flags',0x78D,'B'),('road_pitch',0x6F4,'h'),('road_roll',0x6F6,'h'),('road_height',0x688,'i'),('inverse_duration',0x704,'i'),('compressed_mask',0x719,'B'),
             ('front_force',0x71C,'i'),('rear_force',0x720,'i'),('lateral_force',0x728,'i'),('vertical_force',0x72C,'i'),('forward_force',0x734,'i')]}
         for key,off in [('body_forward',0x668),('body_lateral',0x670),('body_up',0x678),
