@@ -42,6 +42,7 @@
 use serde::Serialize;
 use std::path::Path;
 
+mod contact;
 mod instances;
 mod mesh;
 pub mod render;
@@ -84,6 +85,8 @@ pub struct Node {
     /// comes from the node points (near from this node, far from the next).
     /// Verified as the asphalt on `TC_lisence` (see the module docs).
     pub surface_m: [[f32; 3]; 4],
+    pub contact_search_origin_m: Option<[f64; 3]>,
+    pub contact: Option<contact::ContactMesh>,
 }
 
 #[derive(Debug, Serialize)]
@@ -303,6 +306,8 @@ impl Road {
             direction: [f32; 3],
             /// `(x, z)` in the file's axes, metres.
             surface: [[f32; 2]; 4],
+            search_origin: [f64; 3],
+            contact: contact::ContactMesh,
         }
         let mut raw = Vec::with_capacity(count);
         for (index, &at) in offsets.iter().enumerate() {
@@ -352,6 +357,13 @@ impl Road {
                 position: [x, y, z],
                 direction: [dx, dy, dz],
                 surface,
+                search_origin: [0x18, 0x1C, 0x20]
+                    .map(|o| i32_at(bytes, at + o, "contact node origin").map(|v| v as f64 / 65536.0))
+                    .into_iter()
+                    .collect::<Result<Vec<_>, _>>()?
+                    .try_into()
+                    .unwrap(),
+                contact: contact::parse(bytes, at, limit).map_err(|e| format!("node {index}: {e}"))?,
             });
         }
 
@@ -375,6 +387,8 @@ impl Road {
                     position_m: node.position,
                     direction: node.direction,
                     surface_m: surface,
+                    contact_search_origin_m: Some(node.search_origin),
+                    contact: Some(node.contact.clone()),
                 }
             })
             .collect();
@@ -649,7 +663,7 @@ mod tests {
     /// section-0 framing, link chain and the empty 1-4 sections.
     fn minimal() -> Vec<u8> {
         const S0: usize = 0x24;
-        const NODE: usize = 0x8c;
+        const NODE: usize = 0x150;
         let node_table = S0 + 12;
         let node0 = node_table + 8;
         let node1 = node0 + NODE;
@@ -680,6 +694,17 @@ mod tests {
             bytes[at + 22..at + 24].copy_from_slice(&4096i16.to_le_bytes());
             bytes[at + 24..at + 28].copy_from_slice(&x.to_le_bytes());
             bytes[at + 36..at + 38].copy_from_slice(&4096i16.to_le_bytes());
+            for o in [0x94, 0x98, 0x9C] {
+                bytes[at + o..at + o + 4].copy_from_slice(&((at + 0xE8) as u32).to_le_bytes());
+            }
+            bytes[at + 0xA0..at + 0xA4].copy_from_slice(&((at + NODE) as u32).to_le_bytes());
+            for i in 0..11 {
+                bytes[at + 0xA4 + i * 4..at + 0xA8 + i * 4].copy_from_slice(&((at + 0xE8) as u32).to_le_bytes());
+            }
+            for i in 0..16 {
+                bytes[at + 0xE8 + 40 + i * 4..at + 0xE8 + 44 + i * 4]
+                    .copy_from_slice(&((at + NODE) as u32).to_le_bytes());
+            }
             // Road-surface quad: near at this node's x, far at the next one,
             // one metre either side (file z).
             let half = 1i32 << 16;
@@ -747,12 +772,21 @@ mod tests {
         files.sort();
         assert_eq!(files.len(), 126, "use the complete USA Simulation Rev 2 course corpus");
         let mut meshes = 0;
+        let mut contact_nodes = 0;
+        let mut contact_polygons = 0;
+        let mut contact_references = 0;
         let mut vertices = 0;
         let mut primitives = [0usize; 10];
         for path in files {
             let bytes = std::fs::read(&path).unwrap();
             let course = Course::parse(&bytes).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
             let summary = Course::accounting(&bytes, &course).unwrap();
+            for node in &course.nodes {
+                let contact = node.contact.as_ref().expect("every source node has a collision grid");
+                contact_nodes += 1;
+                contact_polygons += contact.polygons.len();
+                contact_references += contact.cells.iter().map(Vec::len).sum::<usize>();
+            }
             meshes += summary.blobs;
             vertices += summary.vertices;
             for (total, count) in primitives.iter_mut().zip(summary.primitives) {
@@ -760,6 +794,10 @@ mod tests {
             }
         }
         assert_eq!((meshes, vertices), (5709, 280301));
+        assert_eq!(contact_nodes, 14387);
+        println!(
+            "{contact_nodes} contact grids: {contact_polygons} polygons, {contact_references} cell references; every cell list tiles and references an ordinary primitive"
+        );
         assert_eq!(primitives, [827, 5731, 218, 1038, 18183, 107634, 2355, 3160, 6027, 488]);
         println!(
             "126 courses: {meshes} meshes, {vertices} vertices, {} primitives; all mesh arrays tile and polygon indices are in range",

@@ -665,3 +665,26 @@ or raw packed records are interpreted at runtime.
 commands, corpus totals and rendering review. Model LOD,
 visibility lists, procedural groups, original background/camera, collision
 beyond the road table and complete rendering parity remain unverified.
+
+
+## Collision grids and road-frame follow-up
+
+Every road node has a 4×4 collision grid at +9C, ending at +A0. It references
+ordered ordinary triangle/quad records and the same local vertices used by
+node drawing. The importer validates every grid/list/reference across all
+126 courses, removes file pointers and exports normal-unit `ContactMesh`
+data. Engine code searches the longitudinal node then its neighbors, selects
+the first containing polygon and samples its triangle/centre-fan height.
+Contact search origins use f64 to preserve distant 16.16 edge ties. The
+engine-only sandbox authors a flat floor and ramp in that format and walks
+on the sampled height.
+
+Game code owns raw/smoothed height history, surface processing and procedural
+bumps; it projects wheel levers through the retained body basis and rebuilds
+road orientation from the four smoothed heights at the original late phase.
+The prior road basis still feeds suspension. Optional bridges supply native
+suspension, grip and body/contact-motion inputs. Actual chosen polygon,
+heights, offsets, bases and suspension loads match 257 original calls,
+including a fresh holdout. Body-angle integration, vertical correction,
+licence outcome/reset actions and closed driving remain unfinished.
+See [road contact evidence](road-contact-evidence.md).

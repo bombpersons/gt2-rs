@@ -1,0 +1,10 @@
+// Authored flat floor and ramp; the walker samples this engine-format grid.
+(
+    origin_m: (0.0, 0.0, 0.0),
+    grid_origin_m: (-4.0, -4.0), cell_size_m: (8.0, 8.0), dimensions: (1, 1),
+    cells: [[0, 1]], horizontal_step_m: 0.015625, height_step_m: 0.0000152587890625,
+    polygons: [
+        (vertices_m: [(-4.0, 0.0, -4.0), (-4.0, 0.0, 4.0), (0.0, 0.0, 4.0), (0.0, 0.0, -4.0)], surface: 0, variant: 0, flags: 0),
+        (vertices_m: [(0.0, 0.0, -4.0), (0.0, 0.0, 4.0), (4.0, 1.0, 4.0), (4.0, 1.0, -4.0)], surface: 1, variant: 0, flags: 0),
+    ],
+)

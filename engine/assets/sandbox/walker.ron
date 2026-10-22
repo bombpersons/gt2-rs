@@ -1,1 +1,1 @@
-(speed: 3.0) // m/s
+(speed: 3.0, floor_clearance_m: 0.8) // m/s and metres above sampled ground

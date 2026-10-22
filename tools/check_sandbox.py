@@ -54,6 +54,9 @@ with (output / 'sandbox.log').open('w') as log:
         def x(reply):
             return reply['structuredContent']['entities'][0]['components']['Transform']['translation'][0]
         assert x(final) > x(initial) + 0.5, (initial, final)
+        def y(reply):
+            return reply['structuredContent']['entities'][0]['components']['Transform']['translation'][1]
+        assert y(final) > y(initial) + 0.3, 'walker must climb the authored collision ramp'
         shot = call('game_screenshot', dict(target='screen'))
         encoded = next(block['data'] for block in shot['content'] if block['type'] == 'image')
         (output / 'sandbox.png').write_bytes(base64.b64decode(encoded))
@@ -69,7 +72,7 @@ with (output / 'sandbox.log').open('w') as log:
         assert sum(map(blue, near_pixels)) > 500
         assert sum(map(orange, far_pixels)) > 100
         (output / 'evidence.json').write_text(json.dumps(dict(initial=initial, step=step, final=final), indent=2))
-        print(json.dumps(dict(screenshots=[str(output/'sandbox.png'), str(output/'small-detail.png')], start_x=x(initial), end_x=x(final))))
+        print(json.dumps(dict(screenshots=[str(output/'sandbox.png'), str(output/'small-detail.png')], start_x=x(initial), end_x=x(final), start_y=y(initial), end_y=y(final))))
     finally:
         proc.terminate()
         try:

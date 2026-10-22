@@ -34,7 +34,7 @@ The script builds the importer, replays the original from power-on into B-1
 and captures a local checkpoint, extracts and decompresses the required
 course/model/paint files, then exports:
 
-- B-1 course, ordinary road/scenery geometry and textures;
+- B-1 course, collision grids/polygons, ordinary road/scenery geometry and textures;
 - Vitz high-detail body, paint slot 5 and all decoded wheel detail levels;
 - Checkpoint wheel placements and camera setup;
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
@@ -46,7 +46,8 @@ course/model/paint files, then exports:
   curves, surface responses, optional condition parameters, inverse wheel
   radii, contact speed response and wheel-spin/readout conversion factors,
   suspension travel limits, spring/damper/preload/anti-roll responses and
-  body-force transfer levers.
+  body-force transfer levers, road-height plane-fit dimensions, procedural
+  surface-bump settings and shared direction-curve thresholds.
 
 The game reads native RON/PNG files from `game/assets/` and does not use an
 emulator at runtime. The exporter's intermediate files and checkpoints stay

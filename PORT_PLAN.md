@@ -138,6 +138,18 @@ See `docs/assets.md`; run the public history audit before every push.
   the B-1 trajectory and animate the live body/wheels.
   See docs/suspension-evidence.md.
 
+- Decoded course collision now samples ordered node grids/polygons natively.
+  All 126 courses validate: 14,387 grids, 268,488 referenced polygons and
+  660,086 cell references. Road height history, surfaces/variants, procedural
+  bumps, attachments and body/road bases feed native suspension and match
+  257 original calls (1,028 wheel queries), including a fresh holdout.
+  Actual selected polygon identity and neighbor fallback are checked. Native
+  histories and bases carry over natural sequences; corrected body pose/angles
+  and suspension body forces remain observed. The engine sandbox authors and
+  walks a ramp in this collision format. Next: vertical integration/collision,
+  then remaining force producers and the closed B-1 session.
+  See docs/road-contact-evidence.md.
+
 ## Work order
 
 1. Decode and import real course geometry, materials, textures, object

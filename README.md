@@ -63,11 +63,13 @@ engine torque/fuel cut, engine/clutch/gear/centre/axle coupling, ordinary
 engine feedback and automatic/manual transmission timing, lateral/yaw force
 accumulation and horizontal world acceleration, load/camber/surface grip,
 late contact-motion refresh and wheel/axle synchronization, suspension travel,
-spring/damper loads and anti-roll/body-force preparation, and
+spring/damper loads and anti-roll/body-force preparation, decoded polygon
+road contact with height history, procedural bumps and road/body bases, and
 velocity-to-step integration have original recordings; the coupled force
 model and playable driving session are still unfinished. See
 [the evidence](docs/evidence.md), [cameras](docs/camera-evidence.md), [road subdivision](docs/subdivision-evidence.md), [texture detail](docs/material-variant-evidence.md), [course meshes](docs/course-mesh-evidence.md)
-[contact inputs](docs/contact-input-evidence.md) and [suspension](docs/suspension-evidence.md)
+[contact inputs](docs/contact-input-evidence.md), [suspension](docs/suspension-evidence.md)
+and [road contact](docs/road-contact-evidence.md)
 for coverage and remaining work.
 
 `game::GamePlugins` exposes the feature plugins so another crate can disable

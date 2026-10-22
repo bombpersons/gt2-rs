@@ -50,10 +50,15 @@ and speed readouts, with contact motion carried into the next tick's rules.
 [Suspension travel, load and body-force preparation](suspension-evidence.md)
 now match 221 original calls (884 wheels), including a fresh holdout. Native
 spring/damper loads carry into next tick's grip, with travel/rate histories
-retained. Road sampling, surface/orientation, vertical integration and corrected
-world inputs remain observed.
+retained. [Decoded road contact and frames](road-contact-evidence.md) now
+match 257 original calls (1,028 wheel queries), including a fresh holdout.
+Actual selected polygon identity, smoothed heights, surface/offsets and bases
+feed native suspension. All 126 course collision grids validate structurally;
+the engine-only sandbox authors and walks a ramp in the same format.
+Corrected body pose/angles, vertical integration and body collision remain
+observed boundaries.
 Alternate torque controllers, logical control-request production and physical
-bindings, upstream road/orientation inputs, vertical integration, collision, condition
+bindings, corrected body motion/angles, vertical integration, collision, condition
 accumulation, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.

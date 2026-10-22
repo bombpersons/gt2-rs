@@ -7,7 +7,8 @@
 //!
 //! Force rules join [`VehicleSystems::Forces`]; body dynamics supplies
 //! [`VehicleVelocity`] before step construction. Suspension supplies next-tick
-//! loads; road/orientation and vertical collision remain unfinished.
+//! loads; decoded road contact supplies surface/heights and retained bases.
+//! Corrected body angles and vertical collision remain unfinished.
 use bevy::prelude::*;
 use engine::controller::{Button, ControllerState};
 use engine::prelude::TuningPlugin;
@@ -18,11 +19,13 @@ pub mod body_dynamics;
 pub mod brake_assist;
 pub mod braking;
 pub mod contact_motion;
+pub mod direction;
 pub mod drivetrain;
 pub mod engine_torque;
 pub mod forward_dynamics;
 pub mod longitudinal_slip;
 pub mod presentation;
+pub mod road_contact;
 pub mod slip;
 mod steering;
 pub mod suspension;
@@ -184,6 +187,7 @@ pub enum VehicleSystems {
     Forces,
     BuildStep,
     Integrate,
+    SampleRoad,
     Suspension,
     RefreshContact,
 }
@@ -212,6 +216,7 @@ impl Plugin for VehicleRulesPlugin {
                     VehicleSystems::Forces,
                     VehicleSystems::BuildStep,
                     VehicleSystems::Integrate,
+                    VehicleSystems::SampleRoad,
                     VehicleSystems::Suspension,
                     VehicleSystems::RefreshContact,
                 )

@@ -9,7 +9,8 @@
 //!
 //! One room (a floor), one controllable character, one object type with a
 //! trivial controller (a bobbing marker) and one trigger (it recolours the
-//! floor). Scene values come from `room.ron`, `walker.ron` and `camera.ron`.
+//! floor). Scene values come from `room.ron`, `walker.ron`, `camera.ron`
+//! and the flat-floor/ramp collision grid in `contact.ron`.
 use bevy::prelude::*;
 use engine::config::load_ron;
 use engine::launcher::{self, Game};
@@ -34,7 +35,11 @@ struct Room {
 struct WalkerTuning {
     /// m/s.
     speed: f32,
+    floor_clearance_m: f32,
 }
+
+#[derive(Resource)]
+struct SandboxContact(engine::course::ContactMesh);
 
 #[derive(Component, Reflect, Default)]
 #[reflect(Component)]
@@ -95,6 +100,20 @@ fn setup(
     server: Res<AssetServer>,
 ) {
     let room: Room = load_ron("sandbox/room.ron").unwrap_or_else(|e| panic!("sandbox room: {e}"));
+    let contact: engine::course::ContactMesh = load_ron("sandbox/contact.ron").expect("sandbox contact grid");
+    contact.validate().expect("valid authored contact grid");
+    let ramp = &contact.polygons[1];
+    let positions: Vec<[f32; 3]> = ramp.vertices_m.iter().map(|p| p.map(|v| v as f32)).collect();
+    let ramp_mesh = Mesh::new(bevy::mesh::PrimitiveTopology::TriangleList, bevy::asset::RenderAssetUsages::default())
+        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, positions)
+        .with_inserted_indices(bevy::mesh::Indices::U32(vec![0, 1, 2, 0, 2, 3]))
+        .with_computed_normals();
+    commands.spawn((
+        Name::new("Authored ramp"),
+        Mesh3d(meshes.add(ramp_mesh)),
+        MeshMaterial3d(materials.add(PsxMaterial::color(Color::srgb(0.5, 0.45, 0.3)))),
+    ));
+    commands.insert_resource(SandboxContact(contact));
     let lens: engine::camera::LensData = load_ron("sandbox/camera.ron").expect("sandbox camera lens");
     commands.spawn((
         Name::new("Sandbox camera"),
@@ -124,11 +143,15 @@ fn walk(
     pad: Res<ControllerState>,
     time: Res<Time>,
     tuning: Res<WalkerTuning>,
+    ground: Res<SandboxContact>,
     mut q: Query<&mut Transform, With<Walker>>,
 ) {
     let dir = pad.direction();
     for mut t in &mut q {
         t.translation += Vec3::new(dir.x, 0.0, -dir.y) * tuning.speed * time.delta_secs();
+        if let Some((_, height)) = ground.0.sample(t.translation.to_array().map(f64::from)) {
+            t.translation.y = height as f32 + tuning.floor_clearance_m;
+        }
     }
 }
 

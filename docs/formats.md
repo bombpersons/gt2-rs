@@ -650,3 +650,25 @@ and reflection rendering remain work.
    blocker — the six overlays are extracted (`docs/overlays/`) — so the
    remaining work is reading the per-screen loaders inside them. The `.tro`/
    `.cdo` geometry loaders are in the same place.
+
+
+## Course collision grids and native format
+
+The node +9C/+A0 collision grid, cell lists and polygon metadata are now
+decoded across all 126 courses. [Road contact evidence](road-contact-evidence.md)
+records source offsets, counts, sampling and runtime comparisons.
+
+`CourseNode::contact` is an optional engine `ContactMesh`: a local metre
+origin, horizontal grid origin/cell sizes/dimensions, ordered polygon-index
+lists and triangle/quad metre vertices with surface/variant/flag metadata.
+`horizontal_step_m` expresses containment/quad-centre precision;
+`height_step_m` expresses the signed height interpolation boundary. There are
+no file pointers, packed primitive words or GPU commands at runtime.
+`contact_search_origin_m` retains the exact centreline point for edge ties.
+
+Author those fields directly in RON, validate with `ContactMesh::validate`,
+and use `sample` or `CourseData::road_contact`. A quad's vertices are clockwise
+in the horizontal (x,z) plane; its height uses a centre fan. Cell order is
+significant for overlapping polygons. `engine/assets/sandbox/contact.ron`
+is a complete hand-authored flat floor/ramp example, used by the sandbox's
+ordinary walking controller and rendered at the same vertices.

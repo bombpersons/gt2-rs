@@ -312,6 +312,14 @@ def export_tuning(ram_path, assets):
         # 80039EC4..EDC expands x * 13 * 63 * 2 with shifts/adds.
         activation_per_mps=(13 * 63 * 2) / 4096,
         angle_threshold_ratios=[v / 4096 for v in thresholds]))
+    write('vehicle/road_contact.ron',dict(
+        wheel_levers_m=((-car(0x18)/4096,car(0x0C)/4096),(car(0x18)/4096,car(0x0C)/4096),
+                        (-car(0x1A)/4096,-car(0x0E)/4096),(car(0x1A)/4096,-car(0x0E)/4096)),
+        wheelbase_m=car(0x10)/4096,track_m=car(0x12)/4096,rear_height_fraction=car(0x14)/4096,
+        bump_response_per_mps=immediate(0x43428,0x2405)/4096,
+        bumps=[dict(amplitude_m=read(0x46F88+i*2,'h')/4096,cycles_per_m=read(0x46F98+i*2,'h')/256,
+                    scale_with_speed=read(0x46FA8+i,'B')!=0) for i in range(8)],
+        angle_threshold_ratios=[v/4096 for v in thresholds]))
     offsets = [v / 65536 for v in values(0x2F350, 8, 'i', 4)]
     focal = read(0x2F370 + 2 * read(0x1C9992, 'B'), 'h')
     outer = BASE - 0x2C

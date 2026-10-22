@@ -25,6 +25,12 @@
 //!   cross-section, so two adjacent quads may not share their edge exactly;
 //!   keep that (it is what the original draws).
 //!
+//! Collision uses node-local [`ContactMesh`] grids and ordered polygons,
+//! separately from the old surface ribbon. [`CourseData::road_contact`]
+//! walks the road nodes and samples a containing triangle/quad. Imported
+//! contact geometry and search origins retain exact metre coordinates;
+//! another game can author the same grids directly (the sandbox does).
+//!
 //! Span selection has one quirk worth keeping: the original's span table also
 //! stores [`CourseData::level_wrap`]. A level above it wraps back into
 //! `1..=level_wrap` (skipping 0), and a span whose `min_level` is below the
@@ -37,6 +43,9 @@
 //! under the size of a tick's movement, and the format stays readable. Keep the
 //! integer form in the importer (and in format notes) as the evidence.
 use serde::{Deserialize, Serialize};
+
+mod contact;
+pub use contact::{ContactMesh, ContactPolygon, RoadContact};
 
 /// A course: one lap's road table plus its draw spans.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -82,6 +91,12 @@ pub struct CourseNode {
     /// original has no surface here; [`CourseData::surface_quads`] skips it.
     #[serde(default)]
     pub surface_m: [[f32; 3]; 4],
+    /// Exact centreline point for contact-node boundaries. f64 preserves the
+    /// imported 16.16 position even far from the course origin.
+    #[serde(default)]
+    pub contact_search_origin_m: Option<[f64; 3]>,
+    #[serde(default)]
+    pub contact: Option<ContactMesh>,
 }
 
 /// A piece of drawn road. The original selects one from the car's position and
@@ -280,6 +295,8 @@ mod tests {
             position_m,
             direction: [1.0, 0.0, 0.0],
             surface_m: [[0.0; 3]; 4],
+            contact_search_origin_m: None,
+            contact: None,
         }
     }
 

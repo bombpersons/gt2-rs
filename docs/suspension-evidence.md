@@ -11,6 +11,11 @@ state remain observed inputs. Vertical integration and collision correction
 are not part of this stage. These are connected subsystem comparisons, not
 a closed B-1 driving trajectory. The visible car still has its checkpoint pose.
 
+The following [road-contact stage](road-contact-evidence.md) now derives those
+road inputs natively from decoded polygons and retains the original basis
+ordering. Its 257 comparisons include this native suspension stage; corrected
+body motion/angles and force inputs remain explicit.
+
 ## Identity and reproduction
 
 USA Simulation Mode Rev 2, Vitz F '99, B-1 at vblank 7500.
