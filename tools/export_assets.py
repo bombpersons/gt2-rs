@@ -20,6 +20,10 @@ ROOT = Path(__file__).resolve().parents[1]
 BASE = 0xA96B4
 
 
+class RonVariant(str):
+    """Authored enum syntax; values still come from the supplied checkpoint."""
+
+
 def run(command):
     print('+ ' + ' '.join(map(str, command)), flush=True)
     subprocess.run(list(map(str, command)), cwd=ROOT, check=True)
@@ -50,6 +54,8 @@ def capture(disc, bios, work):
 
 
 def ron(value):
+    if isinstance(value, RonVariant):
+        return str(value)
     if isinstance(value, dict):
         return '(' + ', '.join(k + ': ' + ron(v) for k, v in value.items()) + ')'
     if isinstance(value, tuple):
@@ -134,6 +140,27 @@ def export_tuning(ram_path, assets):
         wheel_rotational_mass=(car(0x410, 'H') / 4096, car(0x412, 'H') / 4096),
         surface_resistance=[v / 4096 for v in values(0x46E00, 8, 'i', 4)],
         resistance_curve=resistance_curve))
+    differentials = []
+    for axle in range(2):
+        mode = car(0x37A + axle, 'B')
+        preload = car(0x37C + axle * 4, 'i')
+        drive = car(0x384 + axle * 4, 'i')
+        coast = car(0x38C + axle * 4, 'i')
+        if mode in [0, 1, 2]:
+            variant = ['Independent', 'Locked', 'Open'][mode]
+        elif mode in [3, 4]:
+            variant = 'Clutch' + ron(dict(preload_torque=preload, drive_response=drive / 4096, coast_response=coast / 4096))
+        elif mode == 5:
+            variant = 'Viscous' + ron(dict(slip_squared_limit_mps2=preload / 4096, torque_per_squared_mps=drive))
+        elif mode in [6, 7]:
+            variant = 'YawBiased' + ron(dict(response=preload))
+        else:
+            raise ValueError('Unsupported original differential kind')
+        differentials.append(RonVariant(variant))
+    write('vehicle/wheel_rotation.ron', dict(
+        radius_m=tuple(car(0x3E4 + axle * 2) / 4096 for axle in range(2)),
+        rotation_response=tuple(car(0x3F8 + axle * 4, 'i') / 512 for axle in range(2)),
+        differentials=tuple(differentials), yaw_bias_min_forward_mps=immediate(0x45854, 0x2842) / 4096))
     # Wheel steering uses a biased signed sine quantizer. Verify the native
     # formula against every consumed sine/cosine table entry for this overlay.
     for phase in range(5120):

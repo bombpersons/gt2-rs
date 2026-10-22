@@ -9,8 +9,10 @@ low-speed lateral correction. It runs with the existing native geometric
 and longitudinal slip rules in the same tick.
 
 This establishes wheel-force preparation, not a complete tyre/contact/body
-simulation. The load/camber/surface response that supplies grip capacity,
-wheel rotation dynamics and drivetrain/body integration remain unfinished.
+simulation. Load/camber/surface response that supplies grip capacity and
+drivetrain/body integration remain unfinished. The separate
+[wheel-rotation phase](wheel-rotation-evidence.md) now consumes tyre response
+natively while retaining measured inputs from the central axle solver.
 Forces retain explicit **original internal force units**; a conversion to
 newtons has not been established.
 

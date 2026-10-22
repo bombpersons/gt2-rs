@@ -67,9 +67,10 @@ See `docs/assets.md`; run the public history audit before every push.
   including independent holdouts and complete pedal-to-demand integration.
   Longitudinal wheel slip now matches 268 original wheel executions, with
   all 4096 steering bases verified, and supplies assistance in 36 natural
-  physics ticks exactly. Wheel/contact rotation and upstream yaw-correction
-  signals remain inputs; their producers and coupled braking deceleration
-  remain unported. See docs/longitudinal-slip-evidence.md.
+  physics ticks exactly. Contact motion, speed response and upstream yaw
+  signals remain measured inputs; wheel integration is ported separately
+  below. Coupled braking deceleration remains unfinished.
+  See docs/longitudinal-slip-evidence.md.
 - Paired tyre responses and full per-wheel longitudinal/lateral force
   preparation now match 972 original wheel executions, including low-speed
   correction and independent holdouts. Both slip stages feed forces natively;
@@ -80,6 +81,15 @@ See `docs/assets.md`; run the public history audit before every push.
   feed the phase; all contact masks, surfaces and signed stopping branches
   are covered. Load/grip, aerodynamic preparation and final body/drivetrain
   coupling remain unfinished. See docs/forward-dynamics-evidence.md.
+- Wheel reaction torque, yaw-biased preparation and all eight original
+  differential modes now match 230 original car executions (920 wheels),
+  including consecutive clutch history, an independent mixed-axle
+  holdout and exact consumed yaw-gate boundaries. Both slip stages, tyre force, brake allocation and forward
+  dynamics feed this phase natively. The intervening engine/transmission/axle
+  solver at 80045AE8 remains an explicit measured boundary, including its
+  right-wheel angular history slots. It is the next coupling target;
+  contact/load/grip, auxiliary/yaw inputs, body coupling and live wheel
+  animation remain open. See docs/wheel-rotation-evidence.md.
 
 ## Work order
 

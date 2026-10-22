@@ -20,7 +20,13 @@ stages computed natively in the same tick.
 [Surface resistance and forward integration](forward-dynamics-evidence.md)
 match 183 original car executions before drivetrain coupling, with native tyre
 forces, all wheel-contact combinations and exact signed stopping behavior.
-Drivetrain/body force coupling, upstream contact/rotation/yaw inputs, live wheel
+[Wheel reaction torque and differential rotation](wheel-rotation-evidence.md)
+match 230 original car executions (920 wheels), including all eight source
+modes, persistent clutch history, a fresh mixed-axle holdout and exact consumed
+yaw-gate boundaries with nonzero suppressed inputs. Both slip
+stages, tyre force, brakes and forward dynamics feed these checks natively;
+the intervening engine/transmission/axle solver remains a measured boundary.
+Drivetrain/body force coupling, upstream contact/load/yaw inputs, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.
 

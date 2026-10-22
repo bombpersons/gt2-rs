@@ -5,8 +5,10 @@ project contact velocity onto the steered wheel axis, compare it with tread
 speed, select a normalization velocity and force direction, then calculate
 signed slip with stopped-wheel handling and a low-speed fade. The optional
 connection to brake assistance replaces its measured longitudinal-slip input.
-Wheel rotation, contact motion, speed response, grip and body forces remain
-separate work; this feature does not accelerate the live car.
+Contact motion, speed response, grip and body forces remain separate work;
+this feature does not accelerate the live car. Wheel tread integration is
+now ported in [wheel rotation](wheel-rotation-evidence.md), with axle-drive
+inputs still measured at the intervening drivetrain boundary.
 
 ## Identity and reproduction
 
@@ -129,7 +131,8 @@ The source-only example mod disables this unused dynamics feature and keeps
 its handmade course/body/camera assets independent of private tuning.
 
 [Tyre-force curves and preparation](tyre-force-evidence.md) now consume these
-outputs natively. Wheel surface speed/response generation, contact/rotation
-dynamics, grip and yaw signals, coupled drivetrain/body acceleration and a
+outputs natively. [Wheel rotation](wheel-rotation-evidence.md) now supplies
+the tread integration rule, with the intervening axle solver still open.
+Contact motion, speed-response generation, grip and yaw signals, coupled drivetrain/body acceleration and a
 playable B-1 session are still unfinished. These exact subsystem observations
 do not establish whole-vehicle or all-car parity.
