@@ -16,7 +16,9 @@ See [how the screenshots were captured](docs/screenshots.md).
 
 - **Separate engine and game.** `engine/` provides reusable formats, rendering,
   collision queries and registries. `game/` contains GT2's vehicle rules,
-  course presentation and cameras. A desktop content editor is planned.
+  course presentation and cameras. The desktop editor currently handles
+  object and trigger placements; course geometry and tuning editors remain
+  planned.
 - **Mods are crates.** A mod can replace assets, reuse public controllers and
   disable or replace feature plugins. [The example mod](mods/example) renders
   a handmade course, car and wheels through the same renderer and camera rules:
@@ -46,7 +48,7 @@ milestone. Menus, licence outcomes, races and progression still need work.
 | Playable B-1 test, HUD, sounds and pass/fail/retry | Not yet complete |
 | Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |
 | Example mod and engine sandbox | Run with handmade assets and no disc data |
-| Desktop content editor | Planned |
+| Desktop content editor | Placement editor shell; course geometry and tuning editors remain |
 
 [PORT_PLAN.md](PORT_PLAN.md) tracks the remaining scope.
 [docs/evidence.md](docs/evidence.md) indexes the original observations,
@@ -83,6 +85,7 @@ USA Simulation Mode Rev 2 disc and NTSC-U BIOS. The exporter needs an installed
 python3 tools/export_assets.py /path/to/game.cue --bios /path/to/scph5501.bin
 cargo run                              # current B-1 reference scene
 cargo run -- --software                # software renderer
+cargo run -p editor -- engine/assets/sandbox/placements.ron # placement editor
 cargo run -p example-mod               # handmade example, no disc required
 cargo run -p engine --example sandbox  # engine-only handmade scene
 cargo test --workspace --all-features  # routine checks, including local recordings
@@ -112,6 +115,8 @@ and `.psx/`. CI audits the public Git history with
 | `game/` | GT2 vehicle rules, course and car presentation, cameras and trajectory tests ([guide](game/AGENTS.md)) |
 | `mods/example/` | A separate mod built from handmade assets using the game's public API ([README](mods/example/README.md)) |
 | `psx-bevy/` | The psx template's rendering, ticks, input, menus, testing and developer MCP ([README](psx-bevy/README.md)) |
+| `editor/` | Desktop placement editor, with undo/redo and exact untouched saves ([guide](editor/AGENTS.md)) |
+| `vendor/` | Template-owned psx disc and asset libraries |
 | `tools/import/` | Offline disc-format importers that write engine-native assets |
 | `tools/` | Local asset exporter, original-recording scripts and verification tools |
 | `docs/` | Evidence, engine model, asset setup and template edit notes |

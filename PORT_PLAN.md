@@ -200,7 +200,9 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
    builds. Port all behaviour required by the supplied disc.
 6. Grow an engine-only desktop editor as formats settle: author assets from
    nothing, geometry/collision, placement, triggers and tuning, common-format
-   imports and validation. Make content-folder overrides usable for total
+   imports and validation. The 0.3.8 template shell now edits `LevelData`
+   placements and triggers; racing formats still need editor support.
+   Make content-folder overrides usable for total
    conversions and prove extension through the example mod.
 
 ## Verification and continuity

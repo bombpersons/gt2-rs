@@ -80,6 +80,12 @@ Evidence-recording scripts and importers live in the workspace's `tools/`.
   `psx-bevy/README.md`, "Rebinding".
 - `DisplayPlugin` (F2: resolution, aspect, fullscreen, `PsxLook`) is added by the
   launcher too; open it from your options flow with `DisplayMenu::open()`.
+- Both menus come with a plain built-in view. Once the port has its own
+  front end, give them the game's look: turn the built-in views off
+  (`ControlsUi`, `DisplayUi` in `src/main.rs`'s `add`), copy the views into
+  `game/` and restyle or merge them into the options screen. Never restyle
+  them inside `psx-bevy/`. See `psx-bevy/README.md`, "Making the menus the
+  game's own".
   The screen can change size at runtime, so anchor 2D HUD elements with
   `PsxAnchor` rather than positions computed from `PsxScreen` at startup.
   See `psx-bevy/README.md`, "Screen size".

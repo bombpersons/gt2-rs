@@ -20,6 +20,10 @@ the start. Read the guide for the crate you are working in:
 - `game/AGENTS.md`: turning reverse-engineering evidence into idiomatic Bevy
   code, keeping it extensible, mods (`mods/example`), tick rate, trajectory
   tests, verification.
+- `editor/AGENTS.md`: the desktop editor for engine formats, depending on
+  `engine/` only. It currently edits object and trigger placements.
+- `vendor/`: template-owned psx-media and psx-assets; fix these upstream
+  rather than editing the vendored copies.
 - `psx-bevy/`: the template's crate, updated by `psx template update`. Build
   on it from `engine/` and `game/`; edit it only as `psx-bevy/AGENTS.md`
   allows, and list every edit in `docs/template.md`. Its README documents

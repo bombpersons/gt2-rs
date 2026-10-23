@@ -7,12 +7,16 @@
 #   game/          this title: controllers, rules, HUD, menus, baked assets
 #   tools/import/  offline importers: extracted disc data -> engine formats
 #   mods/example/  a mod: a small game built on game/ from hand-made assets
+#   vendor/        template-owned psx disc and asset libraries
+#   editor/        desktop editor for engine formats
 #
 # Standalone: copying the template does not require the psx workspace.
 [workspace]
 resolver = "3"
-members = ["psx-bevy", "engine", "game", "tools/import", "mods/example"]
+members = ["psx-bevy", "engine", "game", "tools/import", "mods/example", "editor"]
 default-members = ["game"]
+# Template-owned dependencies; their tests run in the psx repository.
+exclude = ["vendor"]
 
 [workspace.package]
 version = "0.1.0"
@@ -38,6 +42,11 @@ bevy = { version = "=0.20.0", default-features = false, features = [
 bevy_render = { version = "=0.20.0", default-features = false, features = ["gles"] }
 # Persist physical bindings without enabling serialization on the renderer/world.
 bevy_input = { version = "=0.20.0", features = ["serialize"] }
+# Align editor/game features so they share one compiled Bevy.
+bevy_egui = { version = "=0.43.1", default-features = false, features = ["render", "default_fonts"] }
+# Available for migrating the offline importers to direct disc reads.
+psx-media = { path = "vendor/psx-media" }
+psx-assets = { path = "vendor/psx-assets" }
 rmcp = { version = "=3.5.1", features = ["transport-io"] }
 tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "io-std"] }
 serde = { version = "1", features = ["derive", "rc"] }

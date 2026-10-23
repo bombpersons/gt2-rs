@@ -45,3 +45,7 @@ __pycache__/
 # Ghidra analysis projects (the toolkit's cached decompiler databases),
 # which cannot live under .psx/ because Ghidra rejects hidden path components.
 ghidra-projects/
+
+# Future first-launch disc imports (including interrupted imports).
+assets/imported/
+assets/imported.partial/
