@@ -17,7 +17,7 @@ BASE = 0x800A96B4
 OUT = Path('game/tests/data/original/driver_assist')
 PREFIX = re.compile(r'^(\d+) (\d+) ([0-9a-f]{8}) ')
 EFFECT = re.compile(r'; \[([0-9a-f]+)\](=>|=)([0-9a-f]+)$')
-PHASES = {0x8003E4FC: 'before', 0x8003E68C: 'signals', 0x8003DE68: 'traction_before',
+PHASES = {0x8002FB18: 'control_before', 0x8002FCB0: 'control_after', 0x8002FF7C: 'control_ready', 0x8003E4FC: 'before', 0x8003E68C: 'signals', 0x8003DE68: 'traction_before',
           0x8003DFCC: 'traction_after', 0x8003DBE8: 'brake_before', 0x8003DE64: 'brake_after',
           0x8003A198: 'prepared', 0x8003A278: 'allocated'}
 
@@ -40,11 +40,11 @@ def export(folder, frames, initial):
             return struct.unpack_from('<' + fmt, ram, (BASE & 0x1FFFFF) + offset)[0]
         values = {key: car(off, fmt) for key, off, fmt in [
             ('forward', 0x6A4, 'i'), ('lateral', 0x6A8, 'i'), ('yaw', 0x64C, 'i'),
-            ('steering', 0x60C, 'h'), ('feedback', 0x64A, 'h'), ('wheelbase', 0x10, 'h'),
+            ('steering', 0x60C, 'h'), ('steering_rate', 0x60E, 'h'), ('feedback', 0x64A, 'h'), ('wheelbase', 0x10, 'h'),
             ('layout', 0x370, 'B'), ('engagement', 0x619, 'B'), ('gear', 0x618, 'B'),
             ('throttle', 0x708, 'h'), ('available', 0x710, 'i'), ('source', 0x45D, 'b'),
             ('gain', 0x450, 'i'), ('fade', 0x454, 'h'), ('speed_gain', 0x456, 'h'),
-            ('speed_response', 0x700, 'h'), ('correction_gain', 0x458, 'h'), ('correction_threshold', 0x45A, 'h'),
+            ('speed_response', 0x700, 'h'), ('negative_limit', 0x70A, 'h'), ('positive_limit', 0x70C, 'h'), ('correction_gain', 0x458, 'h'), ('correction_threshold', 0x45A, 'h'),
             ('target0', 0x1FC, 'h'), ('target1', 0x2D4, 'h'), ('brake_target0', 0x1FE, 'h'),
             ('brake_target1', 0x2D6, 'h'), ('slip_gain0', 0x424, 'i'), ('slip_gain1', 0x428, 'i'),
             ('grip_gain0', 0x42C, 'h'), ('grip_gain1', 0x42E, 'h'), ('handbrake', 0x614, 'h')
@@ -56,12 +56,13 @@ def export(folder, frames, initial):
         values['handbrake_capacity'] = car(0x41C, 'i')
         for i in range(4):
             for key, off, fmt in [('load', 8, 'i'), ('slip', 0x44, 'h'), ('brake', 0x60, 'h'),
-                                  ('response', 0x2A, 'h'), ('grip', 0x34, 'i')]:
+                                  ('response', 0x2A, 'h'), ('grip', 0x34, 'i'), ('direction', 0x50, 'h'), ('local_forward', 0x2C, 'i'), ('local_lateral', 0x30, 'i')]:
                 values[f'{key}{i}'] = car(0x460 + 0x68 * i + off, fmt)
             values[f'demand{i}'] = struct.unpack_from('<i', scratch, 4 + 0x1C * i)[0]
         return values
     cars = {}
     cleared = {}
+    requests = {}
     for line in (folder / 'trace.txt').open():
         prefix = PREFIX.match(line)
         if not prefix:
@@ -69,6 +70,12 @@ def export(folder, frames, initial):
         absolute, cycle, pc = prefix.groups()
         frame, cycle, pc = int(absolute) - start, int(cycle), int(pc, 16)
         effect = EFFECT.search(line.strip())
+        if effect and effect[2] == '=>' and pc in [0x8002FCB0, 0x8002FCC4]:
+            raw = effect[3]
+            v = int(raw, 16)
+            if v >= 1 << (len(raw) * 4 - 1):
+                v -= 1 << (len(raw) * 4)
+            requests.setdefault(frame, {})['flags' if pc == 0x8002FCB0 else 'direction'] = v
         if effect and effect[2] == '=':
             address, raw = int(effect[1], 16), effect[3]
             if 0x1F800000 <= address < 0x1F800400:
@@ -87,14 +94,53 @@ def export(folder, frames, initial):
     for frame, car in sorted(cars.items()):
         assert {'before', 'signals', 'prepared', 'allocated'} <= set(car)
         assert cleared[frame] == {0x8003E4FC, 0x8003E500}, 'observe both scratch signal clears'
+        assert ('control_before' in car) == ('control_after' in car) == ('control_ready' in car)
         assert ('traction_before' in car) == ('traction_after' in car)
         assert ('brake_before' in car) == ('brake_after' in car)
-        row = dict(run_frame=frame, traction_called=int('traction_before' in car), brake_called=int('brake_before' in car))
+        row = dict(run_frame=frame, control_called=int('control_before' in car), traction_called=int('traction_before' in car), brake_called=int('brake_before' in car))
+        control = requests.get(frame, {})
+        if row['control_called']:
+            assert set(control) == {'flags', 'direction'} and control['flags'] == 0, 'digital controls required'
+        row.update(control_flags=control.get('flags', 0), control_direction=control.get('direction', 0))
         for phase in PHASES.values():
             values = car.get(phase, car['signals'])
             row.update({f'{phase}_{key}': value for key, value in values.items()})
         rows.append(row)
     return rows
+
+
+def extension_cases(holdout):
+    # Control -> signed limit -> normalized response -> traction. Intervene only in motion and
+    # tuning; +700 itself is produced by the original steering controller.
+    speeds = [33179, 34997, 137171, -137171] if holdout else [34139, 34140, 102605, -102605]
+    laterals = [-79173, -17391, 17391, 79173] if holdout else [-60000, -10000, 10000, 60000]
+    for speed in speeds:
+        for lateral in laterals:
+            case = {0x45D: (1, 0), 0x370: (1, 1), 0x619: (1, 1), 0x6A4: (4, speed),
+                    0x450: (4, 1379 if holdout else 1024), 0x454: (2, 137),
+                    0x456: (2, 1379 if holdout else 1024), 0x64A: (2, 0),
+                    0x60C: (2, (173 if holdout else 137) * (1 if lateral < 0 else -1)), 0x60E: (2, 0)}
+            for wheel in range(4):
+                base = 0x460 + wheel * 0x68
+                case[base + 0x18] = (4, 131173 if holdout else 131072)
+                case[base + 0x2C] = (4, 40960)
+                case[base + 0x30] = (4, lateral)
+            yield case
+    # Final normalization has a signed halfword store before clamping.
+    # Opposite steering, above-limit steering and a wrapping ratio are distinct.
+    angles = [-193, 1193, 3913] if holdout else [-171, 1001, 4097]
+    for sign in [-1, 1]:
+        for angle in angles:
+            case = {0x45D: (1, 0), 0x370: (1, 1), 0x619: (1, 1),
+                    0x6A4: (4, 137171 if holdout else 102605), 0x60C: (2, sign * angle),
+                    0x60E: (2, 0), 0x450: (4, 1379 if holdout else 1024),
+                    0x454: (2, 137), 0x456: (2, 1379 if holdout else 1024), 0x64A: (2, 0)}
+            for wheel in range(4):
+                base = 0x460 + wheel * 0x68
+                case[base + 0x18] = (4, 131173 if holdout else 131072)
+                case[base + 0x2C] = (4, 40960)
+                case[base + 0x30] = (4, -sign * (79173 if holdout else 60000))
+            yield case
 
 
 def cases(holdout):
@@ -118,6 +164,7 @@ def cases(holdout):
                 case[base + 0x18] = (4, 197531 + wheel * 379)
                 case[base + 0x2C] = (4, 13719 + wheel * 193)
             yield case
+        yield from extension_cases(True)
         return
     for speed in [-409601, -1, 0, 1, 4096, 409601]:
         for angle, yaw in [(0, 0), (317, 1), (-317, -1), (317, -17391), (-317, 17391), (2048, 7319)]:
@@ -141,6 +188,7 @@ def cases(holdout):
         for gain in [-8192, 0, 8192]:
             yield {0x619: (1, 1), 0x618: (1, gear), 0x450: (4, gain), 0x454: (2, 1),
                    0x478: (4, 131072), 0x48C: (4, 65536), 0x468: (4, 0)}
+    yield from extension_cases(False)
 
 
 def main():
@@ -163,7 +211,7 @@ def main():
         folder = Path('.psx/runs') / f'driver-assist-{name}-{label}'
         command = ['psx', 'run', '--from-state', str(args.state), '--frames', str(frames), '--input', json.dumps(replay),
                    '--trace', '--max-events', '1000000', '--watch', f'{BASE:08X}:1952', '--out', str(folder), '--summary']
-        for region in ['8003E4FC-8003E7A8', '8003DBE8-8003E020', '8003A198-8003A28C']:
+        for region in ['8002FB18-8002FF80', '8003E4FC-8003E7A8', '8003DBE8-8003E020', '8003A198-8003A28C']:
             command += ['--trace-range', region]
         ram = bytearray(initial)
         for offset, (width, value) in case.items():

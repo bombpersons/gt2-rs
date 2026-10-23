@@ -1,6 +1,6 @@
 //! Speed-dependent digital steering targets and their damped spring response.
-//! Velocity and front-wheel slip angles are supplied by the dynamics model;
-//! `docs/driving-evidence.md` defines this still-unported boundary.
+//! Retained contact motion and the shared wheel-slip feature supply inputs.
+//! `docs/driving-evidence.md` records the control and traction boundaries.
 use super::{PHYSICS_STEP_SECONDS, PlayerPedals};
 use bevy::prelude::*;
 use engine::controller::{Button, ControllerState};
@@ -42,8 +42,7 @@ pub struct DigitalSteeringInput {
     pub direction: f32,
 }
 
-/// State supplied by the unported dynamics/tyre model, sampled before control
-/// processing. These are car+0x6A4 and front wheels +0x4B0/+0x518. Slip is
+/// Retained contact state sampled before control processing. These are car+0x6A4 and front wheels +0x4B0/+0x518. Slip is
 /// recomputed by `80039DE8` -> atan2(-wheel_vz, wheel_vx) before controls.
 #[derive(Component, Default, Debug, Clone, Copy, Reflect)]
 #[reflect(Component)]
@@ -91,17 +90,41 @@ impl SteeringTuning {
     /// threshold while moving forwards above 0x855B/4096 m/s. In that case
     /// it preserves a larger target in the current turn direction.
     pub fn limits(&self, state: SteeringKinematics) -> [f32; 2] {
+        self.limits_with_extension(state).0
+    }
+
+    /// Intermediate signed limit at physics+700 (8002FC70/8002FCAC),
+    /// before 8002FF30..8002FF78 replaces it with the traction response fraction.
+    pub fn traction_extension_turns(&self, state: SteeringKinematics) -> f32 {
+        self.limits_with_extension(state).1
+    }
+
+    /// Applied steering as a fraction of the signed extended limit, or zero
+    /// when extension is inactive. 8002FF4C truncates the ratio, 8002FF54
+    /// narrows it to a signed halfword, then 8002FF60..8002FF78 clamps to [0,1].
+    pub fn traction_response(&self, angle_turns: f32, state: SteeringKinematics) -> f32 {
+        let extension = self.traction_extension_turns(state);
+        if extension == 0.0 {
+            return 0.0;
+        }
+        let ratio = (angle_turns as f64 / extension as f64 * 4096.0).trunc() as i64 as i16;
+        (ratio as f32 / 4096.0).clamp(0.0, 1.0)
+    }
+
+    fn limits_with_extension(&self, state: SteeringKinematics) -> ([f32; 2], f32) {
         let limit = self.speed_limit(state.forward_velocity_mps);
         let mean = angle_grid((state.front_slip_turns[0] as f64 + state.front_slip_turns[1] as f64) / 2.0);
         let threshold = limit.min(self.extension_threshold_turns);
         if state.forward_velocity_mps > self.extension_min_speed_mps && (mean < -threshold || mean > threshold) {
             if mean > 0.0 {
-                [-limit, mean.min(self.extended_limit_turns)]
+                let extended = mean.min(self.extended_limit_turns);
+                ([-limit, extended], extended)
             } else {
-                [mean.max(-self.extended_limit_turns), limit]
+                let extended = mean.max(-self.extended_limit_turns);
+                ([extended, limit], extended)
             }
         } else {
-            [-limit, limit]
+            ([-limit, limit], 0.0)
         }
     }
 

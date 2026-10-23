@@ -324,7 +324,7 @@ def export_tuning(ram_path, assets):
         wheelbase_m=car(0x10)/4096, radians_per_turn=25736/4096,
         angle_threshold_ratios=[v/4096 for v in thresholds],
         traction_strength=car(0x450,'i')/4096, feedback_fade_per_turn=car(0x454)/4096,
-        speed_suppression=car(0x456)/4096,
+        steering_response_suppression=car(0x456)/4096,
         traction_slip_target=tuple(car(0x1FC+i*0xD8)/4096 for i in range(2)),
         brake_correction_gain=car(0x458)/4096, brake_correction_threshold=car(0x45A)/4096))
     write('vehicle/aerodynamics.ron', dict(

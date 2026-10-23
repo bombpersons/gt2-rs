@@ -179,11 +179,13 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   See docs/aerodynamics-evidence.md.
 
 - Body-motion yaw/lateral stability signals and ordinary traction throttle
-  now match 267 original car executions, including 92 fresh holdout calls.
+  now match 311 original car executions, including 114 fresh holdout calls.
   Native signals feed per-wheel assistance, brake allocation and wheel yaw
   inputs. Handmade tests prove independent/per-car rules and optional
   pedal-to-engine integration without drivetrain or brake plugins. Special
-  profile/timer paths and car speed-response production remain separate.
+  profile/timer paths remain separate. Native wheel direction and digital
+  steering now also produce the normalized steering-extension response used
+  by traction, including both limit signs, normalization clamps and narrowing.
   Next: close remaining control/force producers and the full B-1 feedback loop,
   collision, live vehicle presentation and licence flow.
   See docs/driver-assist-evidence.md.

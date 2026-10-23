@@ -107,6 +107,17 @@ scaled absolute forward speed and its maximum; final dash formatting remains
 open. New driving recordings use corrected speed field names/widths;
 historical fixtures retain their old unused RPM-related column labels.
 
+## Steering extension consumed by traction
+
+The limit-building branch first writes its signed extended limit to +700.
+After the steering spring update, `8002FF30..8002FF78` replaces that temporary
+angle with the applied-command/extended-limit fraction, narrowed then clamped
+to [0,1]. The ordinary traction controller consumes this fraction. The native
+steering API now supplies it through the optional assistance bridge; the
+[combined original comparisons](driver-assist-evidence.md) check wheel direction,
+steering, normalization and traction/brake outputs together. It is not a separate
+speed-response curve.
+
 ## Digital controls
 
 The pad route is `8003C250` -> `80013EF0` -> `80013C90`. It produces a

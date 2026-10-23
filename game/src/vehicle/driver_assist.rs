@@ -4,7 +4,7 @@
 //! torque. 8003DFDC/DE68 then reduces effective throttle on driven-wheel slip.
 //! Motion, contact and logical requests remain independent producers.
 use super::{
-    PedalTravel, SteeringResponse, VehicleSystems, VehicleVelocity,
+    PedalTravel, SteeringKinematics, SteeringResponse, SteeringTuning, VehicleSystems, VehicleVelocity,
     body_dynamics::BodyDynamics,
     brake_assist::BrakeAssistInput,
     braking::BrakingSystems,
@@ -36,7 +36,9 @@ pub struct DriverAssistTuning {
     /// ordinary traction assistance at the caller, regardless of strength.
     pub traction_strength: f32,
     pub feedback_fade_per_turn: f32,
-    pub speed_suppression: f32,
+    /// Physics+456 /4096: suppression at full steering-extension response.
+    #[serde(alias = "speed_suppression")]
+    pub steering_response_suppression: f32,
     /// Physics+1FC/+2D4, /4096; target follows the lowest loaded driven slip.
     pub traction_slip_target: [f32; 2],
     /// Physics+458/+45A /4096, passed to the ordinary brake consumer.
@@ -57,8 +59,9 @@ pub struct DriverAssistInput {
     pub steering_turns: f32,
     /// Lateral acceleration feedback (+64A), sampled before this tick's forces.
     pub lateral_feedback_turns: f32,
-    /// Speed-dependent response (+700 /4096); its upstream producer is separate.
-    pub speed_response: f32,
+    /// Applied steering / signed extended limit (+700 /4096), clamped to
+    /// [0,1] after controls. Zero when slip extension is inactive.
+    pub steering_extension_response: f32,
     pub effective_throttle: f32,
     pub available_torque: f32,
     pub engine_coupled: bool,
@@ -126,8 +129,11 @@ impl DriverAssistTuning {
                     }
                 }
             }
-            let suppression =
-                if input.reverse_gear { 0.0 } else { product(input.speed_response, self.speed_suppression) };
+            let suppression = if input.reverse_gear {
+                0.0
+            } else {
+                product(input.steering_extension_response, self.steering_response_suppression)
+            };
             let strength = product(self.traction_strength, 1.0 - suppression);
             // The final error/strength product truncates (8007596C), unlike
             // the preceding floor products. This affects throttle cut ticks.
@@ -211,6 +217,7 @@ struct AssistCar {
     body: Option<&'static BodyDynamics>,
     velocity: Option<&'static VehicleVelocity>,
     steering: Option<&'static SteeringResponse>,
+    steering_kinematics: Option<&'static SteeringKinematics>,
     forward: Option<&'static ForwardDynamicsInput>,
     slip: Option<&'static LongitudinalSlip>,
     drive: Option<&'static DrivetrainInput>,
@@ -223,6 +230,7 @@ fn prepare(
     tuning: Res<DriverAssistTuning>,
     engine_tuning: Option<Res<EngineTorqueTuning>>,
     drive_tuning: Option<Res<DrivetrainTuning>>,
+    steering_tuning: Option<Res<SteeringTuning>>,
     mut cars: Query<AssistCar>,
 ) {
     for mut car in &mut cars {
@@ -240,6 +248,9 @@ fn prepare(
         }
         if let Some(steering) = car.steering {
             input.steering_turns = steering.angle_turns;
+        }
+        if let (Some(kinematics), Some(tuning)) = (car.steering_kinematics, steering_tuning.as_deref()) {
+            input.steering_extension_response = tuning.traction_response(input.steering_turns, *kinematics);
         }
         if let Some(forward) = car.forward {
             input.wheel_load = forward.wheel_load;

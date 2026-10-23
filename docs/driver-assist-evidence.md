@@ -1,8 +1,8 @@
 # Stability signals and traction throttle
 
 `vehicle::driver_assist` ports the body-motion signals at `8003E4FC..8003E688`
-and ordinary traction reduction at `8003DFDC` / `8003DE68`. All **267 original
-car executions** match: 175 boundary/natural calls and 92 independently
+and ordinary traction reduction at `8003DFDC` / `8003DE68`. All **311 original
+car executions** match: 197 boundary/natural calls and 114 independently
 recorded holdout calls. Native signal outputs feed per-wheel brake assistance,
 brake allocation and wheel-torque input; traction output feeds effective
 engine throttle. This closes these control producers, not the full vehicle
@@ -36,12 +36,12 @@ in `.psx/`. The updated holdout was recorded after the native implementation.
 
 | Recording | Calls | Coverage |
 |---|---:|---|
-| Boundaries | 175 | Signed/zero speed, steering and yaw, low-word overflow, seven layouts, five engagement modes, fade/feedback/suppression boundaries, reverse, signed gains, unloaded wheels, mixed pedals and handbrake |
-| Holdout | 92 | Independent motion/steering/yaw values, all seven layouts, mixed natural sequences, severe driven-wheel slip |
+| Boundaries | 197 | Signed/zero speed, steering and yaw, low-word overflow, seven layouts, five engagement modes, fade/feedback/suppression boundaries, reverse, signed gains, unloaded wheels, mixed pedals and handbrake |
+| Holdout | 114 | Independent motion/steering/yaw values, all seven layouts, mixed natural sequences, severe driven-wheel slip |
 
-The boundary recording has 80 traction and 120 brake calls; the holdout has
-34 traction and 74 brake calls. Original throttle stores include six complete
-and 20 partial reductions in the boundary set, seven complete and five partial
+The boundary recording has 102 traction and 142 brake calls; the holdout has
+56 traction and 96 brake calls. Original throttle stores include six complete
+and 42 partial reductions in the boundary set, seven complete and 27 partial
 reductions in the holdout. The initial holdout lacked complete cuts; seven
 fresh severe-slip probes extended its coverage rather than relaxing the test.
 
@@ -58,8 +58,8 @@ Physics base is `800A96B4`; wheels start at +460, stride 68 hex.
 | Scratch +90/+92, signed halfwords /4096 | Yaw shortfall and lateral correction |
 | +64A, signed halfword /4096 | Lateral acceleration feedback, turns |
 | +450, word /4096 | Traction strength |
-| +454/+456, signed halfwords /4096 | Feedback fade and speed suppression gain |
-| +700, signed halfword /4096 | Car speed response; separate producer |
+| +454/+456, signed halfwords /4096 | Feedback fade and steering-response suppression gain |
+| +700, signed halfword /4096 | Applied steering / signed extended limit, clamped to [0,1] |
 | +1FC/+2D4, signed halfwords /4096 | Front/rear traction slip targets |
 | Wheel +08/+44 | Nonzero load and signed longitudinal slip (/4096) |
 | +458/+45A, signed halfwords /4096 | Ordinary added-braking gain/threshold |
@@ -90,10 +90,10 @@ product and lower-clamp at zero. Negative authored fade can exceed one.
 Inspect loaded wheels on the driven axles: rear for layouts 0/5, front for 1,
 both otherwise. Retain the smallest slip strictly below one and that wheel's
 axle target. Equal slip retains the earlier target. Reverse has no speed
-suppression; other gears use the sampled response times suppression gain.
+suppression; other gears use steering-extension response times suppression gain.
 
 ```text
-strength = traction_strength * (1 - speed_suppression)
+strength = traction_strength * (1 - steering_response * suppression_gain)
 scale = clamp(1 + truncate((lowest_slip - target * feedback) * strength), 0, 1)
 effective_throttle = scale * effective_throttle
 ```
@@ -104,6 +104,44 @@ zero. The final throttle store narrows to a signed halfword. Boundary tests
 compare exact original signals, consumed throttle, all assisted brake channels
 and all four allocated demands in the same native tick.
 
+## Steering-extension response producer
+
+`+700` is not a speed-dependent gain. It is written twice by the control
+routine. `8002FC30` clears it outside the slip-extension branch. Inside that
+branch, `8002FC70` / `8002FCAC` first store the signed extended steering limit,
+positive for the left side and negative for the right side. After the spring
+has advanced the steering command, `8002FF30..8002FF78` divides the current
+command by that signed limit, truncates on the /4096 grid, narrows the result
+to a signed halfword, then clamps it to [0,1]. This final dimensionless fraction
+is what `8003E71C..8003E730` multiplies by the suppression coefficient. The
+legacy fixture column `speed_response` retains its name to keep the recording
+format recognizable; code now names the consumed quantity explicitly.
+
+`SteeringTuning::traction_extension_turns` exposes the intermediate limit;
+`traction_response` performs final normalization. `DriverAssistInput` calls it
+`steering_extension_response`, and the tuning coefficient is now
+`steering_response_suppression`. Existing exported files using the former
+`speed_suppression` tuning key still load through a serde alias. The exporter
+writes the corrected key.
+
+The expanded recording includes both signed limits, zero extension, the strict
+forward-speed gate, opposite steering (lower clamp), above-limit steering
+(upper clamp), and a ratio that wraps at the halfword store before clamping.
+There are 142 ordinary control calls in the boundary recording and 96 in the
+holdout. In the same headless tick, tests now run native wheel direction from
+observed local contact motion, digital steering from the observed logical
+request and starting spring state, extension normalization, stability signals,
+traction, brake assistance and allocation. Intermediate signed limits, final
+response, steering angle/rate, wheel directions and downstream outputs all
+compare exactly. The final steering and response are no longer injected
+observations on these calls. Source-1 probes still bypass controls as the
+original does.
+
+```sh
+psx disasm --ram .psx/runs/b1-state1200 --addr 8002FB18 --count 105 --text
+psx disasm --ram .psx/runs/b1-state1200 --addr 8002FF30 --count 20 --text
+```
+
 ## Bevy contract and remaining work
 
 `DriverAssistRulesPlugin` is public and independently selectable in `GamePlugins`.
@@ -113,7 +151,9 @@ that resource per car. It requires no model, animation, rendering or other
 feature plugin; there are no joint/clip/state metadata requirements.
 
 Optional body, contact, velocity, steering, force and longitudinal-slip
-components supply their corresponding inputs. Optional drivetrain setup/state
+components supply their corresponding inputs. When steering tuning and
+kinematics are present, the plugin computes the extension response from the
+current steering command instead of consuming an observed response. Optional drivetrain setup/state
 supplies layout and engagement; available engine tuning supplies current curve
 torque. Output bridges update effective engine throttle, brake correction inputs
 and wheel yaw input. `PedalThrottle` explicitly opts into copying fresh pedal
@@ -123,15 +163,17 @@ allocation, transmission preparation and engine torque. Explicit engine and
 allocation ordering remains valid when intermediate plugins are absent.
 
 Handmade tests exercise the rules alone, per-car replacement, optional bridges,
-and pedal -> assistance -> torque with no drivetrain or brake plugins. A second
+and pedal -> assistance -> torque with no drivetrain or brake plugins.
+A handmade extension test also checks both turn signs, reverse bypass,
+opposite steering, and externally owned response without kinematics. A second
 car proves that omitting the pedal marker preserves external request ownership.
-The tuning exporter was rerun from the documented checkpoint and reproduced the
-existing local assistance asset byte for byte.
+The tuning exporter was rerun from the documented checkpoint with the corrected
+RON key, and the full comparison suite loaded that rebuilt tuning.
 
 The special source-2/profile caller and its timer gate at +786/+78E are not
 implemented. Source-1 probes verify only shared signal production and do not
-claim those skipped traction/brake paths. Car speed-response production (+700),
-logical requests, condition/proximity producers, collision and a closed B-1
+claim those skipped traction/brake paths. Physical/analog requests,
+condition/proximity producers, collision and a closed B-1
 trajectory remain separate work. Body/load/slip inputs are observed boundaries
 in the original comparison tests, even where optional native bridges exist.
 
