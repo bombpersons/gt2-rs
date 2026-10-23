@@ -178,6 +178,16 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   and presentation, condition and licence flow.
   See docs/aerodynamics-evidence.md.
 
+- Body-motion yaw/lateral stability signals and ordinary traction throttle
+  now match 267 original car executions, including 92 fresh holdout calls.
+  Native signals feed per-wheel assistance, brake allocation and wheel yaw
+  inputs. Handmade tests prove independent/per-car rules and optional
+  pedal-to-engine integration without drivetrain or brake plugins. Special
+  profile/timer paths and car speed-response production remain separate.
+  Next: close remaining control/force producers and the full B-1 feedback loop,
+  collision, live vehicle presentation and licence flow.
+  See docs/driver-assist-evidence.md.
+
 ## Work order
 
 1. Decode and import real course geometry, materials, textures, object

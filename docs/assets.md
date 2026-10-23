@@ -38,7 +38,7 @@ course/model/paint files, then exports:
 - Vitz high-detail body, paint slot 5 and all decoded wheel detail levels;
 - Checkpoint wheel placements and camera setup;
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
-  brake-assistance tuning, axle tyre curves, low-speed force settings, and
+  brake-assistance and ordinary traction/stability tuning, axle tyre curves, low-speed force settings, and
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,
   gear ratios, engine/axle inertias, centre coupling parameters, transmission
   RPM/speed/slip bands and engagement/timer thresholds, body force lever arms,

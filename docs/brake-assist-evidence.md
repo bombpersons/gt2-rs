@@ -111,6 +111,6 @@ when plugins are registered in the opposite order. A separate car in the
 same tests proves independent AI/replay channels remain unchanged.
 
 [Longitudinal-slip generation](longitudinal-slip-evidence.md) is now ported
-and connected. Wheel response generation, the upstream yaw-signal rules,
-other control writers, coupled tyre/drivetrain/body forces and actual braking
-deceleration remain unfinished. These rules alone cannot drive the live car.
+and connected. [Upstream yaw/lateral stability signals](driver-assist-evidence.md)
+now feed this consumer natively. Other control writers, the complete coupled
+vehicle loop and actual braking deceleration remain unfinished. These rules alone cannot drive the live car.

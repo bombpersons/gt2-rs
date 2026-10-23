@@ -53,7 +53,9 @@ Validation:
 - `cargo test --workspace --all-features` reached a failure in the existing
   untracked `fresh_original_driver_assistance_holdout` test
   (`game/tests/driver_assist.rs:183`): the fixture does not exercise both full
-  and partial throttle cuts. The driver-assist work was left unchanged.
+  and partial throttle cuts. The driver-assist work was left unchanged in
+  this migration; the subsequent [assistance feature](driver-assist-evidence.md)
+  extended the original holdout and resolved that coverage failure.
 - `cargo test --workspace --all-features -- --skip fresh_original_driver_assistance_holdout`
   passed the remaining tests and doctests, including the editor's document
   round trips, nonempty authored example, and undo/redo tests.

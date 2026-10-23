@@ -11,6 +11,10 @@ geometry. [Slip preprocessing](wheel-slip-evidence.md) matches 100 original
 boundary/holdout executions; brake allocation matches 133 original calls.
 [Brake assistance](brake-assist-evidence.md) matches 130 original calls,
 including independent holdouts and pedal-to-demand integration.
+[Stability signals and traction throttle](driver-assist-evidence.md) now match
+267 original car executions, including 92 fresh holdout calls. Native signals
+feed brake assistance and wheel torque; effective throttle feeds engine rules.
+Standalone/per-car and optional pedal-to-engine checks use handmade tuning.
 [Longitudinal wheel slip](longitudinal-slip-evidence.md) now matches 268
 original wheel executions and feeds brake assistance exactly in 36 natural
 physics ticks. All 4096 steering sine/cosine pairs match as well.

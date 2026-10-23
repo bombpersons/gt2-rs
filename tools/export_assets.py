@@ -320,6 +320,13 @@ def export_tuning(ram_path, assets):
         bumps=[dict(amplitude_m=read(0x46F88+i*2,'h')/4096,cycles_per_m=read(0x46F98+i*2,'h')/256,
                     scale_with_speed=read(0x46FA8+i,'B')!=0) for i in range(8)],
         angle_threshold_ratios=[v/4096 for v in thresholds]))
+    write('vehicle/driver_assist.ron', dict(
+        wheelbase_m=car(0x10)/4096, radians_per_turn=25736/4096,
+        angle_threshold_ratios=[v/4096 for v in thresholds],
+        traction_strength=car(0x450,'i')/4096, feedback_fade_per_turn=car(0x454)/4096,
+        speed_suppression=car(0x456)/4096,
+        traction_slip_target=tuple(car(0x1FC+i*0xD8)/4096 for i in range(2)),
+        brake_correction_gain=car(0x458)/4096, brake_correction_threshold=car(0x45A)/4096))
     write('vehicle/aerodynamics.ron', dict(
         drag_force_per_squared_mps=car(0x43C,'i')/1024,
         axle_force_per_squared_mps=tuple(car(0x440+i*4,'i')/1024 for i in range(2)),

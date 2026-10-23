@@ -22,6 +22,7 @@ pub mod brake_assist;
 pub mod braking;
 pub mod contact_motion;
 pub mod direction;
+pub mod driver_assist;
 pub mod drivetrain;
 pub mod engine_torque;
 pub mod forward_dynamics;
