@@ -38,8 +38,9 @@ pub struct BodyDynamicsTuning {
 #[reflect(Component)]
 pub struct BodyDynamicsSetup(pub BodyDynamicsTuning);
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct BodyDynamicsInput {
     /// Physics+6B1 !=0 skips tyre acceleration, but still applies external force.
     /// VerticalBody supplies the airborne gate when present.
@@ -65,8 +66,9 @@ pub struct BodyDynamicsInput {
     pub external_world_force: Vec2,
 }
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct BodyDynamics {
     /// Physics+6A8 /4096, supplied by local contact projection and cleared
     /// only by the brake-stop branch in this stage.

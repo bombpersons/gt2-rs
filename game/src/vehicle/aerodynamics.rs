@@ -27,8 +27,9 @@ pub struct AerodynamicsTuning {
 #[reflect(Component)]
 pub struct AerodynamicsSetup(pub AerodynamicsTuning);
 
-#[derive(Component, Default, Clone, Copy, Debug, Reflect)]
+#[derive(Component, Default, Clone, Copy, Debug, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct AerodynamicsInput {
     /// Physics+6A4 /4096, retained contact-forward velocity. A shared
     /// TyreContactState supplies this when present.
@@ -38,8 +39,9 @@ pub struct AerodynamicsInput {
     /// rebuilds it after movement; that upstream producer is separate.
     pub reduction_growth_per_second: f32,
 }
-#[derive(Component, Default, Clone, Copy, Debug, Reflect)]
+#[derive(Component, Default, Clone, Copy, Debug, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct Aerodynamics {
     /// Physics+776 /4096, signed-halfword retained history.
     pub reduction: f32,

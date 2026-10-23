@@ -5,7 +5,10 @@ original ticks across gas, coast, braking and a fresh turning/mixed-pedal
 holdout. Native state is seeded once per recording, then controls, forces,
 engine/drivetrain, movement, road, suspension/body correction and late contact
 motion run together. Four stage boundaries compare sampled physical state
-exactly. Live presentation, the standing start, collision and licence flow
+exactly. The [native initial-state format and spawn hook](vehicle-initial-state.md)
+preserve those trajectories through RON round trips, and the independently
+exported checkpoint reproduces all four sequences. Live presentation, the
+standing start, collision and licence flow
 remain unfinished.
 
 Current vehicle work: [driving evidence](driving-evidence.md) records digital

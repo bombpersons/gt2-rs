@@ -42,8 +42,9 @@ pub struct ContactMotionTuning {
 #[reflect(Component)]
 pub struct ContactMotionSetup(pub ContactMotionTuning);
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct ContactMotionInput {
     /// Physics+68C/68E/690 and +694/696/698, converted to Bevy (x,z,-y).
     /// The orientation/contact producer supplies these corrected axes.
@@ -58,8 +59,9 @@ pub struct ContactMotionInput {
     pub wheel_heading_turns: [f32; 4],
 }
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct ContactMotion {
     pub body_forward_mps: f32,
     pub body_lateral_mps: f32,

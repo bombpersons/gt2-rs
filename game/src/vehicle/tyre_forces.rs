@@ -63,8 +63,9 @@ pub struct TyreTuning {
 /// Inputs from contact/load/body processing. Grip capacity is wheel+34 in
 /// original internal force units, NOT the normalized /4096 response used
 /// by brake assistance. The body velocity is physics+6A4, metres/s.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct TyreContactState {
     pub grip_capacity: [f32; 4],
     pub body_forward_mps: f32,

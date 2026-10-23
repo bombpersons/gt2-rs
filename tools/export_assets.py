@@ -364,6 +364,83 @@ def export_tuning(ram_path, assets):
     path = assets / 'race/camera.ron'
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text('// Generated locally; do not commit.\n' + ron(camera)[:-1] + ', initial_view: Bumper, reference_subject: Some(' + ron(reference) + '))\n')
+    export_initial_vehicle(ram, assets)
+
+
+def export_initial_vehicle(ram, assets):
+    """Convert one supported checkpoint to authorable native simulation state."""
+    if len(ram) != 2 * 1024 * 1024:
+        raise ValueError('Expected a complete 2 MiB B-1 RAM dump')
+    def raw(off, fmt='h'):
+        return struct.unpack_from('<' + fmt, ram, BASE + off)[0]
+    def q(off): return raw(off, 'i') / 4096
+    def a(off): return raw(off) / 4096
+    def b(off): return raw(off, 'B')
+    def wheels(off, fn): return tuple(fn(0x460 + i * 0x68 + off) for i in range(4))
+    def vector(off): return (q(off), q(off + 8), -q(off + 4))
+    def axis(off): return (a(off), a(off + 4), -a(off + 2))
+    def basis(off): return dict(forward=axis(off), lateral=axis(off + 8), up=axis(off + 16))
+    body, road = basis(0x668), basis(0x68C)
+    independent = tuple(b(0x37A + i) == 0 for i in range(2))
+    if b(0x372) != 5 or raw(0x128) != 0:
+        raise ValueError('Initial state currently supports the ordinary non-induction engine only')
+    try:
+        engagement = {0: 'Disconnected', 1: 'Coupled', 2: 'Synchronizing', 3: 'FixedClutch', 4: 'Slipping'}[b(0x619)]
+        shift_mode = {0: 'Automatic', 1: 'Manual', 2: 'Disabled'}[b(0x642)]
+    except KeyError as error:
+        raise ValueError('Unsupported checkpoint engine engagement or transmission mode') from error
+    state = dict(
+        pose=dict(position_m=vector(0x65C), heading_turns=a(0x648)),
+        orientation=dict(pitch_turns=a(0x644), roll_turns=a(0x646)),
+        velocity=dict(linear_mps=vector(0x628), yaw_turns_per_second=raw(0x64C,'i')/524288),
+        step_duration=RonVariant('(' + repr(raw(0x6FE)/65536) + ')'),
+        pedals=dict(throttle=a(0x610), brake=a(0x612), handbrake=a(0x614)),
+        steering=dict(angle_turns=a(0x60C), rate_turns_per_second=a(0x60E)),
+        steering_kinematics=dict(forward_velocity_mps=q(0x6A4), front_slip_turns=(a(0x4B0),a(0x518))),
+        local_motion=dict(forward_mps=wheels(0x2C,q), lateral_mps=wheels(0x30,q)),
+        wheel_motion=dict(tread_speed_mps=wheels(0x18,q), speed_response=wheels(0x2A,a)),
+        tyre_contact=dict(body_forward_mps=q(0x6A4), grip_capacity=wheels(0x34,lambda o:float(raw(o,'i')))),
+        grip_input=dict(load=wheels(8,lambda o:float(raw(o,'i'))), surface=wheels(0x14,b),
+                        roll_difference_turns=a(0x646)-a(0x6F6), bypass_condition=bool(b(0x78D)&16)),
+        tyre_condition=dict(accumulator=wheels(0x64,lambda o:float(raw(o,'i'))), load_scale=wheels(0x38,a),
+                            indicator=wheels(0x3F,lambda o:raw(o,'b'))),
+        engine=dict(speed_rev_s=q(0x624),integer_rpm=float(raw(0x6AC)),effective_throttle=a(0x708)),
+        fuel_cut=dict(active=b(0x61D)!=0),
+        transmission=dict(mode=RonVariant(shift_mode),force_automatic=b(0x786)!=0),
+        transmission_state=dict(first_gear_ticks=raw(0x78E,'H'),engagement_requested=raw(0x60A)!=0,cooldown_ticks=b(0x61C)),
+        drivetrain=dict(gear=b(0x618),engagement=RonVariant(engagement),adaptive_angle_turns=a(0x64A),
+                        brake_travel=a(0x612),alternate_locked_step=ram[0x1D5866]==3,independent_wheels=independent),
+        drivetrain_state=dict(previous_angular_delta=(a(0x4DE),a(0x5AE)),centre_locked=b(0x63C)!=0),
+        axles=dict(radians_per_second=(q(0x634),q(0x638))),
+        wheel_state=dict(previous_delta_mps=wheels(0x16,a),clutch_locked=(b(0x61A)!=0,b(0x61B)!=0)),
+        body_input=dict(bypass_tyre_acceleration=b(0x6B1)!=0,reset_motion=b(0x718)!=0 or b(0x786)==7,
+                        first_gear_override=raw(0x78E)!=0,braked_wheels=wheels(0x63,lambda o:bool(b(o)&2)),
+                        forward_axis=(body['forward'][0],body['forward'][2]), lateral_axis=(body['lateral'][0],body['lateral'][2]),
+                        lateral_resistance=float(raw(0x730,'i')),external_world_force=(float(raw(0x778,'i')),-float(raw(0x77C,'i')))),
+        body_dynamics=dict(local_lateral_mps=q(0x6A8),lateral_acceleration_mps2=q(0x728),lateral_feedback_turns=a(0x64A),
+                           tilt_turns_per_second=(raw(0x650)/65536,raw(0x652)/65536)),
+        aerodynamics_input=dict(forward_mps=q(0x6A4),reduction_growth_per_second=a(0x774)),
+        aerodynamics=dict(reduction=a(0x776)), road_input=dict(),
+        road=dict(node=raw(0x600,'H'),raw_height_m=wheels(4,lambda o:raw(o,'i')/65536),height_m=wheels(0,q),
+                  surface=wheels(0x14,b),variant=wheels(0x15,b),attachment_m=tuple(axis(0x484+i*0x68) for i in range(4)),
+                  road_offset_m=wheels(0x42,a),bump_response=wheels(0x40,a),body_basis=body,road_basis=road,
+                  road_height_m=q(0x688),road_pitch_turns=a(0x6F4),road_roll_turns=a(0x6F6),bypass_condition=bool(b(0x78D)&16)),
+        suspension_input=dict(body_height_m=q(0x664),road_height_m=wheels(0,q),attachment_height_m=wheels(0x28,a),
+                              road_offset_m=wheels(0x42,a),road_normal_up=road['up'][1],body_up=body['up'][1],
+                              inverse_step_seconds=q(0x704),axle_force=(float(raw(0x71C,'i')),float(raw(0x720,'i'))),
+                              lateral_acceleration_mps2=q(0x728),vertical_force=float(raw(0x72C,'i')),
+                              forward_force=float(raw(0x734,'i')),disabled=b(0x786)==7),
+        suspension=dict(travel_m=wheels(0x10,a),travel_rate_mps=wheels(0x12,a),tyre_load=wheels(8,lambda o:float(raw(o,'i')))),
+        vertical_input=dict(),vertical=dict(airborne=b(0x6B1)!=0),
+        contact_input=dict(forward_axis=road['forward'],lateral_axis=road['lateral'],
+                           synchronize_wheels=wheels(0x63,lambda o:b(o)==0),independent_axles=independent,
+                           wheel_heading_turns=wheels(0xC,a)),
+        contact_motion=dict(body_forward_mps=q(0x6A4),body_lateral_mps=q(0x6A8),speed_readout=raw(0x6AE,'H'),
+                            maximum_speed_readout=raw(0x6F8,'H'),spin_turns=wheels(0x20,lambda o:raw(o,'H')/4096)),
+    )
+    path = assets / 'vehicle/initial.ron'
+    path.parent.mkdir(parents=True,exist_ok=True)
+    path.write_text('// Generated locally from the supplied checkpoint; do not commit.\n' + ron(state) + '\n')
 
 
 def main():

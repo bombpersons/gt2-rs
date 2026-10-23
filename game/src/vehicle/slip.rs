@@ -15,8 +15,9 @@ pub const SLIP_TUNING: &str = "vehicle/slip.ron";
 /// Contact velocities in vehicle-local forward/lateral axes, before steering
 /// rotation, in front-left/right then rear-left/right order. Original
 /// wheel+0x2C/+0x30 are signed 1/4096 m/s words.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct WheelLocalVelocities {
     pub forward_mps: [f32; 4],
     pub lateral_mps: [f32; 4],

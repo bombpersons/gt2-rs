@@ -53,8 +53,9 @@ pub struct VerticalBodyTuning {
 #[reflect(Component)]
 pub struct VerticalBodySetup(pub VerticalBodyTuning);
 
-#[derive(Component, Clone, Copy, Debug, Reflect)]
+#[derive(Component, Clone, Copy, Debug, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct VerticalBodyInput {
     /// Physics+78E. TransmissionState supplies this when present.
     pub reset_ticks: u16,
@@ -70,8 +71,9 @@ impl Default for VerticalBodyInput {
     }
 }
 
-#[derive(Component, Default, Clone, Copy, Debug, Reflect)]
+#[derive(Component, Default, Clone, Copy, Debug, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct VerticalBody {
     /// Physics+6B1: zero total tyre load bypasses next tick's tyre acceleration.
     pub airborne: bool,

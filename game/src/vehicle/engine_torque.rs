@@ -37,8 +37,9 @@ pub struct EngineTorqueTuning {
 /// Explicit inputs to torque production. `integer_rpm` is the last refreshed
 /// RPM (`car+0x6AC`), not recomputed from speed during this call: curve sampling
 /// precedes this tick's drivetrain update, while RPM refresh follows it.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct EngineTorqueInput {
     pub speed_rev_s: f32,
     pub integer_rpm: f32,
@@ -47,8 +48,9 @@ pub struct EngineTorqueInput {
 }
 
 /// Persistent fuel-cut latch (`car+0x61D`), separate from control/gear state.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct EngineFuelCut {
     pub active: bool,
 }

@@ -57,7 +57,7 @@ pub struct TransmissionTuning {
 #[reflect(Component)]
 pub struct TransmissionSetup(pub TransmissionTuning);
 
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Reflect)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Reflect, Serialize, Deserialize)]
 pub enum ShiftMode {
     #[default]
     Automatic,
@@ -65,8 +65,9 @@ pub enum ShiftMode {
     Disabled,
 }
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct TransmissionInput {
     /// Physics+642, unless +786 forces the automatic path.
     pub mode: ShiftMode,
@@ -85,8 +86,9 @@ pub struct TransmissionInput {
     pub speed_response: [f32; 4],
 }
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct TransmissionState {
     /// Halfword +78E is decremented at 8003E168 before input and physics.
     /// While nonzero it forces first gear ahead of every selection mode.

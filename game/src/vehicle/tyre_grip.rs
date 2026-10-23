@@ -55,8 +55,9 @@ pub struct TyreGripTuning {
 #[reflect(Component)]
 pub struct TyreGripSetup(pub TyreGripTuning);
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct TyreGripInput {
     /// Wheel+8, in original load units; suspension/contact supplies it.
     pub load: [f32; 4],
@@ -66,8 +67,9 @@ pub struct TyreGripInput {
     /// Physics+78D bit 0x10 skips condition updates and load scaling.
     pub bypass_condition: bool,
 }
-#[derive(Component, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct TyreCondition {
     /// Wheel+64, modified later in 8003B310..444; that producer is separate.
     pub accumulator: [f32; 4],

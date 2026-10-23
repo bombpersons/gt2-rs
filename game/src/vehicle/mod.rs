@@ -26,6 +26,7 @@ pub mod driver_assist;
 pub mod drivetrain;
 pub mod engine_torque;
 pub mod forward_dynamics;
+pub mod initial;
 pub mod longitudinal_slip;
 pub mod presentation;
 pub mod road_contact;
@@ -81,8 +82,9 @@ pub struct PlayerPedals;
 
 /// Pedal travel in 0..=1. Original fields are car+0x610, +0x612 and +0x614
 /// (signed halfwords, 4096 = full travel). This is control state, not force.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct PedalTravel {
     pub throttle: f32,
     pub brake: f32,
@@ -109,8 +111,9 @@ fn travel(current: f32, held: bool, press: f32, release: f32) -> f32 {
 /// with original z negated at the boundary to match the course's coordinates.
 /// Heading keeps the original's signed turn representative because it is
 /// observable: +0x648 is wrapped at +/-4096, rather than into +/-2048.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct VehiclePose {
     pub position_m: Vec3,
     pub heading_turns: f32,
@@ -148,8 +151,9 @@ pub struct MotionStep {
 /// The source stores linear velocity at car+0x628/62C/630 in 1/4096 m/s,
 /// and yaw rate at +0x64C in 1/524288 turn/s. The yaw scale follows from
 /// `800303D8..800303F0`: product with duration / 2^23 becomes 1/4096 turn.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct VehicleVelocity {
     pub linear_mps: Vec3,
     pub yaw_turns_per_second: f32,
@@ -168,8 +172,9 @@ impl VehicleVelocity {
 
 /// Per-car integration duration, car+0x6FE in 1/65536 seconds. It is
 /// distinct from the host's scheduling interval (30 Hz for this race).
-#[derive(Component, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct VehicleStepDuration(pub f32);
 
 impl Default for VehicleStepDuration {

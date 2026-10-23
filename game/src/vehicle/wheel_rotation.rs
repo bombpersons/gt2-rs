@@ -50,8 +50,9 @@ pub struct WheelRotationTuning {
 
 /// Output of the intervening transmission/axle solver. Speeds are axle
 /// angular speed (+634/+638 /4096); torque is scratch+74/+78 in source units.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct AxleDrive {
     pub radians_per_second: [f32; 2],
     pub torque: [f32; 2],
@@ -74,8 +75,9 @@ pub struct WheelRotationInput {
 /// For coupled axles only the left increment belongs to this rule. The
 /// original axle solver reuses the right slot for its angular increment
 /// (80046444/464E8); tests observe that boundary separately each tick.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct WheelRotationState {
     pub previous_delta_mps: [f32; 4],
     pub clutch_locked: [bool; 2],

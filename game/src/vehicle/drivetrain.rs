@@ -90,7 +90,7 @@ pub struct DrivetrainTuning {
 pub struct DrivetrainSetup(pub DrivetrainTuning);
 
 /// Physics+619. Values 2 and 4 share the slipping-clutch path.
-#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Reflect)]
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Reflect, Serialize, Deserialize)]
 pub enum EngineEngagement {
     #[default]
     Disconnected,
@@ -100,8 +100,9 @@ pub enum EngineEngagement {
     FixedClutch,
 }
 
-#[derive(Component, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct DrivetrainInput {
     pub gear: usize,
     pub engagement: EngineEngagement,
@@ -138,8 +139,9 @@ impl Default for DrivetrainInput {
     }
 }
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct DrivetrainState {
     /// Right-wheel history slots +4DE/+5AE /4096. In combined centre modes
     /// they hold common and split increments; otherwise one per axle.

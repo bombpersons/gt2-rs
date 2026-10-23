@@ -49,28 +49,32 @@ pub struct RoadContactTuning {
 #[derive(Component, Clone, Debug, Reflect, Deserialize, Serialize)]
 #[reflect(Component)]
 pub struct RoadContactSetup(pub RoadContactTuning);
-#[derive(Component, Default, Clone, Copy, Debug, Reflect)]
+#[derive(Component, Default, Clone, Copy, Debug, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct BodyOrientation {
     /// Physics+644/+646 /4096 turns, updated by vertical body integration;
     /// yaw comes from VehiclePose.
     pub pitch_turns: f32,
     pub roll_turns: f32,
 }
-#[derive(Component, Default, Clone, Copy, Debug, Reflect)]
+#[derive(Component, Default, Clone, Copy, Debug, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct RoadContactInput {
     /// Race-mode gate returned by 80041AB8; licence/replay mode supplies it.
     pub condition_surfaces_enabled: bool,
 }
-#[derive(Default, Clone, Copy, Debug, Reflect)]
+#[derive(Default, Clone, Copy, Debug, Reflect, Serialize, Deserialize)]
+#[serde(default)]
 pub struct VehicleBasis {
     pub forward: Vec3,
     pub lateral: Vec3,
     pub up: Vec3,
 }
-#[derive(Component, Default, Clone, Copy, Debug, Reflect)]
+#[derive(Component, Default, Clone, Copy, Debug, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct RoadContactState {
     /// Source car+600. The first wheel's longitudinal result becomes the car seed.
     pub node: u16,

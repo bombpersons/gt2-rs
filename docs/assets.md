@@ -37,6 +37,8 @@ course/model/paint files, then exports:
 - B-1 course, collision grids/polygons, ordinary road/scenery geometry and textures;
 - Vitz high-detail body, paint slot 5 and all decoded wheel detail levels;
 - Checkpoint wheel placements and camera setup;
+- Native initial vehicle state with retained simulation histories, exported
+  to `vehicle/initial.ron` (see [the public spawn contract](vehicle-initial-state.md));
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
   brake-assistance and ordinary traction/stability tuning, axle tyre curves, low-speed force settings, and
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,

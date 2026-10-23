@@ -85,62 +85,50 @@ fn initialize(world: &mut World, r: &Original, alternate_locked_step: bool) -> E
     let road = r.basis(0x68C);
     let pose = VehiclePose { position_m: r.vector(0x65C), heading_turns: r.angle(0x648) };
     let orientation = BodyOrientation { pitch_turns: r.angle(0x644), roll_turns: r.angle(0x646) };
-    let car = world
-        .spawn((
-            Name::new("Loop car"),
-            Phases::default(),
-            pose,
-            orientation,
-            VehicleVelocity { linear_mps: r.vector(0x628), yaw_turns_per_second: r.word(0x64C) as f32 / 524288.0 },
-            VehicleStepDuration(r.short(0x6FE) as f32 / 65536.0),
-            MotionStep::default(),
-            DigitalPedalInput::default(),
-            DigitalSteeringInput::default(),
-            PedalTravel { throttle: r.angle(0x610), brake: r.angle(0x612), handbrake: r.angle(0x614) },
-            SteeringResponse { angle_turns: r.angle(0x60C), rate_turns_per_second: r.angle(0x60E), ..default() },
-            SteeringKinematics { forward_velocity_mps: r.q(0x6A4), front_slip_turns: [r.angle(0x4B0), r.angle(0x518)] },
-            WheelSteering::default(),
-            PedalThrottle,
-            PedalBrakes,
-        ))
-        .id();
-    world.entity_mut(car).insert((
-        WheelLocalVelocities { forward_mps: r.wheels(0x2C, Original::q), lateral_mps: r.wheels(0x30, Original::q) },
-        WheelSurfaceMotion {
+    let state = game::vehicle::initial::VehicleInitialState {
+        pose,
+        orientation,
+        velocity: VehicleVelocity {
+            linear_mps: r.vector(0x628),
+            yaw_turns_per_second: r.word(0x64C) as f32 / 524288.0,
+        },
+        step_duration: VehicleStepDuration(r.short(0x6FE) as f32 / 65536.0),
+        pedals: PedalTravel { throttle: r.angle(0x610), brake: r.angle(0x612), handbrake: r.angle(0x614) },
+        steering: SteeringResponse { angle_turns: r.angle(0x60C), rate_turns_per_second: r.angle(0x60E), ..default() },
+        steering_kinematics: SteeringKinematics {
+            forward_velocity_mps: r.q(0x6A4),
+            front_slip_turns: [r.angle(0x4B0), r.angle(0x518)],
+        },
+        local_motion: WheelLocalVelocities {
+            forward_mps: r.wheels(0x2C, Original::q),
+            lateral_mps: r.wheels(0x30, Original::q),
+        },
+        wheel_motion: WheelSurfaceMotion {
             tread_speed_mps: r.wheels(0x18, Original::q),
             speed_response: r.wheels(0x2A, Original::angle),
         },
-        WheelSlip::default(),
-        LongitudinalSlip::default(),
-        TyreForces::default(),
-        TyreContactState { body_forward_mps: r.q(0x6A4), grip_capacity: r.wheels(0x34, |r, o| r.word(o) as f32) },
-        TyreGripInput {
+        tyre_contact: TyreContactState {
+            body_forward_mps: r.q(0x6A4),
+            grip_capacity: r.wheels(0x34, |r, o| r.word(o) as f32),
+        },
+        grip_input: TyreGripInput {
             load: r.wheels(8, |r, o| r.word(o) as f32),
             surface: r.wheels(0x14, |r, o| r.byte(o) as usize),
             roll_difference_turns: r.angle(0x646) - r.angle(0x6F6),
             bypass_condition: r.byte(0x78D) & 16 != 0,
         },
-        TyreCondition {
+        tyre_condition: TyreCondition {
             accumulator: r.wheels(0x64, |r, o| r.word(o) as f32),
             load_scale: r.wheels(0x38, Original::angle),
             indicator: r.wheels(0x3F, |r, o| r.byte(o) as i8),
         },
-        TyreGrip::default(),
-        BrakeAssistInput::default(),
-        DriverAssistInput::default(),
-        DriverAssist::default(),
-        WheelBrakeInput::default(),
-        WheelBrakeDemand::default(),
-    ));
-    world.entity_mut(car).insert((
-        EngineTorqueInput {
+        engine: EngineTorqueInput {
             speed_rev_s: r.q(0x624),
             integer_rpm: r.short(0x6AC) as f32,
             effective_throttle: r.angle(0x708),
         },
-        EngineFuelCut { active: r.byte(0x61D) != 0 },
-        EngineTorque::default(),
-        TransmissionInput {
+        fuel_cut: EngineFuelCut { active: r.byte(0x61D) != 0 },
+        transmission: TransmissionInput {
             mode: match r.byte(0x642) {
                 0 => ShiftMode::Automatic,
                 1 => ShiftMode::Manual,
@@ -149,13 +137,12 @@ fn initialize(world: &mut World, r: &Original, alternate_locked_step: bool) -> E
             force_automatic: r.byte(0x786) != 0,
             ..default()
         },
-        TransmissionState {
+        transmission_state: TransmissionState {
             first_gear_ticks: r.short(0x78E) as u16,
             engagement_requested: r.short(0x60A) != 0,
             cooldown_ticks: r.byte(0x61C),
         },
-        TransmissionOutput::default(),
-        DrivetrainInput {
+        drivetrain: DrivetrainInput {
             gear: r.byte(0x618) as usize,
             engagement: engagement(r.byte(0x619)),
             adaptive_angle_turns: r.angle(0x64A),
@@ -164,20 +151,16 @@ fn initialize(world: &mut World, r: &Original, alternate_locked_step: bool) -> E
             independent_wheels: independent,
             ..default()
         },
-        DrivetrainState { previous_angular_delta: [r.angle(0x4DE), r.angle(0x5AE)], centre_locked: r.byte(0x63C) != 0 },
-        DrivetrainOutput::default(),
-        AxleDrive { radians_per_second: [r.q(0x634), r.q(0x638)], ..default() },
-        WheelRotationInput::default(),
-        WheelRotationState {
+        drivetrain_state: DrivetrainState {
+            previous_angular_delta: [r.angle(0x4DE), r.angle(0x5AE)],
+            centre_locked: r.byte(0x63C) != 0,
+        },
+        axles: AxleDrive { radians_per_second: [r.q(0x634), r.q(0x638)], ..default() },
+        wheel_state: WheelRotationState {
             previous_delta_mps: r.wheels(0x16, Original::angle),
             clutch_locked: [r.byte(0x61A) != 0, r.byte(0x61B) != 0],
         },
-        WheelReactionTorque::default(),
-        ForwardDynamicsInput::default(),
-        ForwardDynamics::default(),
-    ));
-    world.entity_mut(car).insert((
-        BodyDynamicsInput {
+        body_input: BodyDynamicsInput {
             bypass_tyre_acceleration: r.byte(0x6B1) != 0,
             reset_motion: r.byte(0x718) != 0 || r.byte(0x786) == 7,
             first_gear_override: r.short(0x78E) != 0,
@@ -188,17 +171,17 @@ fn initialize(world: &mut World, r: &Original, alternate_locked_step: bool) -> E
             external_world_force: Vec2::new(r.word(0x778) as f32, -(r.word(0x77C) as f32)),
             ..default()
         },
-        BodyDynamics {
+        body_dynamics: BodyDynamics {
             local_lateral_mps: r.q(0x6A8),
             lateral_acceleration_mps2: r.q(0x728),
             lateral_feedback_turns: r.angle(0x64A),
             tilt_turns_per_second: Vec2::new(r.short(0x650) as f32, r.short(0x652) as f32) / 65536.0,
             ..default()
         },
-        AerodynamicsInput { forward_mps: r.q(0x6A4), reduction_growth_per_second: r.angle(0x774) },
-        Aerodynamics { reduction: r.angle(0x776), ..default() },
-        RoadContactInput::default(),
-        RoadContactState {
+        aerodynamics_input: AerodynamicsInput { forward_mps: r.q(0x6A4), reduction_growth_per_second: r.angle(0x774) },
+        aerodynamics: Aerodynamics { reduction: r.angle(0x776), ..default() },
+        road_input: RoadContactInput::default(),
+        road: RoadContactState {
             node: r.short(0x600) as u16,
             raw_height_m: r.wheels(4, |r, o| r.word(o) as f64 / 65536.0),
             height_m: r.wheels(0, Original::q),
@@ -215,7 +198,7 @@ fn initialize(world: &mut World, r: &Original, alternate_locked_step: bool) -> E
             bypass_condition: r.byte(0x78D) & 16 != 0,
             ..default()
         },
-        SuspensionInput {
+        suspension_input: SuspensionInput {
             body_height_m: pose.position_m.y,
             road_height_m: r.wheels(0, Original::q),
             attachment_height_m: r.wheels(0x28, Original::angle),
@@ -229,23 +212,22 @@ fn initialize(world: &mut World, r: &Original, alternate_locked_step: bool) -> E
             forward_force: r.word(0x734) as f32,
             disabled: r.byte(0x786) == 7,
         },
-        Suspension {
+        suspension: Suspension {
             travel_m: r.wheels(0x10, Original::angle),
             travel_rate_mps: r.wheels(0x12, Original::angle),
             tyre_load: r.wheels(8, |r, o| r.word(o) as f64),
             ..default()
         },
-        SuspensionForceTransfer,
-        VerticalBodyInput::default(),
-        VerticalBody { airborne: r.byte(0x6B1) != 0, ..default() },
-        ContactMotionInput {
+        vertical_input: VerticalBodyInput::default(),
+        vertical: VerticalBody { airborne: r.byte(0x6B1) != 0, ..default() },
+        contact_input: ContactMotionInput {
             forward_axis: road.forward,
             lateral_axis: road.lateral,
             synchronize_wheels: r.wheels(0x63, |r, o| r.byte(o) == 0),
             independent_axles: independent,
             wheel_heading_turns: r.wheels(0xC, Original::angle),
         },
-        ContactMotion {
+        contact_motion: ContactMotion {
             body_forward_mps: r.q(0x6A4),
             body_lateral_mps: r.q(0x6A8),
             speed_readout: r.short(0x6AE) as u16,
@@ -253,10 +235,15 @@ fn initialize(world: &mut World, r: &Original, alternate_locked_step: bool) -> E
             spin_turns: r.wheels(0x20, |r, o| r.short(o) as u16 as f32 / 4096.0),
             ..default()
         },
-    ));
-    world.entity_mut(car).insert(TyreWheelFeedback);
+    };
+    // Exercise the public native asset format as well as the spawn path.
+    let encoded = ron::to_string(&state).unwrap();
+    let state: game::vehicle::initial::VehicleInitialState = ron::from_str(&encoded).unwrap();
+    let car = state.spawn(world);
+    world.entity_mut(car).insert((Name::new("Loop car"), Phases::default()));
     car
 }
+
 #[derive(Clone)]
 struct Sample {
     name: String,
@@ -405,6 +392,9 @@ fn capture<const N: usize>(world: &mut World) {
     world.get_mut::<Phases>(car).unwrap().0[N] = out;
 }
 fn check(scenario: &str) {
+    check_from(scenario, false);
+}
+fn check_from(scenario: &str, exported: bool) {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data/original/vehicle_loop").join(scenario);
     let recording: Recording =
         serde_json::from_str(&std::fs::read_to_string(root.join("recording.json")).unwrap()).unwrap();
@@ -446,6 +436,16 @@ fn check(scenario: &str) {
         &Original::load(&root.join(&recording.ticks[0].before)),
         recording.alternate_locked_step,
     );
+    let car = if exported {
+        app.world_mut().despawn(car);
+        let state: game::vehicle::initial::VehicleInitialState =
+            engine::prelude::load_ron(game::vehicle::initial::INITIAL_STATE_ASSET).unwrap();
+        let car = state.spawn(app.world_mut());
+        app.world_mut().entity_mut(car).insert(Phases::default());
+        car
+    } else {
+        car
+    };
     app.insert_resource(CarEntity(car));
     for (index, tick) in recording.ticks.iter().enumerate() {
         assert_eq!(tick.run_frame, index as u32 * 2);
@@ -501,4 +501,12 @@ fn original_continuous_b1_coast() {
 #[cfg_attr(not(gt2_private_data), ignore = "requires original whole-vehicle holdout")]
 fn fresh_original_continuous_b1_turning_and_mixed_pedals() {
     check("holdout");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires exported initial state and original trajectory")]
+fn native_exported_initial_asset_reproduces_original_trajectory() {
+    for scenario in ["gas", "coast", "brake", "holdout"] {
+        check_from(scenario, true);
+    }
 }

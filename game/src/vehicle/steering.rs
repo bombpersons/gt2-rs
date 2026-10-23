@@ -44,8 +44,9 @@ pub struct DigitalSteeringInput {
 
 /// Retained contact state sampled before control processing. These are car+0x6A4 and front wheels +0x4B0/+0x518. Slip is
 /// recomputed by `80039DE8` -> atan2(-wheel_vz, wheel_vx) before controls.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct SteeringKinematics {
     pub forward_velocity_mps: f32,
     pub front_slip_turns: [f32; 2],
@@ -53,8 +54,9 @@ pub struct SteeringKinematics {
 
 /// Commanded wheel angle and response accumulator. Rate remains unclamped
 /// in state; only the rate applied to angle is limited (`8002FD4C..8002FD98`).
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct SteeringResponse {
     pub angle_turns: f32,
     pub rate_turns_per_second: f32,

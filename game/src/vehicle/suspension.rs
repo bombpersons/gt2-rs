@@ -55,8 +55,9 @@ pub struct SuspensionTuning {
 #[reflect(Component)]
 pub struct SuspensionSetup(pub SuspensionTuning);
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct SuspensionInput {
     /// Physics+664; wheel+0, +28 and +42, /4096 metres. These are consumed
     /// road/body observations, not the rendered checkpoint attachment pose.
@@ -84,8 +85,9 @@ pub struct SuspensionInput {
     pub disabled: bool,
 }
 
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct Suspension {
     /// Wheel+10/+12 signed halfwords, /4096 metres and m/s.
     pub travel_m: [f32; 4],

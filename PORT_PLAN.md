@@ -198,7 +198,9 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   late drive/brake synchronization now connect the existing features. All
   sampled physical state matches at four stage boundaries with zero tolerance.
   The 972 tyre comparisons also check both speed-response force channels.
-  Next: an authorable native vehicle initial-state format/public spawn hook,
+  The authorable `VehicleInitialState` and public spawn hook now preserve
+  these trajectories through RON round trips; the independently exported
+  checkpoint asset also reproduces all four sequences. Next:
   live body/wheel/camera presentation and the handmade driving mod, then the
   standing-start B-1 session, collision, licence flow and broad content parity.
   See docs/vehicle-loop-evidence.md.

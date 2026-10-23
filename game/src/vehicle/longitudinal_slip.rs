@@ -23,8 +23,9 @@ pub struct LongitudinalSlipTuning {
 
 /// Wheel rotation/contact solver inputs in front-left/right, rear-left/right
 /// order. The tread velocity is wheel+18 (/4096 m/s), not angular velocity.
-#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[derive(Component, Default, Debug, Clone, Copy, Reflect, Serialize, Deserialize)]
 #[reflect(Component)]
+#[serde(default)]
 pub struct WheelSurfaceMotion {
     pub tread_speed_mps: [f32; 4],
     /// Wheel+2A (/4096), speed-dependent response written by 80030680.
