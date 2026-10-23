@@ -94,6 +94,7 @@ fn handmade_car_uses_native_throttle_brakes_steering_and_contact() {
 #[test]
 fn all_vehicle_data_resolves_to_handmade_assets() {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets");
+    assert_eq!(engine::config::asset_path(game::race::RACE_VEHICLE_ASSET), root.join(game::race::RACE_VEHICLE_ASSET));
     for name in [
         "pedals",
         "steering",
@@ -146,6 +147,30 @@ fn handmade_car_reengages_after_stopping_and_can_request_reverse() {
     }
     assert_eq!(app.world().get::<DrivetrainInput>(car).unwrap().gear, 0);
     assert!(app.world().get::<VehicleVelocity>(car).unwrap().linear_mps.x > 1.0, "reverse should drive back along +X");
+}
+
+#[test]
+fn handmade_car_can_join_a_timed_start_without_changing_its_controller() {
+    use engine::controller::Button;
+    use game::{
+        race::session::{DrivingSession, SessionParticipant},
+        vehicle::{VehiclePose, VehicleVelocity},
+    };
+    let (mut app, car) = driving_app();
+    app.insert_resource(DrivingSession::countdown(64));
+    app.world_mut().entity_mut(car).insert(SessionParticipant);
+    let start = app.world().get::<VehiclePose>(car).unwrap().position_m;
+    for _ in 0..31 {
+        app.run_tick(&[Button::Cross]);
+        assert_eq!(app.world().get::<VehiclePose>(car).unwrap().position_m, start);
+        assert_eq!(app.world().resource::<DrivingSession>().elapsed_millis(), 0);
+    }
+    for _ in 0..61 {
+        app.run_tick(&[Button::Cross]);
+    }
+    assert_eq!(app.world().resource::<DrivingSession>().elapsed_millis(), 2033);
+    assert!(app.world().get::<VehicleVelocity>(car).unwrap().linear_mps.x < -2.0);
+    assert!(app.world().get::<VehiclePose>(car).unwrap().position_m.x < start.x - 1.0);
 }
 
 #[test]

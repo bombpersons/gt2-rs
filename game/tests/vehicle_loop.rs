@@ -65,11 +65,20 @@ struct Tick {
     road: String,
     end: String,
     controls: Controls,
+    #[serde(default)]
+    session: Option<SessionSample>,
+}
+#[derive(Deserialize)]
+struct SessionSample {
+    countdown_fields: u16,
+    clock: u32,
 }
 #[derive(Deserialize)]
 struct Recording {
     ticks: Vec<Tick>,
     alternate_locked_step: bool,
+    #[serde(default)]
+    session: Option<SessionSample>,
 }
 fn engagement(raw: u8) -> EngineEngagement {
     match raw {
@@ -471,6 +480,14 @@ fn check_from(scenario: &str, exported: bool) {
         car
     };
     app.insert_resource(CarEntity(car));
+    if let Some(session) = &recording.session {
+        assert_eq!(session.clock % 100, 0, "clock must start at a complete physics tick");
+        let mut native = game::race::session::DrivingSession::countdown(session.countdown_fields);
+        native.elapsed_ticks = session.clock / 100;
+        app.insert_resource(native);
+        app.add_plugins(game::race::session::SessionRulesPlugin);
+        app.world_mut().entity_mut(car).insert(game::race::session::SessionParticipant);
+    }
     for (index, tick) in recording.ticks.iter().enumerate() {
         assert_eq!(tick.run_frame, index as u32 * 2);
         assert_eq!(tick.controls.flags, 0);
@@ -483,6 +500,17 @@ fn check_from(scenario: &str, exported: bool) {
             DigitalGearInput { reverse: tick.controls.reverse != 0, shift_direction: tick.controls.shift };
         app.world_mut().get_mut::<DigitalSteeringInput>(car).unwrap().direction = tick.controls.steering as f32;
         app.run_tick(&[]);
+        if recording.session.is_some() {
+            let session = app.world().resource::<game::race::session::DrivingSession>();
+            let expected = tick.session.as_ref().expect("session boundary");
+            let countdown = match session.phase {
+                game::race::session::DrivingPhase::Countdown { fields_left } => fields_left,
+                game::race::session::DrivingPhase::Driving => 0,
+            };
+            assert_eq!(countdown, expected.countdown_fields, "countdown tick {index}");
+            assert_eq!(session.elapsed_ticks * 100, expected.clock, "clock tick {index}");
+            assert_eq!(session.elapsed_millis(), u64::from(expected.clock) / 3, "display time tick {index}");
+        }
         let phases = &app.world().get::<Phases>(car).unwrap().0;
         let mut differences = Vec::new();
         for (phase, (samples, file)) in
@@ -507,6 +535,24 @@ fn check_from(scenario: &str, exported: bool) {
         assert!(differences.is_empty(), "{scenario} tick {index}:\n{}", differences.join("\n"));
     }
     assert!(recording.ticks.len() >= 30);
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original countdown recordings")]
+fn original_countdown_to_throttle_launch() {
+    check("countdown-gas");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original countdown recordings")]
+fn original_countdown_to_idle() {
+    check("countdown-coast");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original countdown recordings")]
+fn original_fresh_countdown_launch_holdout() {
+    check("countdown-fresh-launch-holdout");
 }
 #[test]
 #[cfg_attr(not(gt2_private_data), ignore = "requires original whole-vehicle recordings")]

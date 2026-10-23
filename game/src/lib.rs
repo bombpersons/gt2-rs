@@ -46,6 +46,7 @@ impl PluginGroup for GamePlugins {
         PluginGroupBuilder::start::<Self>()
             .add(EnginePlugin)
             .add(race::camera::CameraRulesPlugin)
+            .add(race::session::SessionRulesPlugin)
             .add(race::RacePlugin)
             .add(vehicle::VehicleRulesPlugin)
             .add(vehicle::aerodynamics::AerodynamicsRulesPlugin)

@@ -52,7 +52,7 @@ def export(run, target, frames, initial):
         if not m: continue
         absolute, cycle, pc = m.groups()
         frame, cycle, pc = int(absolute)-start, int(cycle), int(pc,16)
-        if pc not in PHASES and pc != 0x8003E2C8: continue
+        if pc not in PHASES and pc not in (0x8003E2C8,0x8003EC88): continue
         while pending and pending['cycle'] <= cycle:
             p, size = pending['address'] & 0x1FFFFF, pending['width']
             ram[p:p+size] = pending['value'].to_bytes(size,'little')
@@ -61,6 +61,10 @@ def export(run, target, frames, initial):
                     initialized_controls.add(p+off-0x1FF750)
             pending = next(writes, None)
         tick = ticks.setdefault(frame,{})
+        if pc == 0x8003EC88:
+            tick['session'] = dict(countdown_fields=struct.unpack_from('<H',ram,0xA9520)[0],
+                                   clock=struct.unpack_from('<I',ram,0x46F64)[0])
+            continue
         if pc == 0x8003E2C8:
             assert initialized_controls == set(range(12)), 'all effective control bytes must be observed'
             assert 'controls' not in tick, 'one player control boundary per tick required'
@@ -68,6 +72,7 @@ def export(run, target, frames, initial):
             assert flags == 0, 'digital input boundary required'
             tick['controls'] = dict(flags=flags, steering=steering, throttle=throttle, brake=brake,
                                     handbrake=handbrake, reverse=reverse, shift=shift)
+            initialized_controls.clear()
             continue
         phase = PHASES[pc]
         assert phase not in tick, 'single-car tick boundary required'
@@ -76,7 +81,7 @@ def export(run, target, frames, initial):
         (target/name).write_bytes(data)
         tick[phase] = name
     assert sorted(ticks) == list(range(0,frames,2))
-    for tick in ticks.values(): assert set(tick) == set(PHASES.values()) | {'controls'}
+    for tick in ticks.values(): assert set(tick) == set(PHASES.values()) | {'controls','session'}
     result = []
     for frame,tick in sorted(ticks.items()):
         assert tick['controls']['flags'] == 0
@@ -90,13 +95,15 @@ def main():
     p.add_argument('--scenario',choices=SCENARIOS,action='append')
     p.add_argument('--frames',type=int,default=60)
     p.add_argument('--prefix',default='')
+    p.add_argument('--session',action='store_true',help='Record the natural countdown/session clock too')
     args=p.parse_args()
     assert args.frames > 0 and args.frames % 2 == 0
     assert re.fullmatch('[a-z0-9_-]*',args.prefix)
     initial=args.state.with_name('ram.bin').read_bytes()
     assert len(initial)==2*1024*1024
     assert initial[0xAF231] == 1, 'single-car checkpoint required (8003EC1C)'
-    assert initial[0xA9520:0xA9522] == b'\0\0', 'unpaused physics required'
+    if not args.session:
+        assert initial[0xA9520:0xA9522] == b'\0\0', 'use --session for a countdown checkpoint'
     for scenario in args.scenario or ['gas','brake','coast','holdout']:
         name=args.prefix+scenario
         out=Path('game/tests/data/original/vehicle_loop')/name
@@ -104,8 +111,9 @@ def main():
         run=Path('.psx/runs')/f'vehicle-loop-{name}'
         command=['psx','run','--from-state',str(args.state),'--frames',str(args.frames),
                  '--input',json.dumps(SCENARIOS[scenario]),'--trace','--trace-range','8003EC24-8003EC78',
-                 '--trace-range','8003E2C8-8003E2CC',
+                 '--trace-range','8003E2C8-8003E2CC','--trace-range','8003EC88-8003EC8C',
                  '--watch',f'{BASE:08X}:{SIZE}','--watch','801FF750:12','--watch-reads','801FF750:12',
+                 '--watch','800A9520:2','--watch','80046F64:4',
                  '--max-events','2000000','--out',str(run),'--summary']
         subprocess.run(command,check=True,capture_output=True,text=True)
         ticks=export(run,out,args.frames,initial)
@@ -115,6 +123,9 @@ def main():
                       psx_version=subprocess.check_output(['psx','--version'],text=True).strip(),
                       alternate_locked_step=initial[0x1D5866]==3,
                       scope='Natural complete ticks; native tests may initialize state only once')
+        if args.session:
+            metadata['session'] = dict(countdown_fields=struct.unpack_from('<H',initial,0xA9520)[0],
+                                       clock=struct.unpack_from('<I',initial,0x46F64)[0])
         (out/'recording.json').write_text(json.dumps(metadata,indent=2)+'\n')
         print(f'{scenario}: {len(ticks)} complete original ticks',flush=True)
 

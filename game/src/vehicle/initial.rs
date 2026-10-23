@@ -141,6 +141,7 @@ impl VehicleInitialState {
         entity.insert((
             DigitalPedalInput::default(),
             DigitalGearInput::default(),
+            VehicleMotionGate::default(),
             DigitalSteeringInput::default(),
             MotionStep::default(),
             WheelSteering::default(),

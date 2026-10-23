@@ -213,6 +213,14 @@ pub enum VehicleSystems {
     RefreshContact,
 }
 
+/// Suppress pose integration while continuing input/force preparation. The
+/// original skips 80034480 during its start countdown (8003EC2C..44).
+#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
+pub struct VehicleMotionGate {
+    pub blocked: bool,
+}
+
 /// Rules-only verified subset. Requires the tuning file unless the caller
 /// inserts [`PedalTuning`] first. Does not spawn a car, render, or infer forces.
 pub struct VehicleRulesPlugin;
@@ -297,8 +305,11 @@ fn advance_pedals(
     }
 }
 
-fn integrate_motion(mut vehicles: Query<(&mut VehiclePose, &mut MotionStep)>) {
-    for (mut pose, mut step) in &mut vehicles {
+fn integrate_motion(mut vehicles: Query<(&mut VehiclePose, &mut MotionStep, Option<&VehicleMotionGate>)>) {
+    for (mut pose, mut step, gate) in &mut vehicles {
+        if gate.is_some_and(|gate| gate.blocked) {
+            continue;
+        }
         pose.advance(std::mem::take(&mut *step));
     }
 }

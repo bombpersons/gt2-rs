@@ -1,0 +1,5 @@
+// Authored free-driving setup. Keep the mod independent of base session data.
+(
+    initial_state: Some("vehicle/initial.ron"),
+    session: None,
+)

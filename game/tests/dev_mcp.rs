@@ -174,11 +174,21 @@ fn native_driving_frame_matches_the_recorded_body_origin() {
 #[test]
 #[ignore = "requires stationary original checkpoint/fixtures, generated assets and an offscreen GPU"]
 fn native_idle_reverse_and_forward_replays_original_requests() {
+    native_start_replay("standing-reverse-forward", "b1-stationary-checkpoint", None);
+}
+
+#[test]
+#[ignore = "requires original countdown checkpoint/fixtures, generated assets and an offscreen GPU"]
+fn native_countdown_to_launch_replays_original_requests() {
+    native_start_replay("countdown-gas", "b1-countdown-checkpoint", Some(120));
+}
+
+fn native_start_replay(scenario: &str, checkpoint: &str, countdown_fields: Option<u16>) {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
-    let output = std::env::temp_dir().join(format!("gt2-idle-driving-{}", std::process::id()));
+    let output = std::env::temp_dir().join(format!("gt2-start-{scenario}-{}", std::process::id()));
     let asset_root = output.join("native");
     std::fs::create_dir_all(&asset_root).unwrap();
-    println!("Idle driving evidence: {}", output.display());
+    println!("Start replay evidence: {}", output.display());
     // Offline conversion only. The native process receives ordinary assets,
     // never an emulator checkpoint. Keep the normal moving-reference assets
     // untouched while giving this test the recorded idle initial condition.
@@ -196,13 +206,22 @@ module.export_initial_vehicle(checkpoint.read_bytes(), assets)
             .arg("-c")
             .arg(script)
             .arg(root)
-            .arg(root.join(".psx/runs/b1-stationary-checkpoint/ram.bin"))
+            .arg(root.join(format!(".psx/runs/{checkpoint}/ram.bin")))
             .arg(asset_root.join("assets"))
             .status()
             .unwrap()
             .success()
     );
-    let fixtures = root.join("game/tests/data/original/vehicle_loop/standing-reverse-forward");
+    let setup = game::race::RaceVehicle {
+        session: countdown_fields.map(game::race::session::DrivingSession::countdown),
+        ..Default::default()
+    };
+    std::fs::write(
+        asset_root.join("assets").join(game::race::RACE_VEHICLE_ASSET),
+        ron::ser::to_string(&setup).unwrap(),
+    )
+    .unwrap();
+    let fixtures = root.join(format!("game/tests/data/original/vehicle_loop/{scenario}"));
     let recording: Value =
         serde_json::from_str(&std::fs::read_to_string(fixtures.join("recording.json")).unwrap()).unwrap();
     let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));

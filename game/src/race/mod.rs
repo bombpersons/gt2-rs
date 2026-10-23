@@ -27,6 +27,7 @@ use bevy::{
 use engine::prelude::*;
 use engine::psx::{PsxMaterial, PsxView};
 pub mod camera;
+pub mod session;
 use camera::{CameraInput, CameraSettings, CameraSubject, PlayerCamera, VehicleCamera};
 
 /// The baked course this scene runs on.
@@ -62,13 +63,18 @@ pub struct RaceCourse(pub CourseData);
 
 /// Select a native vehicle state, or keep a course-only camera subject.
 /// A mod can supply its own state through the same layered format.
-#[derive(Resource)]
+#[derive(Resource, serde::Deserialize, serde::Serialize)]
+#[serde(default)]
 pub struct RaceVehicle {
     pub initial_state: Option<String>,
+    /// Optional start-grid hold/clock; independent of vehicle tuning.
+    pub session: Option<session::DrivingSession>,
 }
+/// Optional layered scene setup. Existing content without it keeps free driving.
+pub const RACE_VEHICLE_ASSET: &str = "race/vehicle.ron";
 impl Default for RaceVehicle {
     fn default() -> Self {
-        Self { initial_state: Some(crate::vehicle::initial::INITIAL_STATE_ASSET.into()) }
+        Self { initial_state: Some(crate::vehicle::initial::INITIAL_STATE_ASSET.into()), session: None }
     }
 }
 
@@ -81,7 +87,21 @@ impl Plugin for RacePlugin {
         if !app.world().contains_resource::<CameraSettings>() {
             app.add_plugins(TuningPlugin::<CameraSettings>::new(camera::CAMERA_SETTINGS));
         }
-        app.init_resource::<RacePresentation>().init_resource::<RaceVehicle>();
+        app.init_resource::<RacePresentation>();
+        if !app.world().contains_resource::<RaceVehicle>() {
+            let setup = if engine::config::asset_path(RACE_VEHICLE_ASSET).is_file() {
+                load_ron::<RaceVehicle>(RACE_VEHICLE_ASSET)
+                    .unwrap_or_else(|error| panic!("race vehicle setup {RACE_VEHICLE_ASSET}: {error}"))
+            } else {
+                RaceVehicle::default()
+            };
+            app.insert_resource(setup);
+        }
+        if !app.world().contains_resource::<session::DrivingSession>()
+            && let Some(session) = app.world().resource::<RaceVehicle>().session
+        {
+            app.insert_resource(session);
+        }
         if app.world().resource::<RaceVehicle>().initial_state.is_some()
             && !app.world().contains_resource::<crate::vehicle::visual_motion::VehicleVisualTuning>()
         {
@@ -178,6 +198,9 @@ fn spawn_camera(world: &mut World) {
     });
     let subject = if let Some(state) = state {
         let subject = state.spawn(world);
+        if world.contains_resource::<session::DrivingSession>() {
+            world.entity_mut(subject).insert(session::SessionParticipant);
+        }
         subject_pose = crate::vehicle::visual_motion::body_transform(
             *world.get::<crate::vehicle::VehiclePose>(subject).unwrap(),
             world.get::<crate::vehicle::road_contact::RoadContactState>(subject).unwrap(),

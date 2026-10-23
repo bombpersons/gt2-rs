@@ -7,6 +7,11 @@ attaches the controller to an existing entity. Both attach the same components
 and feedback markers used by the continuous original-trajectory comparisons.
 Neither loads assets, installs plugins nor requires a renderer.
 
+For a timed start, [the optional session setup](session-start-evidence.md)
+selects an initial-state asset and countdown independently of the controller.
+Spawned vehicles include `VehicleMotionGate`; `SessionParticipant` lets the
+session drive that gate together with the reset and suspension inputs.
+
 The format uses the public components' documented units: Bevy world metres
 and m/s, turns and turns/s, seconds, normalized pedal travel, and explicitly
 documented internal force units. It contains no original addresses, pointers,

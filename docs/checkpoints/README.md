@@ -35,6 +35,10 @@ recordings, see [driver-request evidence](../driver-request-evidence.md).
 Those checkpoints reach vblank 7050 with the licence clock already running;
 they exercise ready-to-drive idle launches, not the earlier countdown.
 
+[B-1 countdown evidence](../session-start-evidence.md) adds the vblank-6550
+checkpoint recipe and natural countdown-to-launch recordings. It also explains
+the optional native session content setup and the remaining HUD/session gaps.
+
 A non-driving submenu is reachable and does not stall: the GT map's city
 icons open 2D dealership maps. West City is HOME → LEFT (GO RACE) → DOWN
 (MACHINE TEST) → LEFT (WEST CITY) → CROSS; its Alfa Romeo dealer (`LINE UP`,

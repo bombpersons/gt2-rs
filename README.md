@@ -35,8 +35,8 @@ See [how the screenshots were captured](docs/screenshots.md).
 The port is **not yet playable**. B-1 renders from imported course and vehicle
 data, and the composed vehicle rules match original moving and idle-launch
 trajectories, now connected to live presentation. The ordinary scene still
-starts from a moving checkpoint. The licence countdown, timer, menus,
-outcomes, races and progression still need work.
+starts from a moving checkpoint. Optional countdown/clock rules are verified;
+their HUD, licence outcomes, menus, races and progression still need work.
 
 | Area | Status |
 |---|---|
@@ -48,6 +48,7 @@ outcomes, races and progression still need work.
 | Tyre forces, grip, engine, drivetrain and transmission | Moving/idle-launch feedback, reverse and manual requests verified; licence session remains |
 | Road contact, suspension, vertical motion and aerodynamics | Decoded road contact and retained force/body feedback verified together; barrier/car collision remains |
 | Playable B-1 test, HUD, sounds and pass/fail/retry | Not yet complete |
+| B-1 start hold and driving clock | Optional native setup matches countdown/release trajectories; default start and HUD remain |
 | Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |
 | Example mod and engine sandbox | Run with handmade assets and no disc data |
 | Desktop content editor | Placement editor shell; course geometry and tuning editors remain |

@@ -230,8 +230,15 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   Disconnected engines now retain prepared curve/drag values while combustion
   stays at the late feedback boundary. The real binary's idle reverse/forward
   replay matches final position exactly. The handmade mod can stop, re-engage
-  and reverse. Next: licence session/countdown/timer and outcome/retry flow,
-  collision and broader content. See docs/driver-request-evidence.md.
+  and reverse. See docs/driver-request-evidence.md.
+- Optional B-1 session rules now drive countdown gates and the post-physics
+  clock. Three natural countdown recordings add 380 ticks, bringing retained
+  full-loop coverage to 820 unique original ticks with exact countdown/clock
+  comparisons. The real binary's configured countdown launch matches final
+  position exactly; the handmade mod can join a timed start. Native scene
+  setup is available through layered race/vehicle.ron. Next: default standing
+  start selection, countdown/HUD presentation, licence outcomes/retry flow,
+  collision and broader content. See docs/session-start-evidence.md.
 
 ## Work order
 

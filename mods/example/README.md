@@ -96,12 +96,18 @@ then selects reverse through the new ordinary driver-request producer. The
 authored free-engine response and first/top shift thresholds support those
 idle transitions and the three available forward ratios.
 
+A timed-start check inserts `DrivingSession` and marks the same handmade car
+with `SessionParticipant`: it holds despite throttle, releases on the countdown
+boundary, advances the clock and drives away. The controller needs no edits.
+See [the session API](../../docs/session-start-evidence.md) for optional content
+setup through `race/vehicle.ron`.
+
 The opt-in GPU/MCP check copies only the handmade assets into a fresh tree
 with **no base-game assets folder**, then runs the real executable there.
 It verifies acceleration, body/camera following, wheel rolling, view cycling,
 steering and braking, and captures normal and close oblique views for visual
 inspection. It requires an offscreen software GPU adapter.
 
-The base port still needs its standing start, collision, licence conditions,
+The base port still needs default start selection, collision, licence conditions,
 HUD, sound and complete pass/fail/retry flow. This authored example proves
 reuse of the current controller; it does not finish those original-game tasks.
