@@ -4,7 +4,12 @@
 //! dampers, anti-roll response and body-force transfer. Loads feed next tick's
 //! grip preparation. Road sampling, orientation and vertical integration are
 //! separate producers/consumers; this stage does not infer a road plane.
-use super::{VehicleSystems, tyre_grip::TyreGripInput};
+use super::{
+    VehicleSystems,
+    body_dynamics::{BodyDynamics, BodyDynamicsSystems},
+    forward_dynamics::{ForwardDynamics, ForwardDynamicsSystems},
+    tyre_grip::TyreGripInput,
+};
 use bevy::{ecs::query::QueryData, prelude::*};
 use engine::{prelude::TuningPlugin, shell::GameSystems};
 use serde::{Deserialize, Serialize};
@@ -66,10 +71,13 @@ pub struct SuspensionInput {
     /// Physics+704, /4096 per second, produced by 8004232C. This is an
     /// explicit reciprocal: it is not recomputed from the rounded duration.
     pub inverse_step_seconds: f32,
-    /// Physics+71C/+720 and +728/+72C/+734 in original force units.
+    /// Physics+71C/+720, original front/rear aerodynamic force units.
     pub axle_force: [f32; 2],
-    pub lateral_force: f32,
+    /// Physics+728 /4096, lateral acceleration supplied by body dynamics.
+    pub lateral_acceleration_mps2: f32,
+    /// Physics+72C, reserved explicit vertical transfer channel.
     pub vertical_force: f32,
+    /// Physics+734, accumulated forward force in original force units.
     pub forward_force: f32,
     /// Physics+786 ==7 skips this car; the parent countdown can also skip
     /// the entire suspension call. Both leave all persistent state alone.
@@ -149,7 +157,7 @@ impl SuspensionTuning {
             let force = (square * self.axles[axle].antiroll_force_per_m2 as f64).floor();
             if difference < 0.0 { -force } else { force }
         });
-        let lateral = low_product(self.lateral_lever_m as f64, -(input.lateral_force as f64));
+        let lateral = low_product(self.lateral_lever_m as f64, -(input.lateral_acceleration_mps2 as f64 * 4096.0));
         let forward =
             low_product(self.forward_lever_m as f64, input.forward_force as f64 - input.vertical_force as f64);
         for i in 0..4 {
@@ -195,6 +203,13 @@ fn signed_short(value: f64) -> f64 {
 pub enum SuspensionSystems {
     Evaluate,
 }
+/// Opt into transferring the current forward/body dynamics outputs to
+/// suspension after horizontal integration. Without it, explicit inputs are
+/// retained for independently driven suspension, recorded scenes and mods.
+#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
+pub struct SuspensionForceTransfer;
+
 pub struct SuspensionRulesPlugin;
 impl Plugin for SuspensionRulesPlugin {
     fn build(&self, app: &mut App) {
@@ -208,9 +223,31 @@ impl Plugin for SuspensionRulesPlugin {
                 .before(VehicleSystems::RefreshContact)
                 .in_set(GameSystems::Game),
         )
+        .add_systems(
+            FixedUpdate,
+            transfer_forces
+                .after(BodyDynamicsSystems::ApplyWorld)
+                .after(ForwardDynamicsSystems::Integrate)
+                .before(SuspensionSystems::Evaluate)
+                .in_set(VehicleSystems::Suspension),
+        )
         .add_systems(FixedUpdate, evaluate.in_set(SuspensionSystems::Evaluate).in_set(VehicleSystems::Suspension));
     }
 }
+type ForceTransferCar = (&'static mut SuspensionInput, Option<&'static ForwardDynamics>, Option<&'static BodyDynamics>);
+fn transfer_forces(mut cars: Query<ForceTransferCar, With<SuspensionForceTransfer>>) {
+    for (mut input, forward, body) in &mut cars {
+        // 80043AE0 reads +734 and +728 after 8003B304 has completed.
+        // The vertical +72C channel has its own producer and stays explicit.
+        if let Some(forward) = forward {
+            input.forward_force = forward.force;
+        }
+        if let Some(body) = body {
+            input.lateral_acceleration_mps2 = body.lateral_acceleration_mps2;
+        }
+    }
+}
+
 #[derive(QueryData)]
 #[query_data(mutable)]
 struct SuspensionCar {

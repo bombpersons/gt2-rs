@@ -73,8 +73,8 @@ def export(run, frames):
         }
         if pc in mapping:
             field,offset=mapping[pc];wheel=(address-BASE-offset)//0x68
-        elif pc in [0x8003A3CC,0x8003A3EC,0x8003A420]:
-            field,offset={0x8003A3CC:('direction',0x16),0x8003A3EC:('reference',0x14),0x8003A420:('response_force',8)}[pc]
+        elif pc in [0x8003A3CC,0x8003A3EC,0x8003A420,0x8003A424]:
+            field,offset={0x8003A3CC:('direction',0x16),0x8003A3EC:('reference',0x14),0x8003A420:('response_force',8),0x8003A424:('ground_response_force',12)}[pc]
             wheel=(address-0x1F800000-offset)//0x1C
         elif pc in [0x8003D980,0x8003D9BC,0x8003DA68]:
             field='longitudinal_response';wheel=(address-0x1F80001A)//0x1C
@@ -92,7 +92,7 @@ def export(run, frames):
         if field in row and field!='lateral_force':assert row[field]==value,(run,row,field,value)
         row[field]=value
     expected={'run_frame','wheel','steering','forward','lateral','tread','geometric_angle','activation','slip','grip','speed_response',
-              'wheel_force','ground_force','lateral_force','corner_response','direction','reference','response_force','longitudinal_response','corner_limit','body_forward'}
+              'wheel_force','ground_force','lateral_force','corner_response','direction','reference','response_force','ground_response_force','longitudinal_response','corner_limit','body_forward'}
     assert sorted(rows)==[(f,i) for f in range(0,frames,2) for i in range(4)],run
     for row in rows.values():assert set(row)==expected,(run,set(row)^expected,row)
     return [rows[k] for k in sorted(rows)]

@@ -214,7 +214,7 @@ fn check(name: &str, count: usize) {
             SuspensionInput {
                 inverse_step_seconds: v("suspension_before", "inverse_duration") / 4096.0,
                 axle_force: [-999.0; 2],
-                lateral_force: v("suspension_before", "lateral_force"),
+                lateral_acceleration_mps2: v("suspension_before", "lateral_force") / 4096.0,
                 vertical_force: v("suspension_before", "vertical_force"),
                 forward_force: v("suspension_before", "forward_force"),
                 ..default()

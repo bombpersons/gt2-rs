@@ -102,7 +102,7 @@ fn check(name: &str, count: usize) {
             body_up: before("body_up") / 4096.0,
             inverse_step_seconds: before("inverse_duration") / 4096.0,
             axle_force: [before("front_force"), before("rear_force")],
-            lateral_force: before("lateral_force"),
+            lateral_acceleration_mps2: before("lateral_force") / 4096.0,
             vertical_force: before("vertical_force"),
             forward_force: before("forward_force"),
             disabled: before("mode") == 7.0,
@@ -199,7 +199,7 @@ fn handmade_suspension_runs_alone_with_per_car_setup_and_optional_grip_bridge() 
         inverse_step_seconds: 1.0,
         attachment_height_m: [-0.25, 0.25, 0.5, 1.25],
         axle_force: [2.0, -2.0],
-        lateral_force: 4.0,
+        lateral_acceleration_mps2: 4.0 / 4096.0,
         vertical_force: 4.0,
         forward_force: 12.0,
         ..default()
@@ -208,7 +208,19 @@ fn handmade_suspension_runs_alone_with_per_car_setup_and_optional_grip_bridge() 
     let mut variant = tuning.clone();
     variant.axles[0].spring_force_per_m = 32.0;
     let other = app.world_mut().spawn((input, Suspension::default(), SuspensionSetup(variant))).id();
+    let transferred = app
+        .world_mut()
+        .spawn((
+            input,
+            Suspension::default(),
+            SuspensionForceTransfer,
+            game::vehicle::forward_dynamics::ForwardDynamics { force: 20.0, ..default() },
+            game::vehicle::body_dynamics::BodyDynamics { lateral_acceleration_mps2: 0.0, ..default() },
+        ))
+        .id();
     app.run_tick(&[]);
+    assert_eq!(app.world().get::<Suspension>(transferred).unwrap().body_force, [19.0, 3.0, 1.0, -11.0]);
+    assert_eq!(app.world().get::<SuspensionInput>(transferred).unwrap().forward_force, 20.0);
     let state = *app.world().get::<Suspension>(car).unwrap();
     assert_eq!(state.travel_m, [-0.75, -0.25, 0.0, 0.5]);
     assert_eq!(state.spring_force, [12.0, 4.0, 0.0, -4.0]);

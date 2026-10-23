@@ -32,9 +32,9 @@ See [how the screenshots were captured](docs/screenshots.md).
 ## Status: a work in progress
 
 The port is **not yet playable**. B-1 renders from imported course and vehicle
-data, and much of the vehicle simulation has been checked against original
-execution. Connecting those rules into a complete driving session is the next
-milestone. Menus, licence outcomes, races and progression still need work.
+data, and the composed vehicle rules match short original trajectories from a
+moving B-1 checkpoint. Attaching those rules to live presentation and building
+a complete driving session are the next milestones. Menus, licence outcomes, races and progression still need work.
 
 | Area | Status |
 |---|---|
@@ -43,8 +43,8 @@ milestone. Menus, licence outcomes, races and progression still need work.
 | Vitz body and procedural wheels | Imported and rendered at the reference pose; wheel animation, shadows and reflections remain |
 | Bumper, near/far chase and rear-look cameras | Match original pose recordings; R1 cycles views, L1 looks back |
 | Pedals, digital steering, wheel slip and braking | Rules checked against original execution; analog controls remain |
-| Tyre forces, grip, engine, drivetrain and transmission | Individual stages and connected subsystem sequences verified; full feedback loop remains |
-| Road contact, suspension, vertical motion and aerodynamics | Decoded collision and retained histories verified together; remaining force/control producers are being connected |
+| Tyre forces, grip, engine, drivetrain and transmission | Individual stages and moving B-1 feedback trajectories verified; live session remains |
+| Road contact, suspension, vertical motion and aerodynamics | Decoded road contact and retained force/body feedback verified together; barrier/car collision remains |
 | Playable B-1 test, HUD, sounds and pass/fail/retry | Not yet complete |
 | Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |
 | Example mod and engine sandbox | Run with handmade assets and no disc data |

@@ -4,8 +4,10 @@
 //! wheel lever arms, optionally synchronize free wheel/axle speeds and advance
 //! wheel spin. These results feed the NEXT tick's slip/control/force rules.
 use super::{
-    SteeringKinematics, VehicleStepDuration, VehicleSystems, VehicleVelocity,
+    SteeringKinematics, VehicleStepDuration, VehicleSystems, VehicleVelocity, WheelSteering,
     body_dynamics::BodyDynamics,
+    braking::WheelBrakeDemand,
+    drivetrain::DrivetrainOutput,
     longitudinal_slip::{WheelSurfaceMotion, steering_basis},
     slip::WheelLocalVelocities,
     tyre_forces::{TyreContactState, scaled_force},
@@ -188,12 +190,31 @@ struct ContactCar {
     contact: Option<&'static mut TyreContactState>,
     steering: Option<&'static mut SteeringKinematics>,
     body: Option<&'static mut BodyDynamics>,
+    brakes: Option<&'static WheelBrakeDemand>,
+    coupling: Option<&'static DrivetrainOutput>,
+    wheel_steering: Option<&'static WheelSteering>,
 }
 fn refresh(tuning: Res<ContactMotionTuning>, mut cars: Query<ContactCar>) {
     for mut car in &mut cars {
         let setup = car.setup.map(|v| &v.0).unwrap_or(&tuning);
+        let mut input = *car.input;
+        if let Some(steering) = car.wheel_steering {
+            input.wheel_heading_turns = steering.angle_turns;
+        }
+        if let Some(coupling) = car.coupling {
+            // 8003A264 resets wheel flags from current brake demand;
+            // 80045BB4/BBC adds the current drive/coupling flags. The late
+            // 80030748..750 gate synchronizes only a wheel whose complete flag is zero.
+            input.synchronize_wheels = std::array::from_fn(|i| {
+                coupling.wheel_flags[i] == 0 && car.brakes.is_none_or(|brakes| !brakes.is_braking(i))
+            });
+        } else if let Some(brakes) = car.brakes {
+            for (i, sync) in input.synchronize_wheels.iter_mut().enumerate() {
+                *sync &= !brakes.is_braking(i);
+            }
+        }
         let shafts =
-            setup.refresh(*car.input, *car.velocity, car.duration.0, &mut car.state, &mut car.local, &mut car.wheels);
+            setup.refresh(input, *car.velocity, car.duration.0, &mut car.state, &mut car.local, &mut car.wheels);
         if let Some(mut axles) = car.axles {
             for (i, shaft) in shafts.into_iter().enumerate() {
                 if car.state.synchronized_axles[i] {

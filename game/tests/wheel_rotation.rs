@@ -275,3 +275,33 @@ fn handmade_rotation_runs_without_other_vehicle_plugins_or_disc_data() {
     assert_eq!(app.world().get::<WheelSurfaceMotion>(car).unwrap().tread_speed_mps, [0.75, -0.75, 2.0, 2.0]);
     assert_eq!(app.world().get::<WheelRotationState>(car).unwrap().previous_delta_mps, [-0.5, 0.5, 0.0, 0.125]);
 }
+
+#[test]
+fn native_ground_feedback_is_opt_in_and_preserves_explicit_reaction_inputs() {
+    let mut app = headless_app(game::tick_rate(game::REGION));
+    app.insert_resource(WheelRotationTuning {
+        radius_m: [0.5; 2],
+        rotation_response: [1.0; 2],
+        differentials: [Differential::Independent; 2],
+        yaw_bias_min_forward_mps: 2.0,
+    })
+    .add_plugins(WheelRotationRulesPlugin);
+    let spawn = |world: &mut World| {
+        world
+            .spawn((
+                WheelRotationInput { auxiliary_tread_force: [4.0; 4], ..default() },
+                WheelSurfaceMotion::default(),
+                WheelBrakeDemand::default(),
+                TyreForces { wheel_response_force: [2.0; 4], ground_response_force: [6.0; 4], ..default() },
+                ForwardDynamics::default(),
+                WheelReactionTorque::default(),
+            ))
+            .id()
+    };
+    let explicit = spawn(app.world_mut());
+    let native = spawn(app.world_mut());
+    app.world_mut().entity_mut(native).insert(TyreWheelFeedback);
+    app.run_tick(&[]);
+    assert_eq!(app.world().get::<WheelReactionTorque>(native).unwrap().prepared, [-4.0; 4]);
+    assert_eq!(app.world().get::<WheelReactionTorque>(explicit).unwrap().prepared, [-3.0; 4]);
+}

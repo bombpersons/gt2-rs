@@ -173,3 +173,10 @@ load, surface/orientation production and collision, followed
 by a closed B-1 trajectory and live presentation. Alternate torque controllers,
 induction, physical request production, wheel animation, audio, licence flow,
 the wider game and the authoring editor remain unfinished.
+
+## Retained loop
+
+Body brake-stop detection now reads current `WheelBrakeDemand` when present,
+matching bit 1 written by `8003A264`; explicit `braked_wheels` still works for
+standalone bodies. The [moving B-1 loop](vehicle-loop-evidence.md) retains body
+feedback, tilt and velocity across the complete native vehicle pipeline.

@@ -195,3 +195,12 @@ The seed run's load producer at `80043A74` is now ported, together with
 travel sampling and anti-roll/body-force preparation. See
 [suspension evidence](suspension-evidence.md) for 221 original comparisons,
 next-tick load carry and the remaining road/orientation/collision boundaries.
+
+## Current drive/brake synchronization
+
+When drivetrain output and brake demand are present, contact motion now derives
+its synchronization gate from their current wheel flags/demands, and uses
+current `WheelSteering` angles. Explicit inputs still work without these
+components. The [retained B-1 loop](vehicle-loop-evidence.md) verifies braking,
+release and turning without injecting late wheel/axle speeds each tick.
+Collision-specific flags remain outside this completed boundary.

@@ -60,7 +60,8 @@ pub struct AxleDrive {
 #[derive(Component, Default, Debug, Clone, Copy, Reflect)]
 #[reflect(Component)]
 pub struct WheelRotationInput {
-    /// Additional force at scratch wheel+8, separate from tyre response.
+    /// Ground-reference response at scratch wheel+8. External tyre owners
+    /// supply it here; TyreWheelFeedback opts into the native tyre result.
     pub auxiliary_tread_force: [f32; 4],
     /// Signed scratch+90 /4096, shared with yaw-sensitive brake assistance.
     pub yaw_correction: f32,
@@ -257,6 +258,12 @@ pub enum WheelRotationSystems {
     Integrate,
 }
 
+/// Use the tyre feature's ground-reference response in reaction torque.
+/// Omit this marker to supply `auxiliary_tread_force` explicitly.
+#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
+pub struct TyreWheelFeedback;
+
 pub struct WheelRotationRulesPlugin;
 impl Plugin for WheelRotationRulesPlugin {
     fn build(&self, app: &mut App) {
@@ -282,18 +289,21 @@ impl Plugin for WheelRotationRulesPlugin {
         .add_systems(FixedUpdate, integrate.in_set(WheelRotationSystems::Integrate));
     }
 }
-fn prepare(
-    tuning: Res<WheelRotationTuning>,
-    mut cars: Query<(
-        &WheelRotationInput,
-        &WheelSurfaceMotion,
-        &WheelBrakeDemand,
-        &TyreForces,
-        &ForwardDynamics,
-        &mut WheelReactionTorque,
-    )>,
-) {
-    for (&input, &motion, &brakes, &tyres, &forward, mut torque) in &mut cars {
+type ReactionCar = (
+    &'static WheelRotationInput,
+    &'static WheelSurfaceMotion,
+    &'static WheelBrakeDemand,
+    &'static TyreForces,
+    &'static ForwardDynamics,
+    &'static mut WheelReactionTorque,
+    Option<&'static TyreWheelFeedback>,
+);
+fn prepare(tuning: Res<WheelRotationTuning>, mut cars: Query<ReactionCar>) {
+    for (&input, &motion, &brakes, &tyres, &forward, mut torque, feedback) in &mut cars {
+        let mut input = input;
+        if feedback.is_some() {
+            input.auxiliary_tread_force = tyres.ground_response_force;
+        }
         *torque = tuning.prepare(input, motion, brakes, tyres, forward);
     }
 }

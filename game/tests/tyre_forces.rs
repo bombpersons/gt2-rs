@@ -87,6 +87,7 @@ fn check(name: &str, count: usize) {
                 ("wheel_force", actual.wheel_reference_force[i], 1.0),
                 ("ground_force", actual.ground_reference_force[i], 1.0),
                 ("response_force", actual.wheel_response_force[i], 1.0),
+                ("ground_response_force", actual.ground_response_force[i], 1.0),
                 ("lateral_force", actual.lateral_force[i], 1.0),
             ] {
                 assert_eq!(value * scale, row[field] as f32, "{name} case {case} wheel {i}: {field}");
@@ -200,5 +201,6 @@ fn handmade_tyres_work_without_the_other_vehicle_plugins_or_disc_assets() {
     assert_eq!(f.wheel_reference_force, [60.0, 0.0, 0.0, -60.0]);
     assert_eq!(f.ground_reference_force, [0.0, -60.0, 0.0, 0.0]);
     assert_eq!(f.wheel_response_force, [60.0, 0.0, 0.0, -60.0]);
+    assert_eq!(f.ground_response_force, [0.0, -30.0, 0.0, 0.0]);
     assert_eq!(f.lateral_force, [0.0, 0.0, 5.0, 0.0]);
 }

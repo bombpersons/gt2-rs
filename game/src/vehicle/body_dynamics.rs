@@ -249,6 +249,7 @@ struct WorldCar {
     setup: Option<&'static BodyDynamicsSetup>,
     slip: Option<&'static WheelSlip>,
     transmission: Option<&'static TransmissionState>,
+    brakes: Option<&'static super::braking::WheelBrakeDemand>,
     drive: Option<&'static mut DrivetrainInput>,
 }
 fn apply_world(tuning: Res<BodyDynamicsTuning>, mut cars: Query<WorldCar>) {
@@ -257,6 +258,10 @@ fn apply_world(tuning: Res<BodyDynamicsTuning>, mut cars: Query<WorldCar>) {
         let mut input = *car.input;
         if let Some(slip) = car.slip {
             input.slip_activation = slip.activation;
+        }
+        if let Some(brakes) = car.brakes {
+            // 8003A264 produces bit 1 from this tick's allocated demand.
+            input.braked_wheels = std::array::from_fn(|i| brakes.is_braking(i));
         }
         if let Some(state) = car.transmission {
             input.first_gear_override = state.first_gear_ticks != 0;

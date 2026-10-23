@@ -160,3 +160,14 @@ write its road offset, and `80043204` writes attachment height. Both up
 components are written by `8004506C` through the orientation helper. These
 writer observations locate the next investigation; their complete rules are
 not established here.
+
+## Current body-force transfer
+
+`SuspensionForceTransfer` opts into current `ForwardDynamics::force` and
+`BodyDynamics::lateral_acceleration_mps2`, sampled after horizontal integration
+and before suspension evaluation. `SuspensionInput::lateral_acceleration_mps2`
+replaces the former raw `lateral_force` channel (+728 /4096); explicit tests
+convert their recorded boundary once. Omitting the marker retains explicit
+standalone inputs. The [retained B-1 loop](vehicle-loop-evidence.md) verifies
+this bridge through the resulting body tilt and every subsequent physical tick.
+The vertical +72C channel remains explicit.

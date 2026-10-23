@@ -84,6 +84,9 @@ pub struct TyreForces {
     pub ground_reference_force: [f32; 4],
     /// Speed-response-scaled wheel-reference channel (scratch wheel+4).
     pub wheel_response_force: [f32; 4],
+    /// Speed-response-scaled ground-reference channel (scratch wheel+8),
+    /// consumed alongside the wheel-reference channel by reaction torque.
+    pub ground_response_force: [f32; 4],
     /// Wheel+54, including the independent low-speed correction.
     pub lateral_force: [f32; 4],
 }
@@ -111,9 +114,13 @@ impl TyreTuning {
                 if longitudinal.force_direction[wheel] == TyreForceDirection::Reverse { -magnitude } else { magnitude };
             if longitudinal.reference[wheel] == SlipReference::Wheel {
                 forces.wheel_reference_force[wheel] = signed;
-                forces.wheel_response_force[wheel] = scaled_force(motion.speed_response[wheel], signed);
+                // 8003A3E4 calls the wide signed product helper 80075A5C.
+                forces.wheel_response_force[wheel] =
+                    (motion.speed_response[wheel] as f64 * signed as f64).trunc() as f32;
             } else {
                 forces.ground_reference_force[wheel] = signed;
+                forces.ground_response_force[wheel] =
+                    (motion.speed_response[wheel] as f64 * signed as f64).trunc() as f32;
             }
             if geometric.activation[wheel] != 0.0 {
                 // Nonpositive tread speed uses the opposite wheel heading;

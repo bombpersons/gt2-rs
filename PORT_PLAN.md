@@ -190,6 +190,19 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   collision, live vehicle presentation and licence flow.
   See docs/driver-assist-evidence.md.
 
+- The composed moving B-1 loop now matches 120 original ticks across four
+  30-tick trajectories: gas, coast, braking and a fresh turning/mixed-pedal
+  holdout. State is initialized once per recording and retained thereafter;
+  later velocity/force/contact/steering/engine/pose values are assertions only.
+  Current body/forward force transfer, ground-reference wheel feedback and
+  late drive/brake synchronization now connect the existing features. All
+  sampled physical state matches at four stage boundaries with zero tolerance.
+  The 972 tyre comparisons also check both speed-response force channels.
+  Next: an authorable native vehicle initial-state format/public spawn hook,
+  live body/wheel/camera presentation and the handmade driving mod, then the
+  standing-start B-1 session, collision, licence flow and broad content parity.
+  See docs/vehicle-loop-evidence.md.
+
 ## Work order
 
 1. Decode and import real course geometry, materials, textures, object

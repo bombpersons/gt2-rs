@@ -1,5 +1,13 @@
 # Evidence
 
+The [retained B-1 vehicle loop](vehicle-loop-evidence.md) now matches 120
+original ticks across gas, coast, braking and a fresh turning/mixed-pedal
+holdout. Native state is seeded once per recording, then controls, forces,
+engine/drivetrain, movement, road, suspension/body correction and late contact
+motion run together. Four stage boundaries compare sampled physical state
+exactly. Live presentation, the standing start, collision and licence flow
+remain unfinished.
+
 Current vehicle work: [driving evidence](driving-evidence.md) records digital
 steering limits/spring, wheel steering and velocity-to-step construction.
 All 300 consecutive original ticks and 39 controlled boundary probes match

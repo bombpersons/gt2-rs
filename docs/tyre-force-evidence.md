@@ -150,3 +150,14 @@ Ordinary drivetrain/transmission/body phases are ported separately. Suspension
 load, road surface/orientation, collision and a playable driving session remain open.
 The live B-1 subject is still static; these tests do not establish free-driving
 or all-car parity.
+
+## Retained vehicle-loop connection
+
+The [whole moving B-1 loop](vehicle-loop-evidence.md) exposed the second
+speed-response-scaled force at `8003A424` (scratch wheel+8).
+`TyreForces::ground_response_force` now exposes it alongside
+`wheel_response_force`; both use the wide signed product at `8003A3E4`.
+Both channels compare exactly in all 972 original wheel executions after
+regenerating the recorder, including its independent holdout. Opting a car
+into `TyreWheelFeedback` connects this result to reaction torque without
+supplying a measured auxiliary force.
