@@ -236,9 +236,14 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   full-loop coverage to 820 unique original ticks with exact countdown/clock
   comparisons. The real binary's configured countdown launch matches final
   position exactly; the handmade mod can join a timed start. Native scene
-  setup is available through layered race/vehicle.ron. Next: default standing
-  start selection, countdown/HUD presentation, licence outcomes/retry flow,
-  collision and broader content. See docs/session-start-evidence.md.
+  setup is available through layered race/vehicle.ron. See docs/session-start-evidence.md.
+- Normal export now captures and selects the actual countdown start, while
+  retaining the moving checkpoint for tuning/regression tests. Full power-on
+  export reproduced both reference RAM dumps byte for byte. Generated startup
+  content matches all three countdown trajectories; the default real binary
+  matches the launch position exactly without a scene override. Both reuse
+  paths select their intended startup mode. Next: countdown/HUD presentation,
+  licence outcomes/retry flow, collision and broader content.
 
 ## Work order
 

@@ -11,6 +11,30 @@ fn query(client: &mut Client, name: &str) -> Value {
         .clone()
 }
 
+fn copy_assets(source: &std::path::Path, destination: &std::path::Path) {
+    std::fs::create_dir_all(destination).unwrap();
+    for entry in std::fs::read_dir(source).unwrap() {
+        let entry = entry.unwrap();
+        let target = destination.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_assets(&entry.path(), &target);
+        } else {
+            std::fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+
+fn moving_reference_assets(output: &std::path::Path) -> std::path::PathBuf {
+    let root = output.join("moving-reference");
+    copy_assets(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets"), &root.join("assets"));
+    std::fs::write(
+        root.join("assets").join(game::race::RACE_VEHICLE_ASSET),
+        ron::ser::to_string(&game::race::RaceVehicle::default()).unwrap(),
+    )
+    .unwrap();
+    root
+}
+
 #[test]
 #[ignore = "requires a working offscreen GPU/software adapter; no display needed"]
 fn headless_render_edit_step_and_query() {
@@ -18,7 +42,7 @@ fn headless_render_edit_step_and_query() {
     std::fs::create_dir_all(&output).unwrap();
     println!("GPU evidence: {}", output.display());
     let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
-    command.env("BEVY_ASSET_ROOT", env!("CARGO_MANIFEST_DIR"));
+    command.env("BEVY_ASSET_ROOT", moving_reference_assets(&output));
     let mut client = Client::launch(command, &output.join("game.log"));
     let tools = client.request("tools/list", json!({}));
     assert!(tools["result"]["tools"].as_array().unwrap().iter().any(|t| t["name"] == "game_set_component"));
@@ -150,7 +174,7 @@ fn native_driving_frame_matches_the_recorded_body_origin() {
     std::fs::create_dir_all(&output).unwrap();
     println!("Driving comparison: {}", output.display());
     let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
-    command.env("BEVY_ASSET_ROOT", env!("CARGO_MANIFEST_DIR"));
+    command.env("BEVY_ASSET_ROOT", moving_reference_assets(&output));
     let mut client = Client::launch(command, &output.join("game.log"));
     client.call("game_step", json!({"frames":30,"buttons":["cross","r1"]}));
     let expected: Value = serde_json::from_str(
@@ -181,6 +205,21 @@ fn native_idle_reverse_and_forward_replays_original_requests() {
 #[ignore = "requires original countdown checkpoint/fixtures, generated assets and an offscreen GPU"]
 fn native_countdown_to_launch_replays_original_requests() {
     native_start_replay("countdown-gas", "b1-countdown-checkpoint", Some(120));
+}
+
+#[test]
+#[ignore = "requires exported default standing-start assets, original fixtures and an offscreen GPU"]
+fn native_default_scene_starts_from_the_original_countdown() {
+    let output = std::env::temp_dir().join(format!("gt2-default-start-{}", std::process::id()));
+    std::fs::create_dir_all(&output).unwrap();
+    println!("Default standing start: {}", output.display());
+    let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
+    command.env("BEVY_ASSET_ROOT", env!("CARGO_MANIFEST_DIR"));
+    let mut client = Client::launch(command, &output.join("game.log"));
+    client.screenshot(output.join("before-start.png"));
+    let fixtures =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/original/vehicle_loop/countdown-gas");
+    replay_start(&mut client, &fixtures, &output);
 }
 
 fn native_start_replay(scenario: &str, checkpoint: &str, countdown_fields: Option<u16>) {
@@ -222,11 +261,15 @@ module.export_initial_vehicle(checkpoint.read_bytes(), assets)
     )
     .unwrap();
     let fixtures = root.join(format!("game/tests/data/original/vehicle_loop/{scenario}"));
-    let recording: Value =
-        serde_json::from_str(&std::fs::read_to_string(fixtures.join("recording.json")).unwrap()).unwrap();
     let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
     command.env("BEVY_ASSET_ROOT", &asset_root);
     let mut client = Client::launch(command, &output.join("game.log"));
+    replay_start(&mut client, &fixtures, &output);
+}
+
+fn replay_start(client: &mut Client, fixtures: &std::path::Path, output: &std::path::Path) {
+    let recording: Value =
+        serde_json::from_str(&std::fs::read_to_string(fixtures.join("recording.json")).unwrap()).unwrap();
     let mut groups: Vec<(Vec<&str>, u32)> = Vec::new();
     let ticks = recording["ticks"].as_array().unwrap();
     for tick in ticks {

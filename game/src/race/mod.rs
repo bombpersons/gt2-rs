@@ -9,7 +9,8 @@
 //!
 //! The course is exposed as [`RaceCourse`] so driving rules can read the same
 //! data. Ordinary driving-camera rules are ported in [`camera`]; the subject
-//! uses the retained native vehicle controller at the moving checkpoint.
+//! uses the retained native vehicle controller. Exported scene setup selects
+//! the original countdown start; the moving checkpoint remains a reference.
 //!
 //! A mod can choose the procedural ribbon instead by setting
 //! `RacePresentation::geometry` to `None`, with no original assets required.

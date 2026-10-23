@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Build the current B-1 runtime assets from a user-supplied USA Rev 2 disc.
 
-No assets, BIOS or emulator are downloaded. The psx CLI captures a local B-1
-checkpoint for wheel profiles and car/camera tuning; the native game never
-emulates the original. All outputs are private, ignored by Git. Python stdlib
+No assets, BIOS or emulator are downloaded. The psx CLI captures local B-1
+moving and countdown checkpoints for wheel profiles, tuning and startup.
+The native game never emulates the original. All outputs are private, ignored by Git. Python stdlib
 only, plus cargo and psx >=0.3.2. See docs/assets.md.
 """
 import argparse
@@ -30,27 +30,26 @@ def run(command):
 
 
 def capture(disc, bios, work):
-    previous = None
     hops = [
-        ('list', 3000, json.loads((ROOT / 'docs/checkpoints/poweron-to-b1-list.json').read_text())),
-        ('menu', 1800, [{'frame': 10, 'buttons': ['CROSS'], 'until': 16}]),
-        ('transmission', 1500, [{'frame': 10, 'buttons': ['CROSS'], 'until': 16}]),
+        ('list', 3000, json.loads((ROOT / 'docs/checkpoints/poweron-to-b1-list.json').read_text()), None),
+        ('menu', 1800, [{'frame': 10, 'buttons': ['CROSS'], 'until': 16}], 'list'),
+        ('transmission', 1500, [{'frame': 10, 'buttons': ['CROSS'], 'until': 16}], 'menu'),
+        ('start', 250, [{'frame': 10, 'buttons': ['CROSS'], 'until': 16}], 'transmission'),
         ('driving', 1200, [{'frame': 10, 'buttons': ['CROSS'], 'until': 16},
-                           {'frame': 400, 'buttons': ['CROSS']}]),
+                           {'frame': 400, 'buttons': ['CROSS']}], 'transmission'),
     ]
-    for name, frames, replay in hops:
+    for name, frames, replay, parent in hops:
         folder = work / name
         command = ['psx', 'run', '--frames', frames, '--input', json.dumps(replay),
                    '--save-state', '--out', folder, '--summary']
         if bios:
             command += ['--bios', bios]
-        command += ['--from-state', previous / 'state.bin'] if previous else [disc]
+        command += ['--from-state', work / parent / 'state.bin'] if parent else [disc]
         run(command)
         report = json.loads((folder / 'report.json').read_text())
         if report['status'] != 'complete' or report['frames']['reached'] != frames:
             raise RuntimeError(f'Incomplete original run: {folder}')
-        previous = folder
-    return previous / 'ram.bin'
+    return work / 'driving/ram.bin', work / 'start/ram.bin'
 
 
 def ron(value):
@@ -379,7 +378,7 @@ def export_tuning(ram_path, assets):
     ))
 
 
-def export_initial_vehicle(ram, assets):
+def export_initial_vehicle(ram, assets, filename='initial.ron'):
     """Convert one supported checkpoint to authorable native simulation state."""
     if len(ram) != 2 * 1024 * 1024:
         raise ValueError('Expected a complete 2 MiB B-1 RAM dump')
@@ -452,9 +451,27 @@ def export_initial_vehicle(ram, assets):
         chase_stabilization=RonVariant('Some(' + ron(dict(yaw_turns=a(0x748),yaw_rate_turns_per_second=a(0x74A),
             pitch_turns=a(0x74C),pitch_rate_turns_per_second=a(0x74E),previous_yaw_acceleration=a(0x752))) + ')'),
     )
-    path = assets / 'vehicle/initial.ron'
+    path = assets / 'vehicle' / filename
     path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text('// Generated locally from the supplied checkpoint; do not commit.\n' + ron(state) + '\n')
+
+
+def export_scene_setup(start_ram, assets):
+    """Select the actual B-1 start, or explicit free driving for a reused checkpoint."""
+    setup = dict(initial_state=RonVariant('Some("vehicle/initial.ron")'), session=RonVariant('None'))
+    if start_ram is not None:
+        if len(start_ram) != 2 * 1024 * 1024:
+            raise ValueError('Expected a complete countdown RAM dump')
+        fields = struct.unpack_from('<H', start_ram, 0xA9520)[0]
+        clock = struct.unpack_from('<I', start_ram, 0x46F64)[0]
+        if start_ram[0x1D5866] != 3 or start_ram[0xAF231] != 1 or fields == 0 or clock % 100:
+            raise ValueError('Expected an ordinary single-car B-1 countdown at a complete physics tick')
+        export_initial_vehicle(start_ram, assets, 'start.ron')
+        session = dict(phase=RonVariant(f'Countdown(fields_left: {fields})'), elapsed_ticks=clock // 100)
+        setup = dict(initial_state=RonVariant('Some("vehicle/start.ron")'), session=RonVariant('Some(' + ron(session) + ')'))
+    path = assets / 'race/vehicle.ron'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text('// Generated locally from the supplied checkpoints; do not commit.\n' + ron(setup) + '\n')
 
 
 def main():
@@ -462,9 +479,12 @@ def main():
     parser.add_argument('disc', type=Path, help='USA Simulation Mode Rev 2 .cue/.bin/.iso')
     parser.add_argument('--bios', type=Path, help='User-supplied NTSC-U BIOS; otherwise psx local discovery')
     parser.add_argument('--checkpoint', type=Path, help='Reuse a B-1 ram.bin instead of replaying the original')
+    parser.add_argument('--start-checkpoint', type=Path, help='Use this countdown ram.bin for scene startup when reusing --checkpoint')
     parser.add_argument('--assets', type=Path, default=ROOT / 'game/assets')
     parser.add_argument('--work', type=Path, default=ROOT / '.psx/asset-export')
     args = parser.parse_args()
+    if args.start_checkpoint and not args.checkpoint:
+        parser.error('--start-checkpoint requires --checkpoint; a full replay captures both states automatically')
     disc, assets, work = args.disc.resolve(strict=True), args.assets.resolve(), args.work.resolve()
     if not shutil.which('cargo') or not shutil.which('psx'):
         parser.error('cargo and psx must be installed locally; this script downloads neither')
@@ -475,7 +495,11 @@ def main():
     work.mkdir(parents=True, exist_ok=True)
     run(['cargo', 'build', '-p', 'import', '--all-features'])
     importer = ROOT / 'target/debug/import'
-    ram = args.checkpoint.resolve(strict=True) if args.checkpoint else capture(disc, args.bios.resolve(strict=True) if args.bios else None, work)
+    if args.checkpoint:
+        ram = args.checkpoint.resolve(strict=True)
+        start_ram = args.start_checkpoint.resolve(strict=True) if args.start_checkpoint else None
+    else:
+        ram, start_ram = capture(disc, args.bios.resolve(strict=True) if args.bios else None, work)
     files = {}
     for name, source in [('course.tro', '/crsobj/TC_lisence.tro.gz'), ('course.trp', '/crsobj/TC_lisence.trp.gz'),
                          ('t2vzn.cdo', '/carobj/t2vzn.cdo.gz'), ('t2vzn.cdp', '/carobj/t2vzn.cdp.gz')]:
@@ -490,7 +514,10 @@ def main():
     run([importer, 'car', files['t2vzn.cdo'], '--textures', files['t2vzn.cdp'], '--paint', 5, '--lod', 0, '--out', assets / 'gt2/vehicle/t2vzn.ron', '--texture-prefix', 'gt2/vehicle'])
     run([importer, 'wheels', '--ram', ram, '--textures', files['t2vzn.cdp'], '--paint', 5, '--out', assets / 'gt2/vehicle/wheels', '--texture-prefix', 'gt2/vehicle/wheels'])
     export_tuning(ram, assets)
+    export_scene_setup(start_ram.read_bytes() if start_ram else None, assets)
     manifest = dict(disc=str(disc), ram_sha256=hashlib.sha256(ram.read_bytes()).hexdigest(),
+                    start_ram_sha256=hashlib.sha256(start_ram.read_bytes()).hexdigest() if start_ram else None,
+                    startup='countdown' if start_ram else 'free-driving checkpoint',
                     psx_version=subprocess.check_output(['psx', '--version'], text=True).strip(),
                     scope='Current B-1 runtime assets; unused text, audio and all-game content are not needed yet',
                     files=[dict(path=str(p.relative_to(assets)), sha256=hashlib.sha256(p.read_bytes()).hexdigest())

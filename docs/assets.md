@@ -16,7 +16,7 @@ exports. The automated checks complement manual provenance review.
 
 Supply your own **Gran Turismo 2 (USA), Simulation Mode, Rev 2** disc dump and
 an NTSC-U PlayStation BIOS. Install Rust/Cargo and the `psx` toolkit locally
-(`psx` 0.3.2 or newer; tested with 0.3.4). The exporter downloads neither
+(`psx` 0.3.2 or newer; tested with 0.3.8). The exporter downloads neither
 media nor tools. Python uses only its standard library.
 
 From the project root:
@@ -31,7 +31,7 @@ accepted by the importer. This currently supports the identified revision
 and B-1 scene, not every car, region or race mode.
 
 The script builds the importer, replays the original from power-on into B-1
-and captures a local checkpoint, extracts and decompresses the required
+and captures local countdown and moving checkpoints, extracts and decompresses the required
 course/model/paint files, then exports:
 
 - B-1 course, collision grids/polygons, ordinary road/scenery geometry and textures;
@@ -39,7 +39,11 @@ course/model/paint files, then exports:
 - Checkpoint wheel placements and camera setup;
 - Live wheel bindings, body-origin offset and chase-stabilization tuning;
 - Native initial vehicle state with retained simulation histories, exported
-  to `vehicle/initial.ron` (see [the public spawn contract](vehicle-initial-state.md));
+  to `vehicle/start.ron` for startup and `vehicle/initial.ron` for the moving
+  regression reference (see [the public spawn contract](vehicle-initial-state.md));
+- Scene selection in `race/vehicle.ron`, with the observed countdown and clock.
+  The normal game now holds at the line, then releases the car; hold Cross to
+  accelerate. Countdown numerals, HUD, sounds and licence outcomes remain open;
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
   brake-assistance and ordinary traction/stability tuning, axle tyre curves, low-speed force settings, and
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,
@@ -57,15 +61,24 @@ course/model/paint files, then exports:
 The game reads native RON/PNG files from `game/assets/` and does not use an
 emulator at runtime. The exporter's intermediate files and checkpoints stay
 under `.psx/asset-export/`. `game/assets/export-manifest.json` records hashes
-of generated outputs and checkpoint identity. Unused imported text, sound
+of generated outputs, both checkpoint identities and the selected startup mode. Unused imported text, sound
 and menu archives are not required by the current runtime; their separate
 import commands remain available in `tools/import/`.
 
-To reuse an existing supported checkpoint:
+To reuse existing supported moving/tuning and countdown checkpoints:
 
 ```sh
-python3 tools/export_assets.py /path/to/game.cue --checkpoint /path/to/ram.bin
+python3 tools/export_assets.py /path/to/game.cue \
+  --checkpoint /path/to/driving/ram.bin --start-checkpoint /path/to/start/ram.bin
 ```
+
+The full replay captures these under `.psx/asset-export/driving/` and `start/`.
+The countdown checkpoint must be an ordinary single-car B-1 state before its
+hold expires; other modes and partial clock ticks are rejected. Omitting
+`--start-checkpoint` when reusing `--checkpoint` explicitly selects free driving
+from that checkpoint and writes `session: None`. This replaces a prior scene
+selection too, so a reuse run cannot accidentally keep a stale countdown.
+Without `--checkpoint`, the full power-on replay always captures both states.
 
 `--assets` selects another asset output folder; `--work` selects an
 intermediate folder. Project-local outputs are restricted to the ignored
@@ -89,8 +102,9 @@ those tests automatically when present. Missing individual inputs then fail
 normally. Compile-time fixture embedding is intentionally avoided.
 
 `tools/record_*.py` regenerates original reference recordings locally from
-the documented checkpoint. The exporter saves its reproduced checkpoint at
-`.psx/asset-export/driving/`; recorders accepting `--state` or `--checkpoint`
+the documented checkpoint. The exporter saves its moving reference checkpoint
+at `.psx/asset-export/driving/` and its start at `.psx/asset-export/start/`;
+recorders accepting `--state` or `--checkpoint`
 can use that path. For recorders using the original default location, copy
 that generated directory locally to `.psx/runs/b1-state1200/` first. These remain under the ignored
 `game/tests/data/original/` directory. The evidence notes describe each

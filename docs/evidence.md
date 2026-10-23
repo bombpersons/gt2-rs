@@ -1,11 +1,17 @@
 # Evidence
 
+Normal asset exports now select B-1's actual countdown initial state. A full
+power-on export reproduced the earlier countdown and moving reference RAM
+byte for byte. The generated scene setup reproduces all three countdown
+trajectories, and the normal native binary matches the original launch position
+exactly without a scene override. See [default scene export](session-start-evidence.md#default-scene-export).
+
 [B-1 countdown and driving clock](session-start-evidence.md) adds 380 natural
 countdown-to-launch ticks, including a fresh mixed-control holdout. The full
 vehicle corpus now covers 820 unique original ticks. Countdown, physical state
 and the post-physics clock match exactly; the real binary also reproduces the
 countdown launch position exactly through optional native content setup.
-Licence HUD/outcome/retry flow and the default start selection remain open.
+Licence HUD/outcome/retry flow remains open.
 
 [Ordinary driver requests and idle launches](driver-request-evidence.md) now
 extend the retained loop to 440 original ticks, including 320 new idle-start

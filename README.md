@@ -9,9 +9,9 @@ own disc; the native executable runs without an emulator or the psx toolkit.
 |---|---|
 | ![The native port's Vitz in chase view on the B-1 course, with pixel snapping, dithering and 15-bit colour](docs/images/b1-ps1.png) | ![The same native B-1 scene in widescreen, with pixel snapping, dithering and colour quantization disabled](docs/images/b1-widescreen.png) |
 
-Both images were captured at the same reference pose. The car now drives from
-the moving B-1 checkpoint, with live body, wheels and camera. The sky and
-ground are provisional; a complete licence session remains unfinished.
+Both images were captured at the same moving reference pose. New asset exports
+start B-1 at its standing-start countdown, with live body, wheels and camera.
+The sky and ground are provisional; a complete licence session remains unfinished.
 See [how the screenshots were captured](docs/screenshots.md).
 
 - **Separate engine and game.** `engine/` provides reusable formats, rendering,
@@ -32,11 +32,11 @@ See [how the screenshots were captured](docs/screenshots.md).
 
 ## Status: a work in progress
 
-The port is **not yet playable**. B-1 renders from imported course and vehicle
-data, and the composed vehicle rules match original moving and idle-launch
-trajectories, now connected to live presentation. The ordinary scene still
-starts from a moving checkpoint. Optional countdown/clock rules are verified;
-their HUD, licence outcomes, menus, races and progression still need work.
+B-1 can be driven from the original standing-start countdown. Its composed
+vehicle rules match moving, idle-launch and countdown trajectories, with live
+body, wheels and cameras. The licence test remains unfinished: countdown
+numerals, HUD, sound, outcomes and retry flow still need work, along with
+menus, races and progression. Re-export existing assets to select the new start.
 
 | Area | Status |
 |---|---|
@@ -48,7 +48,7 @@ their HUD, licence outcomes, menus, races and progression still need work.
 | Tyre forces, grip, engine, drivetrain and transmission | Moving/idle-launch feedback, reverse and manual requests verified; licence session remains |
 | Road contact, suspension, vertical motion and aerodynamics | Decoded road contact and retained force/body feedback verified together; barrier/car collision remains |
 | Playable B-1 test, HUD, sounds and pass/fail/retry | Not yet complete |
-| B-1 start hold and driving clock | Optional native setup matches countdown/release trajectories; default start and HUD remain |
+| B-1 start hold and driving clock | Normal export starts at the verified countdown/release boundary; HUD remains |
 | Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |
 | Example mod and engine sandbox | Run with handmade assets and no disc data |
 | Desktop content editor | Placement editor shell; course geometry and tuning editors remain |

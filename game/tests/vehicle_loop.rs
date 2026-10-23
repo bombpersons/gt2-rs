@@ -471,8 +471,13 @@ fn check_from(scenario: &str, exported: bool) {
     );
     let car = if exported {
         app.world_mut().despawn(car);
-        let state: game::vehicle::initial::VehicleInitialState =
-            engine::prelude::load_ron(game::vehicle::initial::INITIAL_STATE_ASSET).unwrap();
+        let mut path = game::vehicle::initial::INITIAL_STATE_ASSET.to_owned();
+        if recording.session.is_some() {
+            let setup: game::race::RaceVehicle = engine::prelude::load_ron(game::race::RACE_VEHICLE_ASSET).unwrap();
+            path = setup.initial_state.expect("default scene must select a native vehicle");
+            app.insert_resource(setup.session.expect("default scene must select the countdown session"));
+        }
+        let state: game::vehicle::initial::VehicleInitialState = engine::prelude::load_ron(&path).unwrap();
         let car = state.spawn(app.world_mut());
         app.world_mut().entity_mut(car).insert(Phases::default());
         car
@@ -484,7 +489,9 @@ fn check_from(scenario: &str, exported: bool) {
         assert_eq!(session.clock % 100, 0, "clock must start at a complete physics tick");
         let mut native = game::race::session::DrivingSession::countdown(session.countdown_fields);
         native.elapsed_ticks = session.clock / 100;
-        app.insert_resource(native);
+        if !app.world().contains_resource::<game::race::session::DrivingSession>() {
+            app.insert_resource(native);
+        }
         app.add_plugins(game::race::session::SessionRulesPlugin);
         app.world_mut().entity_mut(car).insert(game::race::session::SessionParticipant);
     }
@@ -541,6 +548,14 @@ fn check_from(scenario: &str, exported: bool) {
 #[cfg_attr(not(gt2_private_data), ignore = "requires original countdown recordings")]
 fn original_countdown_to_throttle_launch() {
     check("countdown-gas");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires exported default scene and original countdown recordings")]
+fn exported_default_scene_reproduces_original_countdown_trajectories() {
+    for scenario in ["countdown-gas", "countdown-coast", "countdown-fresh-launch-holdout"] {
+        check_from(scenario, true);
+    }
 }
 
 #[test]

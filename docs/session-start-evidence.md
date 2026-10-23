@@ -12,8 +12,8 @@ recordings, this covers **820 unique original physics ticks**.
 This is the ordinary, single-car B-1 session on USA Simulation Mode Rev 2.
 Intro cameras, countdown numerals/sounds, HUD clock interpolation, licence
 conditions/outcomes and retry/reset selection remain unported. The normal
-exported scene still selects its moving initial state; this optional session
-does not automatically turn that checkpoint into the licence start.
+asset export now selects the real countdown initial state through native scene
+setup; the moving initial state remains a separate regression reference.
 
 ## Original boundaries
 
@@ -116,3 +116,43 @@ formatting and the public-repository history audit. Workspace Clippy passed
 with the existing `wheel_rotation` test's `collapsible_if` warning. Original
 fixtures, emulator outputs, converted runtime assets and new screenshots all
 remain private and ignored.
+
+## Default scene export
+
+A full `tools/export_assets.py` run now branches from the original transmission
+dialog to capture `start/` at vblank 6550, while preserving the separate
+`driving/` capture at vblank 7500. A fresh power-on run under
+`.psx/default-start-export/` reproduced both earlier RAM checkpoints byte for
+byte. Tuning and the historical moving `vehicle/initial.ron` still use the
+driving capture; startup uses converted `vehicle/start.ron` plus
+`race/vehicle.ron`. The manifest records both RAM hashes and `startup` mode.
+
+The exported scene setup and start state independently reproduce all three
+countdown recordings at every vehicle stage and clock boundary. This adds
+initialization/selection coverage to the same 820-tick corpus, not additional
+unique original executions. The normal binary, launched directly against
+`game/assets/`, passes `native_default_scene_starts_from_the_original_countdown`
+and matches the final original launch position exactly. Its before/after
+images under `/tmp/gt2-default-start-276/` were inspected. That test performs
+no offline conversion or temporary scene override. Moving-scene rendering and
+body-origin checks explicitly select a copied free-driving reference setup.
+
+A fresh exporter-only folder under `.psx/default-start-reuse/assets/` also
+passed a direct native MCP launch replay, with identical final position and
+an inspected image at `.psx/default-start-clean-runtime/launch.png`. This
+checks that older files left in the development asset tree are not supplying
+missing runtime dependencies. All 168 entries in the development export's
+manifest were hash-checked; the fresh folder contains only its own export.
+
+Both checkpoint-reuse paths were exercised through the complete exporter:
+providing `--start-checkpoint` selects the countdown; omitting it writes
+free-driving setup and clears a prior session selection. Generated runtime
+content is the same for the reused checkpoints; provenance sidecars retain
+their actual intermediate source paths. See [asset export](assets.md) for the
+commands. The handmade mod explicitly ships its own free-driving setup and
+continues to override the base game's scene selection.
+
+The workspace test suite, all five native MCP checks and the handmade mod's
+GPU check passed after the default selection changed. Clippy passed with the
+existing wheel-rotation test warning; formatting, Python syntax and the public
+history audit passed. No generated asset or new screenshot is published.

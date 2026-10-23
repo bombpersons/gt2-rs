@@ -61,8 +61,10 @@ its own initial state and tuning through these same public pieces.
 
 ## Checkpoint export and verification
 
-`tools/export_assets.py` writes `vehicle/initial.ron` alongside the current
-B-1 tuning, from the same local checkpoint. It supports the established
+`tools/export_assets.py` writes moving-reference `vehicle/initial.ron` alongside
+the current B-1 tuning, from the same local checkpoint. A full replay also
+exports `vehicle/start.ron` and selects it with the observed session countdown
+in `race/vehicle.ron`; see [asset export](assets.md). It supports the established
 ordinary non-induction engine boundary and rejects unknown engagement/shift
 modes. The generated state remains ignored in `game/assets/`, like all
 disc-derived outputs. The game never loads an emulator snapshot.
@@ -77,8 +79,9 @@ fields. A handmade unit test also checks partial RON defaults, derived axes,
 retained histories and caller-owned input without private assets.
 
 This verifies an initialization boundary for the moving B-1 sequences in
-`vehicle-loop-evidence.md`. Standing-start behaviour, collision, licence flow,
-and broader content parity remain unfinished.
+`vehicle-loop-evidence.md`. Collision, licence outcomes/retry and broader
+content parity remain unfinished. The default start now uses the independently
+verified [countdown state and clock](session-start-evidence.md).
 Idle starts are now verified separately in
 [driver-request evidence](driver-request-evidence.md), including real-binary
 replay from an offline-converted idle initial asset.
