@@ -124,6 +124,31 @@ fn all_vehicle_data_resolves_to_handmade_assets() {
 }
 
 #[test]
+fn handmade_car_reengages_after_stopping_and_can_request_reverse() {
+    use engine::controller::Button;
+    use game::vehicle::{VehicleVelocity, drivetrain::DrivetrainInput};
+    let (mut app, car) = driving_app();
+    for _ in 0..90 {
+        app.run_tick(&[Button::Square]);
+    }
+    let stopped = app.world().get::<VehicleVelocity>(car).unwrap().linear_mps.xz().length();
+    assert!(stopped < 0.5, "service brakes should stop the handmade car: {stopped}");
+    for _ in 0..60 {
+        app.run_tick(&[Button::Cross]);
+    }
+    let resumed = app.world().get::<VehicleVelocity>(car).unwrap().linear_mps.xz().length();
+    assert!(resumed > 2.0, "ordinary requests should reengage and launch: {resumed}");
+    for _ in 0..90 {
+        app.run_tick(&[Button::Square]);
+    }
+    for _ in 0..60 {
+        app.run_tick(&[Button::Triangle]);
+    }
+    assert_eq!(app.world().get::<DrivetrainInput>(car).unwrap().gear, 0);
+    assert!(app.world().get::<VehicleVelocity>(car).unwrap().linear_mps.x > 1.0, "reverse should drive back along +X");
+}
+
+#[test]
 fn layering_the_base_game_keeps_the_mods_override() {
     engine::assets::add_root(example_mod::GAME_ASSETS);
     let path = engine::config::asset_path(COURSE_ASSET);

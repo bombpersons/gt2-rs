@@ -41,6 +41,10 @@ Installing a subset of rules is supported, but only that subset will advance.
 
 Spawning leaves logical input caller-owned through `DigitalPedalInput` and
 `DigitalSteeringInput`. Add `PlayerPedals` to read the player's controller.
+The spawn hook also attaches `DigitalGearInput`: ordinary driver systems
+consume its reverse/shift controls, force reverse throttle when permitted,
+and produce engagement requests from current pedals/RPM/reset inputs.
+Removing that component leaves explicit transmission requests caller-owned.
 The optional `chase_stabilization` group preserves the camera follower's
 angles, rates and previous yaw acceleration; when omitted it starts at the
 supplied heading/pitch.
@@ -70,6 +74,9 @@ retained histories and caller-owned input without private assets.
 This verifies an initialization boundary for the moving B-1 sequences in
 `vehicle-loop-evidence.md`. Standing-start behaviour, collision, licence flow,
 and broader content parity remain unfinished.
+Idle starts are now verified separately in
+[driver-request evidence](driver-request-evidence.md), including real-binary
+replay from an offline-converted idle initial asset.
 
 ## Validation
 

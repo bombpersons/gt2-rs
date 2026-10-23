@@ -1,5 +1,10 @@
 # Retained B-1 vehicle feedback loop
 
+The [ordinary driver-request extension](driver-request-evidence.md) adds
+320 idle-start ticks to the 120 moving ticks described here. Idle throttle,
+brake release, reverse/forward, manual requests and a fresh holdout now match
+at the same four boundaries without reseeding physical or engine state.
+
 The native rules now reproduce **120 original physics ticks** across four
 natural recordings from the moving B-1 checkpoint: throttle, coast, service
 braking and a fresh turning/mixed-pedal holdout, 30 ticks each. Each test

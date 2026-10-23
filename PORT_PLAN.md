@@ -221,8 +221,17 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   wheel and camera checks with its assets copied to a fresh tree containing
   no base-game assets. No game or engine code changes were needed. This is
   an extension/authoring proof, not additional original-game parity.
-  Next: standing-start B-1 control requests and licence flow, collision and
-  broader game content. See mods/example/README.md.
+  See mods/example/README.md.
+- Ordinary digital reverse/shift and engagement-request production now feeds
+  the retained loop. All 440 original ticks match at four boundaries, with
+  320 new idle-start ticks covering throttle, brake/release, reverse/forward,
+  manual shifts and a fresh mixed-control holdout. Fourteen original probes
+  verify engagement gates, including idle/full-pedal/countdown boundaries.
+  Disconnected engines now retain prepared curve/drag values while combustion
+  stays at the late feedback boundary. The real binary's idle reverse/forward
+  replay matches final position exactly. The handmade mod can stop, re-engage
+  and reverse. Next: licence session/countdown/timer and outcome/retry flow,
+  collision and broader content. See docs/driver-request-evidence.md.
 
 ## Work order
 

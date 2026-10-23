@@ -33,9 +33,10 @@ See [how the screenshots were captured](docs/screenshots.md).
 ## Status: a work in progress
 
 The port is **not yet playable**. B-1 renders from imported course and vehicle
-data, and the composed vehicle rules match short original trajectories from a
-moving B-1 checkpoint, now connected to live presentation. The standing start,
-menus, licence outcomes, races and progression still need work.
+data, and the composed vehicle rules match original moving and idle-launch
+trajectories, now connected to live presentation. The ordinary scene still
+starts from a moving checkpoint. The licence countdown, timer, menus,
+outcomes, races and progression still need work.
 
 | Area | Status |
 |---|---|
@@ -44,7 +45,7 @@ menus, licence outcomes, races and progression still need work.
 | Vitz body and procedural wheels | Live body, steering/camber, suspension and wheel spin; shadows, reflections and dynamic LOD remain |
 | Bumper, near/far chase and rear-look cameras | Match original pose recordings; R1 cycles views, L1 looks back |
 | Pedals, digital steering, wheel slip and braking | Rules checked against original execution; analog controls remain |
-| Tyre forces, grip, engine, drivetrain and transmission | Individual stages and moving B-1 feedback trajectories verified; live session remains |
+| Tyre forces, grip, engine, drivetrain and transmission | Moving/idle-launch feedback, reverse and manual requests verified; licence session remains |
 | Road contact, suspension, vertical motion and aerodynamics | Decoded road contact and retained force/body feedback verified together; barrier/car collision remains |
 | Playable B-1 test, HUD, sounds and pass/fail/retry | Not yet complete |
 | Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |
@@ -94,7 +95,8 @@ cargo build --release                 # build without developer MCP
 ```
 
 Cross accelerates, Square brakes, Circle applies the handbrake, and left/right
-steer. R1 cycles cameras; L1 looks back. F1 opens control bindings.
+steer. Triangle requests reverse; R2/L2 shift up/down in manual setups.
+R1 cycles cameras; L1 looks back. F1 opens control bindings.
 
 F11 toggles fullscreen. `--controls` and `--display` open their respective
 menus on launch; `--aspect window` follows the window's shape. The

@@ -3,6 +3,7 @@
 Run `cargo run -p example-mod` from the workspace root. Cross accelerates,
 Square brakes, Circle applies the handbrake, and left/right steer. R1 cycles
 views; L1 looks back. F1 opens control bindings; F2 opens display settings.
+Triangle requests reverse; R2/L2 shift up/down when initial state selects MT.
 The box car starts moving at 7 m/s on a handmade 320 m square circuit.
 
 The mod depends on `game/` and uses its unchanged `GamePlugins` group: the
@@ -90,6 +91,10 @@ brake and handbrake, verify acceleration/deceleration and retained floor
 contact/load, then turn both directions through the public controller. They
 also check asset priority, that every numerical asset resolves to this mod,
 and that callers can disable the scene.
+An additional check stops the car, releases the brake, launches again and
+then selects reverse through the new ordinary driver-request producer. The
+authored free-engine response and first/top shift thresholds support those
+idle transitions and the three available forward ratios.
 
 The opt-in GPU/MCP check copies only the handmade assets into a fresh tree
 with **no base-game assets folder**, then runs the real executable there.

@@ -4,7 +4,8 @@
 //! and application 8003991C. Alternate torque-controller producers remain
 //! separate. Speeds use m/s and engine rev/s; cooldown is in physics ticks.
 use super::{
-    VehicleStepDuration, VehicleSystems,
+    DigitalGearInput, PedalTravel, VehicleStepDuration, VehicleSystems,
+    body_dynamics::BodyDynamicsInput,
     braking::BrakingSystems,
     drivetrain::{
         DriveLayout, DrivetrainInput, DrivetrainOutput, DrivetrainSetup, DrivetrainSystems, DrivetrainTuning,
@@ -366,6 +367,8 @@ fn floor_word_product(a: f32, b: f32) -> f32 {
 #[derive(SystemSet, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TransmissionSystems {
     Timers,
+    DriverRequests,
+    DriverEngagement,
     Prepare,
     Feedback,
     Select,
@@ -392,6 +395,25 @@ impl Plugin for TransmissionRulesPlugin {
         )
         .configure_sets(
             FixedUpdate,
+            TransmissionSystems::DriverRequests
+                .after(TransmissionSystems::Timers)
+                .after(VehicleSystems::ReadInput)
+                .before(VehicleSystems::Pedals)
+                .in_set(engine::prelude::EngineSet::Control)
+                .in_set(GameSystems::Game),
+        )
+        .configure_sets(
+            FixedUpdate,
+            TransmissionSystems::DriverEngagement
+                .after(TransmissionSystems::DriverRequests)
+                .after(VehicleSystems::Pedals)
+                .before(VehicleSystems::SteerWheels)
+                .before(TransmissionSystems::Prepare)
+                .in_set(engine::prelude::EngineSet::Control)
+                .in_set(GameSystems::Game),
+        )
+        .configure_sets(
+            FixedUpdate,
             TransmissionSystems::Prepare
                 .in_set(VehicleSystems::Forces)
                 .before(DrivetrainSystems::Prepare)
@@ -406,9 +428,58 @@ impl Plugin for TransmissionRulesPlugin {
                 .after(WheelRotationSystems::Integrate),
         )
         .add_systems(FixedUpdate, tick_timers.in_set(TransmissionSystems::Timers).in_set(VehicleSystems::Prepare))
+        .add_systems(FixedUpdate, driver_requests.in_set(TransmissionSystems::DriverRequests))
+        .add_systems(FixedUpdate, driver_engagement.in_set(TransmissionSystems::DriverEngagement))
         .add_systems(FixedUpdate, prepare.in_set(TransmissionSystems::Prepare))
         .add_systems(FixedUpdate, feedback.in_set(TransmissionSystems::Feedback))
         .add_systems(FixedUpdate, select.in_set(TransmissionSystems::Select));
+    }
+}
+
+fn driver_requests(mut cars: Query<(&DigitalGearInput, &TransmissionState, &mut TransmissionInput)>) {
+    for (controls, state, mut input) in &mut cars {
+        // 8002FFD8..FFEC and 80030158..174 use the already-decremented
+        // first-gear counter. Suppression does not mutate caller-owned input.
+        let enabled = state.first_gear_ticks == 0;
+        input.reverse_requested = enabled && controls.reverse;
+        input.shift_direction = if enabled { controls.shift_direction } else { 0 };
+    }
+}
+
+#[derive(QueryData)]
+#[query_data(mutable)]
+struct DriverEngagementCar {
+    pedals: &'static PedalTravel,
+    state: &'static mut TransmissionState,
+    input: &'static mut TransmissionInput,
+    drive: &'static mut DrivetrainInput,
+    engine: &'static EngineTorqueInput,
+    body: Option<&'static BodyDynamicsInput>,
+    setup: Option<&'static DrivetrainSetup>,
+}
+fn driver_engagement(
+    engine: Res<EngineTorqueTuning>,
+    drive: Res<DrivetrainTuning>,
+    mut cars: Query<DriverEngagementCar, With<DigitalGearInput>>,
+) {
+    for mut car in &mut cars {
+        let setup = car.setup.map_or(&*drive, |s| &s.0);
+        // Ordinary multi-ratio producer 8002F92C, after pedal ramping.
+        // A reset/countdown or a full handbrake on the rear reference axle
+        // disconnects. Otherwise a disconnected engine requests coupling
+        // unless the service brake is fully down; an engaged engine stays
+        // requested only while its last refreshed RPM is at least idle.
+        let blocked = car.body.is_some_and(|b| b.reset_motion)
+            || car.state.first_gear_ticks != 0
+            || matches!(setup.reference_axle, super::drivetrain::Axle::Rear) && car.pedals.handbrake == 1.0;
+        car.state.engagement_requested = !blocked
+            && if car.drive.engagement == EngineEngagement::Disconnected {
+                car.pedals.brake != 1.0
+            } else {
+                car.engine.integer_rpm >= engine.idle_rpm
+            };
+        car.input.accelerator_travel = car.pedals.throttle;
+        car.drive.brake_travel = car.pedals.brake;
     }
 }
 

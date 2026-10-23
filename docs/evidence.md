@@ -1,5 +1,13 @@
 # Evidence
 
+[Ordinary driver requests and idle launches](driver-request-evidence.md) now
+extend the retained loop to 440 original ticks, including 320 new idle-start
+ticks with AT/MT selection, braking, reverse/forward and a fresh holdout.
+Fourteen original producer probes check engagement gates. The real native
+binary replays an idle reverse/forward sequence to the exact original final
+world position. The licence countdown, clock and outcome/retry flow remain
+unfinished; the ordinary scene still selects its moving checkpoint asset.
+
 The [retained B-1 vehicle loop](vehicle-loop-evidence.md) now matches 120
 original ticks across gas, coast, braking and a fresh turning/mixed-pedal
 holdout. Native state is seeded once per recording, then controls, forces,

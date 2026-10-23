@@ -75,7 +75,17 @@ pub struct DigitalPedalInput {
     pub handbrake: bool,
 }
 
-/// Opt into reading the logical player pad for pedals and steering. Without
+/// Effective digital reverse/manual-shift controls at the physics boundary.
+/// Triangle requests reverse; R2/L2 request up/down, with both held cancelling.
+/// The original consumes these at 8002FFC8/80030168, after pad transport.
+#[derive(Component, Default, Debug, Clone, Copy, Reflect)]
+#[reflect(Component)]
+pub struct DigitalGearInput {
+    pub reverse: bool,
+    pub shift_direction: i8,
+}
+
+/// Opt into reading the logical player pad for pedals, steering and gears. Without
 /// this marker, replay/AI systems can supply the effective requests themselves.
 #[derive(Component, Default, Debug, Clone, Copy, Reflect)]
 #[reflect(Component)]
@@ -238,12 +248,20 @@ impl Plugin for VehicleRulesPlugin {
             )
             .add_systems(
                 FixedUpdate,
-                (read_player_pedals, steering::read_player_steering).in_set(VehicleSystems::ReadInput),
+                (read_player_pedals, steering::read_player_steering, read_player_gears)
+                    .in_set(VehicleSystems::ReadInput),
             )
             .add_systems(FixedUpdate, (advance_pedals, steering::advance_steering).in_set(VehicleSystems::Pedals))
             .add_systems(FixedUpdate, steering::steer_wheels.in_set(VehicleSystems::SteerWheels))
             .add_systems(FixedUpdate, build_motion_steps.in_set(VehicleSystems::BuildStep))
             .add_systems(FixedUpdate, integrate_motion.in_set(VehicleSystems::Integrate));
+    }
+}
+
+fn read_player_gears(pad: Res<ControllerState>, mut players: Query<&mut DigitalGearInput, With<PlayerPedals>>) {
+    for mut input in &mut players {
+        input.reverse = pad.held(Button::Triangle);
+        input.shift_direction = i8::from(pad.held(Button::R2)) - i8::from(pad.held(Button::L2));
     }
 }
 
@@ -259,8 +277,22 @@ fn read_player_pedals(pad: Res<ControllerState>, mut players: Query<&mut Digital
     }
 }
 
-fn advance_pedals(tuning: Res<PedalTuning>, mut pedals: Query<(&DigitalPedalInput, &mut PedalTravel)>) {
-    for (&input, mut travel) in &mut pedals {
+fn advance_pedals(
+    tuning: Res<PedalTuning>,
+    mut pedals: Query<(
+        &DigitalPedalInput,
+        &mut PedalTravel,
+        Option<&transmission::TransmissionInput>,
+        Option<&DigitalGearInput>,
+    )>,
+) {
+    for (&input, mut travel, transmission, gears) in &mut pedals {
+        // 8002FFD8..80030004: reverse raises the digital throttle only
+        // when the first-gear countdown permits the reverse request.
+        let input = DigitalPedalInput {
+            throttle: input.throttle || gears.is_some() && transmission.is_some_and(|t| t.reverse_requested),
+            ..input
+        };
         travel.advance(input, &tuning);
     }
 }

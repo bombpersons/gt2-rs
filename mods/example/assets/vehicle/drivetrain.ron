@@ -3,7 +3,7 @@
  layout: Rear, reference_axle: Rear, gear_ratios: [5.0, 5.0, 3.2, 2.2],
  axle_inertia: (200.0, 200.0), engine_inertia: 50.0, centre_rotation_response: 0.01,
  centre_viscosity: 100.0, adaptive_lock: false, centre_lock_torque: 5000.0,
- engine_rotation_response: 0.5, revolutions_per_radian: 0.15915494,
+ engine_rotation_response: 32.0, revolutions_per_radian: 0.15915494,
  fixed_clutch_torque: 8000.0, coast_clutch_torque: 2000.0, clutch_free_difference_rev_s: 5.0,
  clutch_gain_per_rev_s: 0.02, max_clutch_gain: 1.5, adaptive_full_angle_turns: 0.04,
  adaptive_min_angle_turns: 0.01, adaptive_min_response: 0.2, adaptive_taper_intercept: 1.2, lock_brake_travel: 0.5,

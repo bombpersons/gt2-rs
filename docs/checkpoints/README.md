@@ -30,6 +30,11 @@ live B-1 session with the lap clock running. To drive, hold `CROSS`
 (accelerator) from ~frame 400 of the last hop: the car launches at the timer's
 start and the AT shifts 1→2 around ~35 mph.
 
+For current idle AT/MT checkpoint recipes and complete retained launch
+recordings, see [driver-request evidence](../driver-request-evidence.md).
+Those checkpoints reach vblank 7050 with the licence clock already running;
+they exercise ready-to-drive idle launches, not the earlier countdown.
+
 A non-driving submenu is reachable and does not stall: the GT map's city
 icons open 2D dealership maps. West City is HOME → LEFT (GO RACE) → DOWN
 (MACHINE TEST) → LEFT (WEST CITY) → CROSS; its Alfa Romeo dealer (`LINE UP`,

@@ -51,6 +51,10 @@ struct Controls {
     throttle: i32,
     brake: i32,
     handbrake: i32,
+    #[serde(default)]
+    reverse: i32,
+    #[serde(default)]
+    shift: i8,
 }
 #[derive(Deserialize)]
 struct Tick {
@@ -475,6 +479,8 @@ fn check_from(scenario: &str, exported: bool) {
             brake: tick.controls.brake != 0,
             handbrake: tick.controls.handbrake != 0,
         };
+        *app.world_mut().get_mut::<DigitalGearInput>(car).unwrap() =
+            DigitalGearInput { reverse: tick.controls.reverse != 0, shift_direction: tick.controls.shift };
         app.world_mut().get_mut::<DigitalSteeringInput>(car).unwrap().direction = tick.controls.steering as f32;
         app.run_tick(&[]);
         let phases = &app.world().get::<Phases>(car).unwrap().0;
@@ -529,4 +535,29 @@ fn native_exported_initial_asset_reproduces_original_trajectory() {
     for scenario in ["gas", "coast", "brake", "holdout"] {
         check_from(scenario, true);
     }
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original stationary B-1 recordings")]
+fn original_standing_start_and_brake_release_launch() {
+    check("standing-gas");
+    check("standing-brake-launch");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original B-1 reverse/forward recording")]
+fn original_reverse_then_forward_from_idle() {
+    check("standing-reverse-forward");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original manual-transmission B-1 recording")]
+fn original_manual_shift_requests_from_idle() {
+    check("manual-shifts");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires fresh original B-1 launch holdout")]
+fn fresh_original_brake_rev_reverse_and_turn_launch_holdout() {
+    check("standing-launch-holdout");
 }

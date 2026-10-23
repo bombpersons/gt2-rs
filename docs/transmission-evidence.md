@@ -8,9 +8,10 @@ the original layout, wheel-contact and longitudinal-slip rules.
 
 The connected tests now retain engine rotation, RPM, fuel-cut state, gear,
 engagement, engagement request and both timers across consecutive physics
-calls. Contact/body motion and driver request production remain observed
-boundaries. The scene still uses a checkpoint pose; playable driving is
-unfinished. Special one-/two-ratio torque controllers and induction remain
+calls. Contact/body motion is composed separately in the retained loop;
+[ordinary driver requests and idle launches](driver-request-evidence.md)
+now supply the digital producer boundary as well. A complete licence session
+is unfinished. Special one-/two-ratio torque controllers and induction remain
 separate producers, as recorded in the drivetrain evidence.
 
 ## Identity and reproduction

@@ -170,3 +170,87 @@ fn native_driving_frame_matches_the_recorded_body_origin() {
     client.screenshot(output.join("driving-30.png"));
     std::fs::write(output.join("body.json"), serde_json::to_vec_pretty(&body).unwrap()).unwrap();
 }
+
+#[test]
+#[ignore = "requires stationary original checkpoint/fixtures, generated assets and an offscreen GPU"]
+fn native_idle_reverse_and_forward_replays_original_requests() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    let output = std::env::temp_dir().join(format!("gt2-idle-driving-{}", std::process::id()));
+    let asset_root = output.join("native");
+    std::fs::create_dir_all(&asset_root).unwrap();
+    println!("Idle driving evidence: {}", output.display());
+    // Offline conversion only. The native process receives ordinary assets,
+    // never an emulator checkpoint. Keep the normal moving-reference assets
+    // untouched while giving this test the recorded idle initial condition.
+    let script = r#"
+import importlib.util, pathlib, shutil, sys
+root, checkpoint, assets = map(pathlib.Path, sys.argv[1:])
+shutil.copytree(root / 'game/assets', assets, dirs_exist_ok=True)
+spec=importlib.util.spec_from_file_location('export_assets', root / 'tools/export_assets.py')
+module=importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+module.export_initial_vehicle(checkpoint.read_bytes(), assets)
+"#;
+    assert!(
+        Command::new("python3")
+            .arg("-c")
+            .arg(script)
+            .arg(root)
+            .arg(root.join(".psx/runs/b1-stationary-checkpoint/ram.bin"))
+            .arg(asset_root.join("assets"))
+            .status()
+            .unwrap()
+            .success()
+    );
+    let fixtures = root.join("game/tests/data/original/vehicle_loop/standing-reverse-forward");
+    let recording: Value =
+        serde_json::from_str(&std::fs::read_to_string(fixtures.join("recording.json")).unwrap()).unwrap();
+    let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
+    command.env("BEVY_ASSET_ROOT", &asset_root);
+    let mut client = Client::launch(command, &output.join("game.log"));
+    let mut groups: Vec<(Vec<&str>, u32)> = Vec::new();
+    let ticks = recording["ticks"].as_array().unwrap();
+    for tick in ticks {
+        let c = &tick["controls"];
+        let mut buttons = Vec::new();
+        for (key, button) in
+            [("throttle", "cross"), ("brake", "square"), ("handbrake", "circle"), ("reverse", "triangle")]
+        {
+            if c[key].as_i64().unwrap() != 0 {
+                buttons.push(button);
+            }
+        }
+        let steering = c["steering"].as_i64().unwrap();
+        if steering != 0 {
+            buttons.push(if steering > 0 { "left" } else { "right" });
+        }
+        let shift = c["shift"].as_i64().unwrap();
+        if shift != 0 {
+            buttons.push(if shift > 0 { "r2" } else { "l2" });
+        }
+        if let Some((previous, count)) = groups.last_mut()
+            && *previous == buttons
+        {
+            *count += 1;
+        } else {
+            groups.push((buttons, 1));
+        }
+    }
+    for (buttons, count) in groups {
+        client.call("game_step", json!({"frames":count,"buttons":buttons}));
+    }
+    let car=client.call("game_query",json!({"name":"CameraSubject","components":["VehiclePose","VehicleVelocity","DrivetrainInput","EngineTorqueInput"]}))["structuredContent"]["entities"][0].clone();
+    let expected = std::fs::read(fixtures.join(ticks.last().unwrap()["end"].as_str().unwrap())).unwrap();
+    let word = |offset: usize| i32::from_le_bytes(expected[offset..offset + 4].try_into().unwrap()) as f64 / 4096.0;
+    for (i, value) in [word(0x65C), word(0x664), -word(0x660)].into_iter().enumerate() {
+        assert_eq!(
+            car["components"]["VehiclePose"]["position_m"][i].as_f64().unwrap(),
+            value,
+            "world position axis {i}"
+        );
+    }
+    assert_eq!(car["components"]["DrivetrainInput"]["gear"], expected[0x618]);
+    std::fs::write(output.join("state.json"), serde_json::to_vec_pretty(&car).unwrap()).unwrap();
+    client.call("game_step", json!({"frames":1,"buttons":["r1"]}));
+    client.screenshot(output.join("after-launch.png"));
+}

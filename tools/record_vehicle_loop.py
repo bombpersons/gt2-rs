@@ -11,14 +11,13 @@ import json
 from pathlib import Path
 import re
 import subprocess
+import struct
 
 BASE = 0x800A96B4
 SIZE = 0x7A0
 PHASES = {0x8003EC24: 'before', 0x8003EC2C: 'forces', 0x8003EC48: 'moved',
           0x8003EC68: 'road', 0x8003EC74: 'end'}
 PREFIX = re.compile(r'^(\d+) (\d+) ([0-9a-f]{8}) ')
-INPUTS = {0x8002FCB0: 'flags', 0x8002FCC4: 'steering', 0x8002FFF4: 'throttle',
-          0x800300A8: 'brake', 0x80030178: 'handbrake'}
 SCENARIOS = {
     'gas': [dict(frame=0, buttons=['CROSS'])],
     'brake': [dict(frame=0, buttons=['SQUARE'])],
@@ -26,6 +25,15 @@ SCENARIOS = {
     'holdout': [dict(frame=0, buttons=['CROSS','LEFT']), dict(frame=8, buttons=['CROSS','RIGHT']),
                 dict(frame=16, buttons=['CROSS']), dict(frame=28, buttons=['SQUARE']),
                 dict(frame=44, buttons=['CIRCLE']), dict(frame=54, buttons=[])],
+    'brake-launch': [dict(frame=0, buttons=['SQUARE']), dict(frame=40, buttons=['CROSS'])],
+    'reverse-forward': [dict(frame=0, buttons=['TRIANGLE']), dict(frame=50, buttons=['CROSS'])],
+    'shifts': [dict(frame=0, buttons=['CROSS','R2']), dict(frame=20, buttons=['CROSS']),
+               dict(frame=30, buttons=['CROSS','L2']), dict(frame=50, buttons=['CROSS','L2','R2']),
+               dict(frame=70, buttons=['CROSS','R2']), dict(frame=90, buttons=['CROSS'])],
+    'launch-holdout': [dict(frame=0,buttons=['SQUARE']),dict(frame=16,buttons=['CROSS','SQUARE']),
+        dict(frame=32,buttons=['CROSS']),dict(frame=60,buttons=['CIRCLE']),
+        dict(frame=76,buttons=['TRIANGLE']),dict(frame=100,buttons=['CROSS','LEFT']),
+        dict(frame=124,buttons=['SQUARE']),dict(frame=144,buttons=['CROSS','RIGHT'])],
 }
 
 
@@ -38,17 +46,29 @@ def export(run, target, frames, initial):
     writes = iter(sorted((json.loads(line) for line in (run/'writes.jsonl').open()), key=lambda e:e['cycle']))
     pending = next(writes, None)
     ticks = {}
+    initialized_controls = set()
     for line in (run/'trace.txt').open():
         m = PREFIX.match(line)
         if not m: continue
         absolute, cycle, pc = m.groups()
         frame, cycle, pc = int(absolute)-start, int(cycle), int(pc,16)
-        if pc not in PHASES: continue
+        if pc not in PHASES and pc != 0x8003E2C8: continue
         while pending and pending['cycle'] <= cycle:
             p, size = pending['address'] & 0x1FFFFF, pending['width']
             ram[p:p+size] = pending['value'].to_bytes(size,'little')
+            for off in range(size):
+                if 0x1FF750 <= p+off < 0x1FF75C:
+                    initialized_controls.add(p+off-0x1FF750)
             pending = next(writes, None)
         tick = ticks.setdefault(frame,{})
+        if pc == 0x8003E2C8:
+            assert initialized_controls == set(range(12)), 'all effective control bytes must be observed'
+            assert 'controls' not in tick, 'one player control boundary per tick required'
+            flags, steering, brake, throttle, shift, reverse, handbrake, _ = struct.unpack_from('<HhhhbbBB',ram,0x1FF750)
+            assert flags == 0, 'digital input boundary required'
+            tick['controls'] = dict(flags=flags, steering=steering, throttle=throttle, brake=brake,
+                                    handbrake=handbrake, reverse=reverse, shift=shift)
+            continue
         phase = PHASES[pc]
         assert phase not in tick, 'single-car tick boundary required'
         data = ram[BASE & 0x1FFFFF:(BASE & 0x1FFFFF)+SIZE]
@@ -56,20 +76,10 @@ def export(run, target, frames, initial):
         (target/name).write_bytes(data)
         tick[phase] = name
     assert sorted(ticks) == list(range(0,frames,2))
-    for tick in ticks.values(): assert set(tick) == set(PHASES.values())
-    for line in (run/'reads.jsonl').open():
-        e = json.loads(line)
-        key = INPUTS.get(e['pc'])
-        if key is None: continue
-        bits = e['width']*8
-        v = e['value']
-        if v >= 1 << (bits-1): v -= 1 << bits
-        controls = ticks[e['run_frame']].setdefault('controls',{})
-        assert key not in controls
-        controls[key] = v
+    for tick in ticks.values(): assert set(tick) == set(PHASES.values()) | {'controls'}
     result = []
     for frame,tick in sorted(ticks.items()):
-        assert set(tick['controls']) == set(INPUTS.values()) and tick['controls']['flags'] == 0
+        assert tick['controls']['flags'] == 0
         result.append(dict(run_frame=frame,**tick))
     return result
 
@@ -79,19 +89,23 @@ def main():
     p.add_argument('--state',type=Path,default=Path('.psx/runs/b1-state1200/state.bin'))
     p.add_argument('--scenario',choices=SCENARIOS,action='append')
     p.add_argument('--frames',type=int,default=60)
+    p.add_argument('--prefix',default='')
     args=p.parse_args()
     assert args.frames > 0 and args.frames % 2 == 0
+    assert re.fullmatch('[a-z0-9_-]*',args.prefix)
     initial=args.state.with_name('ram.bin').read_bytes()
     assert len(initial)==2*1024*1024
     assert initial[0xAF231] == 1, 'single-car checkpoint required (8003EC1C)'
     assert initial[0xA9520:0xA9522] == b'\0\0', 'unpaused physics required'
-    for scenario in args.scenario or SCENARIOS:
-        out=Path('game/tests/data/original/vehicle_loop')/scenario
+    for scenario in args.scenario or ['gas','brake','coast','holdout']:
+        name=args.prefix+scenario
+        out=Path('game/tests/data/original/vehicle_loop')/name
         out.mkdir(parents=True,exist_ok=True)
-        run=Path('.psx/runs')/f'vehicle-loop-{scenario}'
+        run=Path('.psx/runs')/f'vehicle-loop-{name}'
         command=['psx','run','--from-state',str(args.state),'--frames',str(args.frames),
                  '--input',json.dumps(SCENARIOS[scenario]),'--trace','--trace-range','8003EC24-8003EC78',
-                 '--watch',f'{BASE:08X}:{SIZE}','--watch-reads','801FF750:12',
+                 '--trace-range','8003E2C8-8003E2CC',
+                 '--watch',f'{BASE:08X}:{SIZE}','--watch','801FF750:12','--watch-reads','801FF750:12',
                  '--max-events','2000000','--out',str(run),'--summary']
         subprocess.run(command,check=True,capture_output=True,text=True)
         ticks=export(run,out,args.frames,initial)

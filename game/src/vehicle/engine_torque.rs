@@ -155,7 +155,14 @@ fn advance_engine_torque(
                 continue;
             }
             if drive.engagement == super::drivetrain::EngineEngagement::Disconnected {
-                *torque = EngineTorque::default();
+                // 8003E1FC..21C prepares curve/drag for every car, even
+                // disconnected ones. Combustion/fuel-cut evaluation is
+                // deferred to 8003AC60's free-engine feedback call.
+                *torque = EngineTorque {
+                    full_throttle: tuning.available_torque(input.speed_rev_s),
+                    drag: (input.speed_rev_s as f64 * tuning.drag_per_rev_s as f64).floor() as f32,
+                    net: 0.0,
+                };
                 continue;
             }
         }
