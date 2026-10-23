@@ -112,8 +112,8 @@ The full-loop test's raw-field conversion remains reference-test code. It now
 constructs the public `VehicleInitialState` and runs the same spawn path as
 native assets and mods; the exporter independently writes that format.
 Live pose/wheel/camera presentation is now connected and verified separately.
-The example
-mod must drive its handmade car through the same public pieces. Standing-start
+The example mod now drives its handmade car through the same public pieces,
+with independent tuning and no original assets. Standing-start
 input/gear requests, licence flow/HUD, condition/proximity producers,
 collision, special controllers, analog controls and broad content parity remain
 required. These short moving trajectories do not finish the port.

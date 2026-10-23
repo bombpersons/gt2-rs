@@ -1,0 +1,11 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(axles: ((
+ slip_curve: [(slip: -1.0, longitudinal: 0.8, cornering_limit: 0.2), (slip: -0.15, longitudinal: 1.0, cornering_limit: 0.8), (slip: 0.0, longitudinal: 0.0, cornering_limit: 1.0), (slip: 0.15, longitudinal: 1.0, cornering_limit: 0.8), (slip: 1.0, longitudinal: 0.8, cornering_limit: 0.2)],
+ cornering_curve: [(angle_turns: 0.0, response: 0.0), (angle_turns: 0.03, response: 1.0), (angle_turns: 0.25, response: 0.8)],
+), (
+ slip_curve: [(slip: -1.0, longitudinal: 0.8, cornering_limit: 0.2), (slip: -0.15, longitudinal: 1.0, cornering_limit: 0.8), (slip: 0.0, longitudinal: 0.0, cornering_limit: 1.0), (slip: 0.15, longitudinal: 1.0, cornering_limit: 0.8), (slip: 1.0, longitudinal: 0.8, cornering_limit: 0.2)],
+ cornering_curve: [(angle_turns: 0.0, response: 0.0), (angle_turns: 0.03, response: 1.0), (angle_turns: 0.25, response: 0.8)],
+)), low_speed: (
+ tread_limit_mps: 1.0, body_tread_difference_limit_mps: 0.5, saturation_speed_mps: 0.5,
+ force_per_lateral_mps: 3000.0, max_force: 1500.0, fade_per_mps: 1.0,
+))

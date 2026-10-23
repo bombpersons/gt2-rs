@@ -1,0 +1,2 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(radius_m: (0.25, 0.25), rotation_response: (8.0, 8.0), differentials: (Independent, Open), yaw_bias_min_forward_mps: 3.0)

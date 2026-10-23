@@ -1,0 +1,2 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(slip_target: (0.15, 0.15), slip_feedback: (2.0, 2.0), grip_feedback: (0.3, 0.3), yaw_target_strength: 0.0)

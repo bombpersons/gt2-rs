@@ -1,0 +1,2 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(stationary_wheel_speed_mps: 0.02, full_response_speed_mps: 1.0, response_per_mps: 1.0)

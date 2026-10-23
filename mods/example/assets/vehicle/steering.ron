@@ -1,0 +1,8 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(
+ stiffness: 25.0, damping: 8.0, centering_stiffness: 35.0,
+ rate_limit_turns_per_second: 0.4, extension_threshold_turns: 0.12,
+ extension_min_speed_mps: 2.0, extended_limit_turns: 0.2,
+ inner_wheel_ratio: 1.1, outer_wheel_ratio: 0.9, toe_turns: (0.0, 0.0),
+ speed_curve: [(speed_kph: 0.0, angle_turns: 0.08), (speed_kph: 40.0, angle_turns: 0.035), (speed_kph: 100.0, angle_turns: 0.015)],
+)

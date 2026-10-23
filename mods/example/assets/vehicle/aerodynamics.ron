@@ -1,0 +1,2 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(drag_force_per_squared_mps: 0.3, axle_force_per_squared_mps: (0.0, 0.0), minimum_response: 0.8, recovery_per_second: 0.5)

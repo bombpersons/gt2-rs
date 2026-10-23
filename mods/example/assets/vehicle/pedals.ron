@@ -1,0 +1,2 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(throttle_press: 0.2, throttle_release: 0.3, brake_press: 0.25, brake_release: 0.4, handbrake_press: 0.4, handbrake_release: 0.4)

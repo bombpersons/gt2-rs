@@ -1,0 +1,17 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(
+ pose: (position_m: (50.0, 0.0, 80.0), heading_turns: 0.25),
+ velocity: (linear_mps: (-7.0, 0.0, 0.0)),
+ steering_kinematics: (forward_velocity_mps: 7.0),
+ local_motion: (forward_mps: (7.0, 7.0, 7.0, 7.0)),
+ wheel_motion: (tread_speed_mps: (7.0, 7.0, 7.0, 7.0), speed_response: (1.0, 1.0, 1.0, 1.0)),
+ tyre_contact: (body_forward_mps: 7.0, grip_capacity: (20000.0, 20000.0, 20000.0, 20000.0)),
+ grip_input: (load: (20480.0, 20480.0, 20480.0, 20480.0)),
+ engine: (speed_rev_s: 22.3, integer_rpm: 1340.0),
+ transmission_state: (engagement_requested: true),
+ drivetrain: (gear: 1, engagement: Coupled, independent_wheels: (true, false)), axles: (radians_per_second: (28.0, 28.0)),
+ road: (node: 2),
+ suspension: (travel_m: (-0.25, -0.25, -0.25, -0.25), tyre_load: (20480.0, 20480.0, 20480.0, 20480.0)),
+ contact_motion: (body_forward_mps: 7.0),
+ contact_input: (independent_axles: (true, false)),
+)

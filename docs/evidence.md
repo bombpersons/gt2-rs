@@ -14,6 +14,12 @@ steering, velocity-tracking and nonzero-camber recordings. The application
 drives the rendered car and camera from that native controller. The standing
 start, collision and licence flow remain unfinished.
 
+The [handmade driving mod](../mods/example/README.md) now uses the same public
+controller with independent tuning, initial state, collision and animated
+geometry. Its paired input checks and real-binary MCP checks pass without
+base-game assets; close wheel, turning and braking views were inspected.
+This proves the current extension boundary rather than original-game parity.
+
 Current vehicle work: [driving evidence](driving-evidence.md) records digital
 steering limits/spring, wheel steering and velocity-to-step construction.
 All 300 consecutive original ticks and 39 controlled boundary probes match

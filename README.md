@@ -20,8 +20,9 @@ See [how the screenshots were captured](docs/screenshots.md).
   object and trigger placements; course geometry and tuning editors remain
   planned.
 - **Mods are crates.** A mod can replace assets, reuse public controllers and
-  disable or replace feature plugins. [The example mod](mods/example) renders
-  a handmade course, car and wheels through the same renderer and camera rules:
+  disable or replace feature plugins. [The example mod](mods/example) drives
+  a handmade car on its own course through the same controller, renderer and
+  camera rules, using independently authored tuning and no disc data:
 
   ![The example mod's handmade box car and circuit, rendered by the native port](docs/images/example-mod.png)
 

@@ -1,0 +1,12 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(axles: ((
+ bump_start_m: -0.32, minimum_travel_m: -0.38, maximum_travel_m: 0.05, travel_offset_m: -0.25,
+ spring_force_per_m: 81920.0, bump_force_per_m2: 40000.0, antiroll_force_per_m2: 6000.0, preload_force: 0.0,
+ rebound: (threshold_mps: 0.0, base_force: 0.0, square_root_response: 8000.0),
+ compression: (threshold_mps: 0.0, base_force: 0.0, square_root_response: 8000.0),
+), (
+ bump_start_m: -0.32, minimum_travel_m: -0.38, maximum_travel_m: 0.05, travel_offset_m: -0.25,
+ spring_force_per_m: 81920.0, bump_force_per_m2: 40000.0, antiroll_force_per_m2: 6000.0, preload_force: 0.0,
+ rebound: (threshold_mps: 0.0, base_force: 0.0, square_root_response: 8000.0),
+ compression: (threshold_mps: 0.0, base_force: 0.0, square_root_response: 8000.0),
+)), lateral_lever_m: 0.02, forward_lever_m: 0.02)

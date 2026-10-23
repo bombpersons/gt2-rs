@@ -47,7 +47,8 @@ supplied heading/pitch.
 Presentation is separate: this hook does not attach `VehicleBody`, a camera
 subject, a `Transform` or wheel geometry. The
 [live presentation plugin](vehicle-presentation-evidence.md) now consumes
-this state; the handmade driving mod remains integration work.
+this state; the [handmade driving mod](../mods/example/README.md) supplies
+its own initial state and tuning through these same public pieces.
 
 ## Checkpoint export and verification
 
@@ -68,7 +69,7 @@ retained histories and caller-owned input without private assets.
 
 This verifies an initialization boundary for the moving B-1 sequences in
 `vehicle-loop-evidence.md`. Standing-start behaviour, collision, licence flow,
-broader content parity and the handmade driving mod remain unfinished.
+and broader content parity remain unfinished.
 
 ## Validation
 

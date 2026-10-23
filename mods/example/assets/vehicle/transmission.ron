@@ -1,0 +1,11 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(
+ forward_gears: 3, minimum_shift_rpm: 1100.0, upshift_rpm: 4800.0, downshift_rpm: [1600.0, 1800.0],
+ engine_rev_s_per_mps: [3.1831, 3.1831, 2.03718, 1.40056],
+ downshift_slip_limit: (0.5, 0.5), upshift_slip_limit: (0.5, 0.5),
+ launch_speed_mps: 1.0, launch_throttle: 0.2, forward_select_speed_mps: 0.5,
+ reverse_select_speed_mps: 0.5, forward_return_speed_mps: 0.5, full_throttle_threshold: 0.9,
+ throttle_downshift_margin_rpm: 700.0, redline_speed_margin_rpm: 300.0,
+ first_downshift_rpm: 1000.0, top_upshift_rpm: 5200.0, feedback_redline_margin_rpm: 200.0,
+ braking_idle_margin_rpm: 200.0, reengagement_delay_ticks: 4,
+)

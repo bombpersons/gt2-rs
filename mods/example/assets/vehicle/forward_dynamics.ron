@@ -1,0 +1,5 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(
+ body_mass: 2.0, body_inverse_mass: 0.5, wheel_rotational_mass: (0.1, 0.1),
+ surface_resistance: [0.01], resistance_curve: [(speed_mps: 0.0, response: 0.0), (speed_mps: 1.0, response: 1.0)],
+)

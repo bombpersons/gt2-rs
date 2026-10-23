@@ -9,7 +9,7 @@ with the observed poses held between the 30 Hz physics updates.
 
 This starts from the established **moving** Vitz/B-1 checkpoint, not the
 standing start. Collision, licence conditions/HUD/outcomes, audio, shadows,
-reflections, dynamic detail selection and the handmade driving mod remain
+reflections and dynamic detail selection remain
 unfinished. It is not yet an end-to-end licence session.
 
 ## Source and observation boundaries
@@ -113,9 +113,11 @@ finite values and unit rotations before spawning geometry.
 The wheel importer exports those bindings alongside the existing reference
 poses; re-export assets after updating the source. No runtime matrix packets
 or RAM layouts are introduced. `RaceVehicle::initial_state` selects a native
-initial-state asset; `None` keeps a course-only subject. The example mod
-explicitly selects that mode and disables numerical vehicle features until
-its own driving tuning is authored. It still uses only handmade assets.
+initial-state asset; `None` keeps a course-only subject. The
+[example mod](../mods/example/README.md) now supplies handmade tuning and
+an initial state to the unchanged feature group, with live octagonal wheels
+and authored course collision. Its real executable runs against a fresh copy
+of those assets without a base-game asset folder.
 
 ## Visual validation
 

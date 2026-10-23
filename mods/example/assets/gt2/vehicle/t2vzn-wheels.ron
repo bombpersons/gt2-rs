@@ -1,7 +1,15 @@
-// Authored layout, independent of original wheel dimensions or pose.
+// Handmade wheel geometry bound to the public simulation, not original dimensions.
 (body_asset: "gt2/vehicle/t2vzn.ron", wheels: [
-(name: "front left wheel", geometry: "gt2/vehicle/wheel.ron", position_m: (-0.7, 0.28, -1.02), rotation_xyzw: (0.0, -0.70710677, 0.0, 0.70710677)),
-(name: "front right wheel", geometry: "gt2/vehicle/wheel.ron", position_m: (0.7, 0.28, -1.02), rotation_xyzw: (0.0, 0.70710677, 0.0, 0.70710677)),
-(name: "rear left wheel", geometry: "gt2/vehicle/wheel.ron", position_m: (-0.7, 0.28, 1.02), rotation_xyzw: (0.0, -0.70710677, 0.0, 0.70710677)),
-(name: "rear right wheel", geometry: "gt2/vehicle/wheel.ron", position_m: (0.7, 0.28, 1.02), rotation_xyzw: (0.0, 0.70710677, 0.0, 0.70710677))
+    (name: "front left wheel", geometry: "gt2/vehicle/wheel.ron",
+     position_m: (-0.7, 0.28, -1.02), rotation_xyzw: (0.0, -0.70710677, 0.0, 0.70710677),
+     motion: Some((wheel: 0, suspension_origin_y_m: 0.03, camber_turns: 0.0, mesh_rotation_xyzw: (0.0, 0.0, 0.0, 1.0)))),
+    (name: "front right wheel", geometry: "gt2/vehicle/wheel.ron",
+     position_m: (0.7, 0.28, -1.02), rotation_xyzw: (0.0, -0.70710677, 0.0, 0.70710677),
+     motion: Some((wheel: 1, suspension_origin_y_m: 0.03, camber_turns: 0.0, mesh_rotation_xyzw: (0.0, 0.0, 0.0, 1.0)))),
+    (name: "rear left wheel", geometry: "gt2/vehicle/wheel.ron",
+     position_m: (-0.7, 0.28, 1.02), rotation_xyzw: (0.0, -0.70710677, 0.0, 0.70710677),
+     motion: Some((wheel: 2, suspension_origin_y_m: 0.03, camber_turns: 0.0, mesh_rotation_xyzw: (0.0, 0.0, 0.0, 1.0)))),
+    (name: "rear right wheel", geometry: "gt2/vehicle/wheel.ron",
+     position_m: (0.7, 0.28, 1.02), rotation_xyzw: (0.0, -0.70710677, 0.0, 0.70710677),
+     motion: Some((wheel: 3, suspension_origin_y_m: 0.03, camber_turns: 0.0, mesh_rotation_xyzw: (0.0, 0.0, 0.0, 1.0)))),
 ])

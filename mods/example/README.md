@@ -1,67 +1,102 @@
-# Example course mod
+# Example driving mod
 
-Run `cargo run -p example-mod` from the workspace root. F1 opens controls;
-F2 opens display settings. The mod is a separate executable depending on
-`game/` and using its public `GamePlugins` group, course renderer and driving
-camera controller. R1 cycles views; L1 looks back.
+Run `cargo run -p example-mod` from the workspace root. Cross accelerates,
+Square brakes, Circle applies the handbrake, and left/right steer. R1 cycles
+views; L1 looks back. F1 opens control bindings; F2 opens display settings.
+The box car starts moving at 7 m/s on a handmade 320 m square circuit.
 
-The hand-authored 320 m circuit in `assets/gt2/course/TC_lisence.ron`
-replaces the game's course at that path. Bevy and synchronous RON loads
-search this mod's `assets/` first, then `../../game/assets`. Its course has
-four nodes, four surface quads and four level-1 draw spans; all geometry is
-written by hand and no extracted content is required. Run the binary outside
-Cargo with `BEVY_ASSET_ROOT` set to this crate's absolute directory.
+The mod depends on `game/` and uses its unchanged `GamePlugins` group: the
+same force, engine, drivetrain, tyre, contact, suspension, body, wheel and
+camera features as the Vitz. It supplies its own data through the ordinary
+asset layer. No edit to `game/` or `engine/` and no disc, BIOS, exported
+parameters or reference fixtures are required.
 
-Its handmade `assets/race/camera.ron` replaces the camera's lens, offsets and
-starting view. The public `CameraRulesPlugin` follows an ordinary subject
-Transform; no imported vehicle/body or physics data is needed. The MCP check
-cycles to the mod's 12 m far view, moves its subject and verifies the camera
-follows it. Race rules run at 30 Hz, with 60 Hz presentation.
+The values are independently authored for this example, rather than a copy
+of the original car's setup. They demonstrate controller reuse and authoring;
+they are not a claim about an original GT2 car's handling. Race physics runs
+at 30 Hz, with 60 Hz presentation.
 
-Its `assets/gt2/vehicle/t2vzn.ron` replaces the game's body with two handmade
-boxes: a coral deck and a blue cabin. It contains no extracted vertices or
-textures. The public `vehicle::presentation::VehiclePresentationPlugin`
-dresses subjects marked `VehicleBody` with engine-native geometry under their
-ordinary Transform (metres, X right, Y up, -Z forward). The asset override
-exercises body replacement through the same asset layers as the course.
-Alternatively, insert `VehiclePresentation { geometry: Some(path), wheels: None }`
-before adding the feature to select another body without inherited wheels,
-set both fields to `None` to disable dressing, or disable the presentation
-plugin through `GamePlugins`.
-No wheels, reflections or physics are implied by this authored body.
+## What to change
 
-The separate `assets/gt2/vehicle/t2vzn-wheels.ron` layout supplies four
-handmade charcoal cuboid wheels using `wheel.ron`. Their dimensions and
-poses are authored for this box car. The base port's independently decoded
-procedural tire profiles and wheel image are not used by the mod. Replace
-or disable the optional wheel layout separately from the body, and keep its
-`body_asset` path equal to the selected body to avoid applying unrelated
-attachments. These static wheels do not add steering, suspension or rolling
-physics.
+| Asset | Purpose |
+|---|---|
+| `assets/gt2/course/TC_lisence.ron` | Four road nodes, surface quads, draw spans and flat collision grids |
+| `assets/gt2/vehicle/t2vzn.ron` | Handmade coral deck and blue cabin, in engine `GeometryData` |
+| `assets/gt2/vehicle/wheel.ron` | Handmade octagonal tyre and two hubs, with a bright sector to show spin |
+| `assets/gt2/vehicle/t2vzn-wheels.ron` | Four metre attachments and live simulation bindings |
+| `assets/vehicle/initial.ron` | Native moving initial state: position, velocity and retained controller state |
+| Other `assets/vehicle/*.ron` | Pedals, steering, forces, engine/gears, assistance, contact, suspension and visual tuning |
+| `assets/race/camera.ron` | Lens, bumper/chase offsets and initial view |
 
-The port now drives its Vitz from the moving B-1 checkpoint through the native
-force/body controller and live body/wheel/camera presentation. This example
-still selects `RaceVehicle { initial_state: None }` and disables the numerical
-vehicle features, so it requires no private tuning. It proves course/body
-replacement and camera reuse; the next integration is handmade driving tuning
-and an initial state using the verified controller's public asset contract.
-It does not yet demonstrate a driving mod or a complete licence session.
+RON and Bevy asset loading search this crate's `assets/` first, then the
+base game's `../../game/assets`. Every file used by this example is present
+in its own layer. Outside Cargo, set `BEVY_ASSET_ROOT` to this crate's absolute
+directory. The executable selects `RacePresentation { geometry: None }` to
+render the authored road ribbon; physics reads the collision polygons, not
+that visual mesh.
 
-A code mod can select features with
-`game::GamePlugins.build().disable::<game::race::RacePlugin>()` and add its
-own plugins. Object and action overrides use `replace_object_type` and
-`replace_action` after the original registration; accidental duplicate
-registrations still panic.
+## Controller and model contract
 
-Checks:
+The [public initial-state format](../../docs/vehicle-initial-state.md) and
+[live presentation contract](../../docs/vehicle-presentation-evidence.md)
+describe the shared pieces. `RaceVehicle` selects `vehicle/initial.ron` by
+default. Numerical rules do not require a model, joints or animation clips.
+
+The handmade body uses local X right, Y up, -Z forward and metre vertices.
+`VehicleBody` attaches ordinary engine geometry beneath its driven Transform.
+The optional wheel layout names the matching body path. Its bindings select
+simulation wheels 0..3, suspension-origin height, axle camber and an extra
+mesh-local unit rotation. Canonical wheel geometry has Z as axle and XY as
+rolling plane. This example's wheels follow steering, suspension and spin
+through that contract; the tyre/hub geometry is constructed independently
+from an octagonal prism and discs. No original wheel profiles or textures
+are used.
+
+Replace the body/layout through assets, or insert `VehiclePresentation` to
+select other paths or disable them. A code mod can disable a feature with
+`GamePlugins.build().disable::<FeaturePlugin>()`, add its own plugins or
+supply public tuning resources/per-car setup components. This example needs
+no custom movement or force systems.
+
+The numerical tuning retains the controller's documented units, including
+normalized internal mass/force units rather than an asserted SI calibration.
+The initial ride state balances four equal spring loads against authored
+gravity; rendering puts the quarter-metre tyres just above the floor.
+Several authoring details matter:
+
+- Tyre slip curves cover **negative and positive** coordinates. Force direction
+  is a separate solver output, so both sides of the curve have positive grip.
+- This rear-drive car uses independently rotating front wheels and an open
+  rear differential. The initial `independent_wheels`/`independent_axles`
+  flags agree with that choice.
+- The four direction curves are independent mathematical samples of
+  `tan((i - 0.5) * tau / 4096)` for `i = 1..512`, rounded to `f32`. Their
+  provenance is written in each file; they are not the original lookup table.
+- Collision has local metre polygons and a 1 cm horizontal sampling grid.
+  Coordinates and areas fit the sampler's signed query/edge arithmetic.
+  The flat floor covers the circuit and its runoff, from -40 to 120 m on
+  each horizontal axis. There are no barriers, lap rules or recovery outside
+  that floor yet.
+
+## Checks
 
 ```sh
 cargo test -p example-mod --all-features
 cargo test -p example-mod --all-features --test dev_mcp -- --ignored --nocapture
 ```
 
-The first checks the actual game loader with the handmade course, asset
-priority, and disabling the scene without requiring rendering resources.
-The second renders the separate binary offscreen and checks its camera is
-on the mod's circuit, then exercises its camera controls and subject following.
-It needs a software GPU adapter.
+Headless checks drive identical initial states with throttle, coast, service
+brake and handbrake, verify acceleration/deceleration and retained floor
+contact/load, then turn both directions through the public controller. They
+also check asset priority, that every numerical asset resolves to this mod,
+and that callers can disable the scene.
+
+The opt-in GPU/MCP check copies only the handmade assets into a fresh tree
+with **no base-game assets folder**, then runs the real executable there.
+It verifies acceleration, body/camera following, wheel rolling, view cycling,
+steering and braking, and captures normal and close oblique views for visual
+inspection. It requires an offscreen software GPU adapter.
+
+The base port still needs its standing start, collision, licence conditions,
+HUD, sound and complete pass/fail/retry flow. This authored example proves
+reuse of the current controller; it does not finish those original-game tasks.

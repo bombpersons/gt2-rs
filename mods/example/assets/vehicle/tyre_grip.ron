@@ -1,0 +1,2 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(axles: ((load_curve: [(load: 0.0, capacity: 0.0), (load: 20000.0, capacity: 20000.0), (load: 80000.0, capacity: 50000.0)], camber_curve: [(angle_turns: 0.0, response: 1.0), (angle_turns: 0.25, response: 0.6)], camber_turns: 0.0), (load_curve: [(load: 0.0, capacity: 0.0), (load: 20000.0, capacity: 20000.0), (load: 80000.0, capacity: 50000.0)], camber_curve: [(angle_turns: 0.0, response: 1.0), (angle_turns: 0.25, response: 0.6)], camber_turns: 0.0)), surface_response: [1.0], condition: None)

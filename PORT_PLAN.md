@@ -201,8 +201,8 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   The 972 tyre comparisons also check both speed-response force channels.
   The authorable `VehicleInitialState` and public spawn hook now preserve
   these trajectories through RON round trips; the independently exported
-  checkpoint asset also reproduces all four sequences. Next:
-  the handmade driving mod, then the
+  checkpoint asset also reproduces all four sequences. The handmade driving
+  mod now uses the same public controller. Next:
   standing-start B-1 session, collision, licence flow and broad content parity.
   See docs/vehicle-loop-evidence.md.
 - Live body/wheel/camera presentation now runs from that native controller.
@@ -211,9 +211,18 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   including fresh turning, alternate velocity tracking and asymmetric camber
   probes. The complete-loop tests also check all five retained follower
   channels exactly. The real binary's 30-tick throttle body origin matches
-  the original; live chase/turning frames were inspected. The example mod
-  remains a handmade course-only scene pending authored driving tuning.
+  the original; live chase/turning frames were inspected.
   See docs/vehicle-presentation-evidence.md.
+- The example mod now drives its handmade box car using unchanged
+  `GamePlugins` and 22 independently authored numerical assets, with its own
+  course collision, initial state and live octagonal wheels. Headless tests
+  verify throttle/coast/braking/handbrake, both steering directions and
+  retained road loads/contact. The real binary also passes those driving,
+  wheel and camera checks with its assets copied to a fresh tree containing
+  no base-game assets. No game or engine code changes were needed. This is
+  an extension/authoring proof, not additional original-game parity.
+  Next: standing-start B-1 control requests and licence flow, collision and
+  broader game content. See mods/example/README.md.
 
 ## Work order
 

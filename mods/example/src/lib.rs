@@ -1,45 +1,15 @@
 //! A mod using the game's course renderer with a hand-authored circuit.
 //!
 //! Its asset at the game's course path wins over the base game's folder.
-//! This scene currently selects the course-only subject; the next integration
-//! is handmade tuning for the verified live vehicle controller.
+//! The public vehicle controller drives the handmade box car using authored
+//! tuning, initial state and collision. No original assets are required.
 
 /// Layer the base game's assets below this crate's own `assets/`.
 /// Relative to Bevy's asset root (the mod crate when run through Cargo).
 pub const GAME_ASSETS: &str = "../../game/assets";
 
-/// This authored scene uses camera and geometry, with no private dynamics
-/// tuning. Keep the binary and its headless checks on the same feature set.
+/// The same public feature group as the game, with the example's asset layer.
 pub fn plugins() -> bevy::app::PluginGroupBuilder {
     use bevy::prelude::PluginGroup;
-    game::GamePlugins
-        .build()
-        .disable::<game::vehicle::VehicleRulesPlugin>()
-        .disable::<game::vehicle::aerodynamics::AerodynamicsRulesPlugin>()
-        .disable::<game::vehicle::engine_torque::EngineTorqueRulesPlugin>()
-        .disable::<game::vehicle::slip::WheelSlipRulesPlugin>()
-        .disable::<game::vehicle::longitudinal_slip::LongitudinalSlipRulesPlugin>()
-        .disable::<game::vehicle::braking::BrakingRulesPlugin>()
-        .disable::<game::vehicle::brake_assist::BrakeAssistRulesPlugin>()
-        .disable::<game::vehicle::driver_assist::DriverAssistRulesPlugin>()
-        .disable::<game::vehicle::tyre_forces::TyreForcesRulesPlugin>()
-        .disable::<game::vehicle::forward_dynamics::ForwardDynamicsRulesPlugin>()
-        .disable::<game::vehicle::wheel_rotation::WheelRotationRulesPlugin>()
-        .disable::<game::vehicle::drivetrain::DrivetrainRulesPlugin>()
-        .disable::<game::vehicle::transmission::TransmissionRulesPlugin>()
-        .disable::<game::vehicle::body_dynamics::BodyDynamicsRulesPlugin>()
-        .disable::<game::vehicle::tyre_grip::TyreGripRulesPlugin>()
-        .disable::<game::vehicle::contact_motion::ContactMotionRulesPlugin>()
-        .disable::<game::vehicle::suspension::SuspensionRulesPlugin>()
-        .disable::<game::vehicle::vertical_body::VerticalBodyRulesPlugin>()
-        .disable::<game::vehicle::road_contact::RoadContactRulesPlugin>()
-        .disable::<game::vehicle::visual_motion::VehicleVisualMotionPlugin>()
-        .add_before::<game::race::RacePlugin>(ExampleCourseScene)
-}
-
-struct ExampleCourseScene;
-impl bevy::prelude::Plugin for ExampleCourseScene {
-    fn build(&self, app: &mut bevy::prelude::App) {
-        app.insert_resource(game::race::RaceVehicle { initial_state: None });
-    }
+    game::GamePlugins.build()
 }

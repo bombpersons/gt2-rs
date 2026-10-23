@@ -1,0 +1,2 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(body_offset_m: (0.0, 0.0, 0.0), chase_heading: Body, velocity_heading_min_mps: 1.0, yaw_stiffness: 18.0, yaw_damping: 7.0, pitch_stiffness: 16.0, pitch_damping: 6.0)

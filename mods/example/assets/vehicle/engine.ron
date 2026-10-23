@@ -1,0 +1,5 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(
+ torque_curve: [(speed_rev_s: 0.0, torque: 3600.0), (speed_rev_s: 40.0, torque: 4500.0), (speed_rev_s: 90.0, torque: 3600.0), (speed_rev_s: 120.0, torque: 0.0)],
+ drag_per_rev_s: 20.0, redline_rpm: 6500.0, idle_rpm: 900.0, fuel_cut_hysteresis_rpm: 400.0,
+)

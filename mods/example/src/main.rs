@@ -11,8 +11,8 @@ fn main() {
         screen: game::SCREEN,
         add: |app| {
             app.insert_resource(game::race::RacePresentation { geometry: None });
-            // This authored scene uses the camera/geometry features only.
-            // Disabled dynamics must not load the base game's private tuning.
+            // Its own layered tuning, initial state and collision feed the
+            // same numerical controller as the base game.
             app.add_plugins(example_mod::plugins());
         },
     });

@@ -1,0 +1,6 @@
+// Independently authored for the handmade box car; no disc-derived values.
+(
+ wheel_levers_m: ((-0.7, 1.02), (0.7, 1.02), (-0.7, -1.02), (0.7, -1.02)), inverse_radius_per_m: (4.0, 4.0), radians_per_turn: 6.2831855,
+ turns_per_radian: 0.15915494, speed_readout_units_per_mps: 3.6,
+ full_response_speed_mps: 5.0, response_gain_per_mps: 0.1, base_speed_response: 0.5,
+)
