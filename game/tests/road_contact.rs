@@ -8,6 +8,7 @@ use engine::{
 };
 use game::vehicle::{
     VehiclePose, VehicleStepDuration, VehicleVelocity,
+    aerodynamics::*,
     body_dynamics::{BodyDynamics, BodyDynamicsInput},
     contact_motion::ContactMotionInput,
     road_contact::*,
@@ -75,7 +76,7 @@ fn check(name: &str, count: usize) {
     assert_eq!(rows.len(), count);
     let original: CourseData = load_ron(game::race::COURSE_ASSET).unwrap();
     let mut app = headless_app(game::tick_rate(game::REGION));
-    app.add_plugins((RoadContactRulesPlugin, SuspensionRulesPlugin, VerticalBodyRulesPlugin));
+    app.add_plugins((RoadContactRulesPlugin, SuspensionRulesPlugin, VerticalBodyRulesPlugin, AerodynamicsRulesPlugin));
     let car = app
         .world_mut()
         .spawn((
@@ -170,6 +171,7 @@ fn check(name: &str, count: usize) {
         let mut vertical = VerticalBody { airborne: v("suspension_after", "airborne") != 0.0, ..default() };
         let mut orientation =
             BodyOrientation { pitch_turns: v("before", "pitch") / 4096.0, roll_turns: v("before", "roll") / 4096.0 };
+        let mut aero = Aerodynamics { reduction: v("aero_before", "aero_reduction") / 4096.0, ..default() };
         if previous == Some(r["sequence"]) {
             let old = *app.world().get::<RoadContactState>(car).unwrap();
             assert_eq!(old.node, state.node, "{label}: node seed carry");
@@ -189,6 +191,9 @@ fn check(name: &str, count: usize) {
             orientation = old_angle;
             assert_eq!(app.world().get::<VerticalBody>(car).unwrap().airborne, vertical.airborne);
             vertical = *app.world().get::<VerticalBody>(car).unwrap();
+            let old_aero = *app.world().get::<Aerodynamics>(car).unwrap();
+            assert_eq!(old_aero.reduction, aero.reduction, "{label}: aerodynamic history carry");
+            aero = old_aero;
             state = old;
             let old = *app.world().get::<Suspension>(car).unwrap();
             assert_eq!(old.travel_m, suspension.travel_m, "{label}: suspension travel carry");
@@ -208,7 +213,7 @@ fn check(name: &str, count: usize) {
             },
             SuspensionInput {
                 inverse_step_seconds: v("suspension_before", "inverse_duration") / 4096.0,
-                axle_force: [v("suspension_before", "front_force"), v("suspension_before", "rear_force")],
+                axle_force: [-999.0; 2],
                 lateral_force: v("suspension_before", "lateral_force"),
                 vertical_force: v("suspension_before", "vertical_force"),
                 forward_force: v("suspension_before", "forward_force"),
@@ -227,7 +232,24 @@ fn check(name: &str, count: usize) {
                 ..default()
             },
         ));
+        app.world_mut().entity_mut(car).insert((
+            aero,
+            AerodynamicsInput {
+                forward_mps: v("aero_before", "forward_speed") / 4096.0,
+                reduction_growth_per_second: v("aero_before", "aero_growth") / 4096.0,
+            },
+        ));
         app.run_tick(&[]);
+        assert_eq!(
+            app.world().get::<Aerodynamics>(car).unwrap().reduction * 4096.0,
+            v("before", "aero_reduction"),
+            "{label}: native aerodynamic reduction"
+        );
+        assert_eq!(
+            app.world().get::<Aerodynamics>(car).unwrap().axle_force,
+            [v("suspension_before", "front_force"), v("suspension_before", "rear_force")],
+            "{label}: native aerodynamic axle forces"
+        );
         let actual_pose = app.world().get::<VehiclePose>(car).unwrap();
         assert_eq!(actual_pose.position_m, pose(r, "frame_before").position_m, "{label}: native corrected pose");
         assert_eq!(actual_pose.heading_turns, pose(r, "frame_before").heading_turns);

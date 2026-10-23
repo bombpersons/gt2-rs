@@ -15,6 +15,7 @@ pub fn plugins() -> bevy::app::PluginGroupBuilder {
     game::GamePlugins
         .build()
         .disable::<game::vehicle::VehicleRulesPlugin>()
+        .disable::<game::vehicle::aerodynamics::AerodynamicsRulesPlugin>()
         .disable::<game::vehicle::engine_torque::EngineTorqueRulesPlugin>()
         .disable::<game::vehicle::slip::WheelSlipRulesPlugin>()
         .disable::<game::vehicle::longitudinal_slip::LongitudinalSlipRulesPlugin>()

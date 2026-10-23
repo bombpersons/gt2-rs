@@ -320,6 +320,10 @@ def export_tuning(ram_path, assets):
         bumps=[dict(amplitude_m=read(0x46F88+i*2,'h')/4096,cycles_per_m=read(0x46F98+i*2,'h')/256,
                     scale_with_speed=read(0x46FA8+i,'B')!=0) for i in range(8)],
         angle_threshold_ratios=[v/4096 for v in thresholds]))
+    write('vehicle/aerodynamics.ron', dict(
+        drag_force_per_squared_mps=car(0x43C,'i')/1024,
+        axle_force_per_squared_mps=tuple(car(0x440+i*4,'i')/1024 for i in range(2)),
+        minimum_response=read(0x46EF4,'i')/4096,recovery_per_second=0.25))
     write('vehicle/vertical_body.ron', dict(
         pitch_response=tuple(car(0x6C+i*4,'i')/4096/65536 for i in range(2)),
         roll_response=tuple(car(0x74+i*4,'i')/4096/65536 for i in range(2)),

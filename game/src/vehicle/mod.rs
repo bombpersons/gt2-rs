@@ -9,12 +9,14 @@
 //! [`VehicleVelocity`] before step construction. Suspension supplies next-tick
 //! loads; decoded road contact supplies surface/heights and retained bases.
 //! Vertical body rules update tilt/velocity and correct compression stops.
+//! Aerodynamics supplies drag and axle loads before control/force evaluation.
 use bevy::prelude::*;
 use engine::controller::{Button, ControllerState};
 use engine::prelude::TuningPlugin;
 use engine::shell::GameSystems;
 use serde::{Deserialize, Serialize};
 
+pub mod aerodynamics;
 pub mod body_dynamics;
 pub mod brake_assist;
 pub mod braking;

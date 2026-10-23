@@ -164,6 +164,18 @@ See `docs/assets.md`; run the public history audit before every push.
   producers, then a closed B-1 trajectory and live vehicle presentation.
   See docs/vertical-body-evidence.md.
 
+
+- Speed-squared aerodynamic drag and front/rear loads, retained reduction
+  growth/recovery and force storage now match 266 original calls, including
+  a fresh 74-call holdout. Native forward/suspension/body rules consume those
+  outputs. All 257 decoded-road comparisons now also use native aerodynamic
+  axle loads and carry reduction history, replacing that observed boundary.
+  Standalone and per-car/optional-bridge tests use handmade tuning. The
+  upstream proximity growth producer and other force/control boundaries remain
+  explicit. Next: close the full B-1 vehicle feedback loop, then live driving
+  and presentation, condition and licence flow.
+  See docs/aerodynamics-evidence.md.
+
 ## Work order
 
 1. Decode and import real course geometry, materials, textures, object

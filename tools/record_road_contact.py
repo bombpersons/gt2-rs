@@ -18,7 +18,7 @@ OUT=Path('game/tests/data/original/road_contact')
 PREFIX=re.compile(r'^(\d+) (\d+) ([0-9a-f]{8}) ')
 EFFECT=re.compile(r'; \[([0-9a-f]{8})\](=>|=)([0-9a-f]+)$')
 REGISTER=re.compile(r'; a0=([0-9a-f]{8})$')
-PHASES={0x80043388:'before',0x80043578:'queried',0x800438C0:'after',0x8003E7EC:'frame_before',0x8003E8CC:'frame_after',0x80043AE0:'suspension_before',0x80043F18:'suspension_after'}
+PHASES={0x8003DAA8:'aero_before',0x80043388:'before',0x80043578:'queried',0x800438C0:'after',0x8003E7EC:'frame_before',0x8003E8CC:'frame_after',0x80043AE0:'suspension_before',0x80043F18:'suspension_after'}
 
 
 def export(folder,frames,initial):
@@ -47,6 +47,7 @@ def export(folder,frames,initial):
         result={k:car(o,f) for k,o,f in [('x',0x65C,'i'),('y',0x660,'i'),('z',0x664,'i'),
             ('pitch',0x644,'h'),('roll',0x646,'h'),('heading',0x648,'h'),('node',0x600,'H'),
             ('pitch_rate',0x650,'h'),('roll_rate',0x652,'h'),('vx',0x628,'i'),('vy',0x62C,'i'),('vz',0x630,'i'),
+            ('forward_speed',0x6A4,'i'),('aero_growth',0x774,'h'),('aero_reduction',0x776,'h'),
             ('duration',0x6FE,'h'),('reset_ticks',0x78E,'H'),('airborne',0x6B1,'b'),('mode',0x786,'B'),
             ('condition_flags',0x78D,'B'),('road_pitch',0x6F4,'h'),('road_roll',0x6F6,'h'),('road_height',0x688,'i'),('inverse_duration',0x704,'i'),('compressed_mask',0x719,'B'),
             ('front_force',0x71C,'i'),('rear_force',0x720,'i'),('lateral_force',0x728,'i'),('vertical_force',0x72C,'i'),('forward_force',0x734,'i')]}
@@ -136,7 +137,7 @@ def main():
         folder=Path('.psx/runs')/f'road-contact-{name}-{label}'
         command=['psx','run','--from-state',str(args.state),'--frames',str(frames),'--input',json.dumps(replay),
             '--trace','--max-events','200000','--watch',f'{BASE:08X}:1952','--out',str(folder),'--summary']
-        for region in ['800431A0-800438F0','80028830-80028900','80028470-80028588','8003E7EC-8003E8E4','80043AE0-80043AE4','80043F18-80043F1C']:command+=['--trace-range',region]
+        for region in ['8003DAA8-8003DAAC','800431A0-800438F0','80028830-80028900','80028470-80028588','8003E7EC-8003E8E4','80043AE0-80043AE4','80043F18-80043F1C']:command+=['--trace-range',region]
         changes=[]
         if case:
             changes=[(BASE+0x45D,1,1),(BASE+0x65C,4,read(BASE+0x65C,'i')+case.get('forward',0)),

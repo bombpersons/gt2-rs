@@ -55,8 +55,10 @@ Force retains original internal units. Acceleration and speed use /4096
 metres/s² and metres/s respectively. Normalized source mass units and their
 reciprocals relate these quantities; kilograms and newtons are not claimed.
 The signed aerodynamic force comes from `8003DAAC..8003DBA0`, a speed-squared
-preparation path with a changing reduction factor. That producer remains
-unported; tests supply the force actually consumed by this phase.
+preparation path with a changing reduction factor. The separate
+[aerodynamics feature](aerodynamics-evidence.md) now produces it natively and
+feeds this forward rule in 266 original comparisons. This isolated corpus
+still supplies the force actually consumed by this phase.
 
 ## Rule and exact boundaries
 

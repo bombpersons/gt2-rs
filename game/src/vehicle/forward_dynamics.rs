@@ -45,7 +45,7 @@ pub struct ForwardDynamicsInput {
     pub wheel_load: [f32; 4],
     pub surface: [usize; 4],
     /// Signed force at physics+71A, prepared by speed-squared aerodynamic
-    /// processing 8003DAAC..DBA0. Its producer is not part of this feature.
+    /// processing 8003DAAC..DBA0. Aerodynamics supplies it when present.
     pub aerodynamic_force: f32,
 }
 

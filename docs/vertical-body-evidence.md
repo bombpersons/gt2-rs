@@ -148,6 +148,8 @@ Screenshots were inspected. Clippy reports only the pre-existing
 wheel-rotation test warning. The current-source and reachable-history audits
 pass; generated assets and original recordings remain private and ignored.
 
-Remaining work includes aerodynamic/body-force and condition producers,
+The [aerodynamics feature](aerodynamics-evidence.md) now supplies drag and axle
+loads in connected forward/suspension/body and decoded-road comparisons.
+Remaining work includes other body-force/proximity and condition producers,
 licence reset/outcome flow, closing the full vehicle feedback loop and live
 presentation, then the wider game and authoring editor in `PORT_PLAN.md`.

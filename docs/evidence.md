@@ -61,8 +61,12 @@ road, suspension, body correction and late attachment/frame refresh run
 together across the 257 road calls, replacing the corrected-pose injection.
 Movement-entry position/velocity, suspension force channels and reset event
 selection remain observed boundaries.
+[Aerodynamic force and retained reduction](aerodynamics-evidence.md) now match
+266 original calls, including a fresh 74-call holdout. Native forward,
+suspension and body rules consume drag/axle loads; all 257 decoded-road
+comparisons also replace observed axle loads with native aerodynamics.
 Alternate torque controllers, logical control-request production and physical
-bindings, aerodynamic/body-force production, broader collision/reset and condition
+bindings, proximity/other body-force production, broader collision/reset and condition
 accumulation, live wheel
 animation, reflections, shadows and a playable session remain
 unfinished. These checks cover component rules, not complete vehicle parity.

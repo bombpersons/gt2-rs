@@ -57,7 +57,7 @@ Offsets below use physics base `800A96B4`. Wheels start at +460, stride 68 hex.
 | +628/+62C/+630 | Original world velocity, /4096 metres/s; Bevy maps (x,z,-y) |
 | +668/+66A, +670/+672 | Horizontal forward/lateral axes, /4096; supplied by orientation/contact processing |
 | +6A4/+6A8 | Local forward/lateral velocity, /4096 metres/s |
-| +650/+652 | Secondary angular quantities, /4096; their producer/physical interpretation remains unported |
+| +650/+652 | Pitch/roll turns per second, /65536; now produced by the vertical body integrator |
 | +6B1 | Nonzero bypass of tyre acceleration; upstream state meaning remains open |
 | +718, +786 ==7, +78E !=0 | World-motion reset gates; the first-gear countdown retains vertical/secondary angular motion |
 | Wheel +52, +63 bit 1 | Slip activation and nonzero allocated brake demand |

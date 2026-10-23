@@ -48,6 +48,7 @@ impl PluginGroup for GamePlugins {
             .add(race::camera::CameraRulesPlugin)
             .add(race::RacePlugin)
             .add(vehicle::VehicleRulesPlugin)
+            .add(vehicle::aerodynamics::AerodynamicsRulesPlugin)
             .add(vehicle::engine_torque::EngineTorqueRulesPlugin)
             .add(vehicle::slip::WheelSlipRulesPlugin)
             .add(vehicle::longitudinal_slip::LongitudinalSlipRulesPlugin)

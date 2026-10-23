@@ -12,6 +12,8 @@ bases and the resulting **native suspension travel, spring/damper and loads**.
 Natural sequences retain heights, node seeds, bases, suspension and tilt histories.
 The [vertical body rules](vertical-body-evidence.md) now also produce corrected
 pose/angles and velocity natively before the late attachment/frame refresh.
+[Aerodynamics](aerodynamics-evidence.md) now produces both axle loads in this
+same pipeline; reduction history carries across consecutive ticks.
 
 Movement-entry position/velocity and the body-force inputs to suspension remain
 observed boundaries. Broader collision/reset and licence outcome actions are
@@ -39,7 +41,8 @@ GT2_TRO_CORPUS=/absolute/path/to/extracted/courses cargo test -p import --all-fe
 ```
 
 The recorder requires complete execution/watches, zero dropped trace lines,
-one car, four complete queries and all seven stage boundaries. It records
+one car, four complete queries and all eight stage boundaries, including
+the pre-aerodynamic input snapshot. It records
 the actual selected polygon/node at `800284BC/C0`, rather than inferring
 identity from an equal flat height. Commands, hashes and toolkit identity
 accompany the private CSV/JSON in `game/tests/data/original/road_contact/`.
@@ -178,7 +181,8 @@ checks and the engine sandbox pass. Screenshots were inspected. Clippy has
 only the existing wheel-rotation test warning. Current-source/history audits
 pass; all generated assets and numerical evidence remain ignored.
 
-Next: aerodynamic/body-force and condition producers, then a closed B-1 trajectory.
+Next: close the full B-1 feedback loop, remaining body-force/proximity and
+condition producers, and live driving/presentation.
 The licence reset/outcome code after `80043780`, live car/wheel animation,
 alternate torque/induction paths, request production, audio, wider game flow
 and authoring editor remain unfinished. The native scene still displays its
