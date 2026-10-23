@@ -5,7 +5,10 @@ game assets (including converted RON/PNG/WAV and tuning tables) in ignored
 `game/assets/`, reference fixtures in ignored `game/tests/data/original/`,
 and emulator/analysis outputs in `.psx/`. Never commit binary overlays or
 historical development Git data from `.private/`. Only authored engine and
-example-mod assets may be published. Run `python3 tools/check_public_repo.py
+example-mod assets may be published. The three explicitly listed README
+screenshots under `docs/images/` are an approved documentation exception;
+see `docs/screenshots.md`. This does not allow runtime assets or raw captures
+from the original game. Run `python3 tools/check_public_repo.py
 --history` before pushing. `tools/export_assets.py` rebuilds required runtime
 assets locally from a user-supplied disc; see `docs/assets.md`.
 

@@ -104,6 +104,9 @@ with `--history`. CI runs the history audit on pushes and pull requests.
 This guard complements source/provenance review; extensions alone cannot
 identify copied proprietary data hidden inside source code.
 
-The only published PNGs are the two small, handmade engine sandbox panels.
-The example mod's RON geometry and tuning are hand-authored. Do not add
-imports, captures or original tables to those authored folders.
+Published PNGs are the two small, handmade engine sandbox panels and the
+three explicitly approved [README screenshots](screenshots.md). Those native
+presentation images are a documentation exception, not runtime assets or
+original-game captures. The example mod's RON geometry and tuning are
+hand-authored. Do not add imports, captures or original tables to those
+authored folders, or broaden the screenshot exception to generated assets.

@@ -1,97 +1,121 @@
-# Gran Turismo 2 native Bevy port
+# Gran Turismo 2, native Rust port
 
-A standalone Rust / **Bevy 0.20.0** workspace for a native port of a
-PlayStation game, created by `psx template create`. This public repository
-contains source and handmade examples only: **no disc-derived assets or
-original reference fixtures are distributed**. After local asset export,
-the native game doesn't need an emulator, a disc or the psx toolkit at runtime.
-Requires Rust 1.97.1+ and a
-desktop GPU driver (or Mesa lavapipe with `--software`).
+A native Rust port of Gran Turismo 2 (PlayStation, USA Simulation Mode Rev 2),
+built with [Bevy](https://bevyengine.org). The game runs as ordinary Bevy code
+on top of a separate, reusable engine. Assets are exported locally from your
+own disc; the native executable runs without an emulator or the psx toolkit.
 
-Use your own USA Simulation Mode Rev 2 disc and NTSC-U BIOS to generate the
-current B-1 runtime assets. The exporter needs a locally installed `psx` CLI;
-it downloads neither media nor tools. See [asset setup](docs/assets.md).
+| B-1, with the PS1 look (320×240) | Widescreen, with the PS1 look switches off (640×360) |
+|---|---|
+| ![The native port's Vitz in chase view on the B-1 course, with pixel snapping, dithering and 15-bit colour](docs/images/b1-ps1.png) | ![The same native B-1 scene in widescreen, with pixel snapping, dithering and colour quantization disabled](docs/images/b1-widescreen.png) |
+
+Both images are captures of the current port at the same reference pose.
+The sky and ground are provisional, and the car is still static. These show
+rendering and camera progress; a playable driving session remains unfinished.
+See [how the screenshots were captured](docs/screenshots.md).
+
+- **Separate engine and game.** `engine/` provides reusable formats, rendering,
+  collision queries and registries. `game/` contains GT2's vehicle rules,
+  course presentation and cameras. A desktop content editor is planned.
+- **Mods are crates.** A mod can replace assets, reuse public controllers and
+  disable or replace feature plugins. [The example mod](mods/example) renders
+  a handmade course, car and wheels through the same renderer and camera rules:
+
+  ![The example mod's handmade box car and circuit, rendered by the native port](docs/images/example-mod.png)
+
+- **Display and controls options.** F1 opens control rebinding; F2 opens display
+  settings. Resolution, aspect ratio, fullscreen, vertex snapping, dithering
+  and colour quantization are configurable.
+
+## Status: a work in progress
+
+The port is **not yet playable**. B-1 renders from imported course and vehicle
+data, and much of the vehicle simulation has been checked against original
+execution. Connecting those rules into a complete driving session is the next
+milestone. Menus, licence outcomes, races and progression still need work.
+
+| Area | Status |
+|---|---|
+| B-1 road, placed scenery and textures | Rendered from decoded assets; other primitive types, backgrounds and LOD remain |
+| Road subdivision and texture detail | Match recorded splits, UVs and projected-area selections, including independent holdouts |
+| Vitz body and procedural wheels | Imported and rendered at the reference pose; wheel animation, shadows and reflections remain |
+| Bumper, near/far chase and rear-look cameras | Match original pose recordings; R1 cycles views, L1 looks back |
+| Pedals, digital steering, wheel slip and braking | Rules checked against original execution; analog controls remain |
+| Tyre forces, grip, engine, drivetrain and transmission | Individual stages and connected subsystem sequences verified; full feedback loop remains |
+| Road contact, suspension, vertical motion and aerodynamics | Decoded collision and retained histories verified together; remaining force/control producers are being connected |
+| Playable B-1 test, HUD, sounds and pass/fail/retry | Not yet complete |
+| Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |
+| Example mod and engine sandbox | Run with handmade assets and no disc data |
+| Desktop content editor | Planned |
+
+[PORT_PLAN.md](PORT_PLAN.md) tracks the remaining scope.
+[docs/evidence.md](docs/evidence.md) indexes the original observations,
+recording commands, verification coverage and explicit gaps for each feature.
+Race physics uses the observed 30 Hz cadence, with 60 Hz presentation.
+
+## Built with psx
+
+The port is made with [psx](https://github.com/bombpersons/psx), a PlayStation
+reverse-engineering toolkit:
+
+- It runs the original and records memory values, writes, input and instruction
+  traces. Headless Bevy tests compare the port with those recordings, including
+  fresh scenarios recorded after implementation.
+- Its disassembler and Ghidra integration help trace each rule to the original
+  routine. Evidence notes distinguish executed behaviour from binary analysis
+  and describe what remains unverified.
+- Its template supplies the PS1 rendering, input, tick scheduling, trajectory
+  tests and developer MCP used to step and screenshot the native game.
+
+The offline importers in this repository turn the player's disc data into
+engine-native assets. **No runtime game assets, original reference fixtures,
+disc images or BIOS files are distributed.** The README screenshots are
+presentation images, not assets used to run the game.
+
+## Running it
+
+Requires Rust **1.97.1+**, Bevy **0.20.0** and a desktop GPU driver (or Mesa
+lavapipe with `--software`). To render B-1, first export assets from your own
+USA Simulation Mode Rev 2 disc and NTSC-U BIOS. The exporter needs an installed
+`psx` CLI; it downloads neither tools nor media. See [asset setup](docs/assets.md).
 
 ```sh
 python3 tools/export_assets.py /path/to/game.cue --bios /path/to/scph5501.bin
-cargo run                                # the game (default member: game/)
-cargo run -- --software                  # force a software adapter
-cargo run -- --region pal                # override REGION (display + tick rate)
-cargo run -- --controls                  # open the controls menu (F1 also opens it)
-cargo run -- --display                   # open the display menu (F2 also opens it)
-cargo run -- --fullscreen                # borderless fullscreen (F11 toggles)
-cargo run -- --aspect window             # screen width follows the window's shape
-cargo run -p engine --example sandbox    # the engine's own tiny game
-cargo run -p example-mod                 # a mod: a tiny game built on game/
-cargo test --workspace                   # private-data checks report ignored if absent
-cargo run --features dev-mcp -- --mcp --headless --software  # developer MCP, offscreen
-cargo test --workspace --all-features    # routine agent check (dev-mcp everywhere)
-cargo build --release                    # shipping build; developer MCP is excluded
+cargo run                              # current B-1 reference scene
+cargo run -- --software                # software renderer
+cargo run -p example-mod               # handmade example, no disc required
+cargo run -p engine --example sandbox  # engine-only handmade scene
+cargo test --workspace --all-features  # routine checks, including local recordings
+cargo build --release                 # build without developer MCP
 ```
 
-The sandbox and example mod run from handmade assets without exporting any
-game data. Generated files under `game/assets/`, original fixtures and
-analysis outputs are ignored; CI audits the complete public Git history.
+F11 toggles fullscreen. `--controls` and `--display` open their respective
+menus on launch; `--aspect window` follows the window's shape. The
+[template README](psx-bevy/README.md) documents all display, input and developer
+options. For offscreen stepping and screenshots:
+
+```sh
+cargo run --features dev-mcp -- --mcp --headless --software
+```
+
+Without exported data, the engine, example mod and source-only tests still
+build and run; tests needing private assets or recordings report as ignored.
+Generated files stay in ignored `game/assets/`, `game/tests/data/original/`
+and `.psx/`. CI audits the public Git history with
+`python3 tools/check_public_repo.py --history`.
 
 ## Layout
 
-| Path | Owner | Contents |
-|---|---|---|
-| `psx-bevy/` | psx template | PS1 look, ticks and input, controls and display menus, testing, viewers, developer MCP, launcher. Updated by `psx template update`; edit sparingly and list edits in `docs/template.md` ([AGENTS.md](psx-bevy/AGENTS.md), [README](psx-bevy/README.md)) |
-| `engine/` | this project | This game's engine family: object type and action registries, update-order sets, level and tuning formats, `examples/sandbox.rs`. No names, numbers or assets from this game ([AGENTS.md](engine/AGENTS.md)) |
-| `game/` | this project | This title: per-type controllers, action handlers, HUD, menus, baked assets in `game/assets/`, trajectory tests ([AGENTS.md](game/AGENTS.md)) |
-| `mods/example/` | this project | An example mod: a small game built on `game` from hand-made assets, proving the game can be extended without editing it ([game/AGENTS.md](game/AGENTS.md), "Mods are crates") |
-| `tools/import/` | this project | Offline importers: files extracted with `psx` → engine formats, with provenance |
-| `docs/` | this project | `engine-model.md` (what the original treats as data vs code), `evidence.md`, `template.md` (edits to `psx-bevy/`) |
-| `.psx-template.toml` | psx template | Which template version this is and which files it owns |
+| Path | Contents |
+|---|---|
+| `engine/` | Reusable formats, geometry/collision, object and action registries, tuning and sandbox ([guide](engine/AGENTS.md)) |
+| `game/` | GT2 vehicle rules, course and car presentation, cameras and trajectory tests ([guide](game/AGENTS.md)) |
+| `mods/example/` | A separate mod built from handmade assets using the game's public API ([README](mods/example/README.md)) |
+| `psx-bevy/` | The psx template's rendering, ticks, input, menus, testing and developer MCP ([README](psx-bevy/README.md)) |
+| `tools/import/` | Offline disc-format importers that write engine-native assets |
+| `tools/` | Local asset exporter, original-recording scripts and verification tools |
+| `docs/` | Evidence, engine model, asset setup and template edit notes |
 
-The game renders the B-1 licence course from decoded road-node polygons,
-13 placed scenery meshes and 32 imported texture materials. Its bumper,
-near/far chase and rear-look camera rules use original recordings, with
-R1 cycling views and L1 looking back. Race logic is 30 Hz with 60 Hz
-presentation. Road textures switch by original projected-area rules, and
-flat-textured road quads use the original subdivision rules.
-Model LOD, other primitive refinement, procedural elements, backgrounds,
-mirror and intro/replay cameras remain unfinished.
-The decoded Vitz body and procedural wheels now appear in chase view, with
-hand-authored replacements in the example mod. Live wheel animation,
-reflections and shadows remain open.
-Verified pedals, digital/per-wheel steering, geometric and longitudinal slip, brake
-assistance/allocation, per-wheel tyre forces, surface resistance and forward
-integration before drivetrain coupling, wheel reaction/differential rotation,
-engine torque/fuel cut, engine/clutch/gear/centre/axle coupling, ordinary
-engine feedback and automatic/manual transmission timing, lateral/yaw force
-accumulation and horizontal world acceleration, load/camber/surface grip,
-late contact-motion refresh and wheel/axle synchronization, suspension travel,
-spring/damper loads and anti-roll/body-force preparation, decoded polygon
-road contact with height history, procedural bumps and road/body bases,
-aerodynamic drag/axle loads and retained reduction, pitch/roll and vertical
-impulses, suspension-stop correction and reset
-height/heading, and velocity-to-step integration have original recordings; the coupled force
-model and playable driving session are still unfinished. See
-[the evidence](docs/evidence.md), [cameras](docs/camera-evidence.md), [road subdivision](docs/subdivision-evidence.md), [texture detail](docs/material-variant-evidence.md), [course meshes](docs/course-mesh-evidence.md)
-[contact inputs](docs/contact-input-evidence.md), [suspension](docs/suspension-evidence.md)
-[road contact](docs/road-contact-evidence.md), [vertical body motion](docs/vertical-body-evidence.md)
-and [aerodynamics](docs/aerodynamics-evidence.md)
-for coverage and remaining work.
-
-`game::GamePlugins` exposes the feature plugins so another crate can disable
-or replace them. [The example mod](mods/example/README.md) reuses the course
-renderer and driving-camera controller with a hand-authored circuit and
-camera tuning at the same asset paths. The mod's
-`assets/` takes priority over the game's fallback folder for both RON and
-Bevy asset loads. No imported content is needed to run the example. It will
-grow to exercise the real driving controller when that controller is ported.
-
-## Template updates
-
-```sh
-psx template update --dry-run   # what would change
-psx template update             # replace unmodified template files
-```
-
-Files under `psx-bevy/` that you edited are left alone and the new version is
-written beside them as `<file>.psx-new`; reapply your change from
-`docs/template.md` to it. Files the template only seeded
-(everything outside `psx-bevy/`) are never touched; when their template
-version changed, the update reports a diff to apply by hand.
+Template updates use `psx template update --dry-run`, then
+`psx template update`. Edited template files receive a sibling `.psx-new`;
+[docs/template.md](docs/template.md) lists the local edits to reapply.

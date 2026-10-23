@@ -11,11 +11,17 @@ import hashlib
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import struct
 import subprocess
 
 ROOT_FILES = {'AGENTS.md', 'Cargo.toml', 'Cargo.lock', 'PORT_PLAN.md', 'README.md',
               '.gitignore', '.psx-template.toml', 'rustfmt.toml', 'tools_bin2iso.py'}
 AUTHORED_IMAGES = {'engine/assets/sandbox/panel-large.png', 'engine/assets/sandbox/panel-small.png'}
+# Explicitly reviewed documentation captures, requested for the README.
+# These are native-rendered presentation images, never runtime game assets.
+README_SCREENSHOTS = {'docs/images/b1-ps1.png': (320, 240),
+                      'docs/images/b1-widescreen.png': (640, 360),
+                      'docs/images/example-mod.png': (320, 240)}
 PRIVATE = ('game/assets/', 'game/tests/data/', 'docs/overlays/', '.psx/', '.private/',
            'extracted/', 'bios/', 'media/', 'external/', 'ghidra-projects/', 'target/')
 # Complete tuning arrays previously copied into an investigation note. Store
@@ -33,7 +39,7 @@ def allowed(name):
     p = PurePosixPath(name)
     if p.is_absolute() or '..' in p.parts or any(name.startswith(prefix) for prefix in PRIVATE):
         return False
-    if name in ROOT_FILES or name in AUTHORED_IMAGES:
+    if name in ROOT_FILES or name in AUTHORED_IMAGES or name in README_SCREENSHOTS:
         return True
     if name.startswith('.github/workflows/') and p.suffix in {'.yml', '.yaml'}:
         return True
@@ -54,9 +60,12 @@ def check_blob(name, data):
         raise ValueError(f'Not on the public source/authored-content list: {name}')
     if len(data) > 512 * 1024:
         raise ValueError(f'Oversized public file requires review: {name}')
-    if name in AUTHORED_IMAGES:
+    if name in AUTHORED_IMAGES or name in README_SCREENSHOTS:
         if not data.startswith(b'\x89PNG\r\n\x1a\n'):
-            raise ValueError(f'Expected authored PNG: {name}')
+            raise ValueError(f'Expected approved PNG: {name}')
+        if name in README_SCREENSHOTS:
+            if len(data) < 33 or data[12:16] != b'IHDR' or struct.unpack('>II', data[16:24]) != README_SCREENSHOTS[name]:
+                raise ValueError(f'Unexpected documentation screenshot dimensions: {name}')
         return
     try:
         text = data.decode('utf8')

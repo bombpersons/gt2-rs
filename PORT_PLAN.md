@@ -11,6 +11,8 @@ The public history excludes all disc-derived assets, numerical fixture files,
 raw overlays and emulator data. `tools/export_assets.py` reproduces the
 current B-1 runtime content locally from the user-supplied disc and BIOS.
 See `docs/assets.md`; run the public history audit before every push.
+The three named native README screenshots are a documentation exception
+requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
 
 ## Current baseline
 
