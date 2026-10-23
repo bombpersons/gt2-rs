@@ -95,6 +95,15 @@ struct WheelPlacement {
     geometry: String,
     position_m: [f32; 3],
     rotation_xyzw: [f32; 4],
+    motion: Option<WheelMotionBinding>,
+}
+
+#[derive(Debug, Serialize)]
+struct WheelMotionBinding {
+    wheel: usize,
+    suspension_origin_y_m: f32,
+    camber_turns: f32,
+    mesh_rotation_xyzw: [f32; 4],
 }
 
 impl Geometry {
@@ -299,6 +308,12 @@ pub fn import(
             geometry: format!("{}/{axle}{side}-lod0.ron", texture_prefix.trim_matches('/')),
             position_m,
             rotation_xyzw: [-quarter * sin, -quarter * cos, quarter * sin, quarter * cos],
+            motion: Some(WheelMotionBinding {
+                wheel,
+                suspension_origin_y_m: f32::from(half(&ram, OUTER_CAR + 0x160 + (wheel / 2) * 52)?) / 4096.0,
+                camber_turns: f32::from(half(&ram, OUTER_CAR + 0x394 + (wheel / 2) * 2)?) / 4096.0,
+                mesh_rotation_xyzw: [0.0, 0.0, 0.0, 1.0],
+            }),
         });
     }
     let layout = WheelLayout { body_asset: "gt2/vehicle/t2vzn.ron".into(), wheels: placements };
@@ -311,7 +326,7 @@ pub fn import(
     crate::Provenance::of(ram_path, "import checkpoint wheel placement and spin")
         .and_then(|p| p.write_beside(&layout_file))
         .map_err(|e| e.to_string())?;
-    Ok("six byte-verified axle/LOD constructions, twelve meshes including reflected right wheels, checkpoint layout and default paint; live steering/spin animation remain unported".into())
+    Ok("six byte-verified axle/LOD constructions, twelve meshes including reflected right wheels, checkpoint layout with simulation bindings and default paint".into())
 }
 
 #[cfg(test)]

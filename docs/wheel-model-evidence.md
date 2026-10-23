@@ -4,9 +4,10 @@ The native wheel assets reproduce the original B-1 tire profile construction,
 default wheel image and checkpoint wheel placements. They are ordinary metre
 meshes with PNG texture paths. All six generated front/rear detail streams
 match the original's initialized RAM arrays byte-for-byte before conversion.
-This establishes geometry construction for this checkpoint, not finished
-wheel animation, upgraded-wheel selection, dynamic detail selection or a
-complete car renderer.
+This establishes geometry construction for this checkpoint. Live steering,
+camber, spin and suspension bindings are now verified separately in
+[presentation evidence](vehicle-presentation-evidence.md). Upgraded-wheel
+selection, dynamic detail selection and a complete car renderer remain open.
 
 ## Pointer bases and identity
 

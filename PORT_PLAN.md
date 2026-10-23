@@ -42,7 +42,7 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
 - Ordinary bumper/chase/rear-look camera rules and the B-1 lens are ported,
   with 192 original pose comparisons including a held-out sequence. Race
   logic now runs at the observed 30 Hz with 60 Hz presentation. The native
-  subject is still static pending the vehicle force/body simulation. Intro,
+  subject now follows the retained vehicle simulation and camera stabilization. Intro,
   replay, mirror and split-screen presentation remain unfinished.
   See docs/camera-evidence.md.
 - Gameplay physics, vehicles, full courses, races, menus, progression, save
@@ -60,8 +60,9 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   views, using checkpoint paint slot 5. The example mod supplies a handmade body
   through the same engine geometry format. Procedural wheel meshes match all
   six original front/rear LOD streams byte-for-byte and render with observed
-  default rims and static checkpoint attachment poses. The mod supplies its
-  own wheels and layout. Live steering/spin/suspension, dynamic LOD, wheel
+  default rims and live attachment poses. The mod supplies its
+  own wheels and layout. Live steering/camber/spin/suspension is connected;
+  dynamic LOD, wheel
   variants, shadows and reflections are still required.
 - Wheel slip preprocessing matches 100 original boundary/holdout executions
   and feeds steering correctly in all 300 driving ticks. Brake allocation
@@ -201,9 +202,18 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   The authorable `VehicleInitialState` and public spawn hook now preserve
   these trajectories through RON round trips; the independently exported
   checkpoint asset also reproduces all four sequences. Next:
-  live body/wheel/camera presentation and the handmade driving mod, then the
+  the handmade driving mod, then the
   standing-start B-1 session, collision, licence flow and broad content parity.
   See docs/vehicle-loop-evidence.md.
+- Live body/wheel/camera presentation now runs from that native controller.
+  Body origins, wheel attachment/steering/camber/spin and retained chase
+  stabilization match 180 original poses and 696 consumed wheel matrices,
+  including fresh turning, alternate velocity tracking and asymmetric camber
+  probes. The complete-loop tests also check all five retained follower
+  channels exactly. The real binary's 30-tick throttle body origin matches
+  the original; live chase/turning frames were inspected. The example mod
+  remains a handmade course-only scene pending authored driving tuning.
+  See docs/vehicle-presentation-evidence.md.
 
 ## Work order
 

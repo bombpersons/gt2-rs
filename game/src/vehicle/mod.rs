@@ -37,6 +37,7 @@ pub mod transmission;
 pub mod tyre_forces;
 pub mod tyre_grip;
 pub mod vertical_body;
+pub mod visual_motion;
 pub mod wheel_rotation;
 pub use steering::{
     DigitalSteeringInput, STEERING_TUNING, SteeringKinematics, SteeringKnot, SteeringResponse, SteeringTuning,

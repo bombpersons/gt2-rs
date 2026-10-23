@@ -235,6 +235,13 @@ fn initialize(world: &mut World, r: &Original, alternate_locked_step: bool) -> E
             spin_turns: r.wheels(0x20, |r, o| r.short(o) as u16 as f32 / 4096.0),
             ..default()
         },
+        chase_stabilization: Some(game::vehicle::visual_motion::ChaseStabilization {
+            yaw_turns: r.angle(0x748),
+            yaw_rate_turns_per_second: r.angle(0x74A),
+            pitch_turns: r.angle(0x74C),
+            pitch_rate_turns_per_second: r.angle(0x74E),
+            previous_yaw_acceleration: r.angle(0x752),
+        }),
     };
     // Exercise the public native asset format as well as the spawn path.
     let encoded = ron::to_string(&state).unwrap();
@@ -270,6 +277,18 @@ fn capture<const N: usize>(world: &mut World) {
         add("position", 0x65C + i * 4, 'i', v as f64 * 4096.0);
     }
     add("heading", 0x648, 'h', pose.heading_turns as f64 * 4096.0);
+    if N == 3 {
+        let state = world.get::<game::vehicle::visual_motion::ChaseStabilization>(car).unwrap();
+        for (offset, value) in [
+            (0x748, state.yaw_turns),
+            (0x74A, state.yaw_rate_turns_per_second),
+            (0x74C, state.pitch_turns),
+            (0x74E, state.pitch_rate_turns_per_second),
+            (0x752, state.previous_yaw_acceleration),
+        ] {
+            add("chase stabilization", offset, 'h', value as f64 * 4096.0);
+        }
+    }
     let steering = world.get::<SteeringResponse>(car).unwrap();
     add("steering", 0x60C, 'h', steering.angle_turns as f64 * 4096.0);
     add("steering rate", 0x60E, 'h', steering.rate_turns_per_second as f64 * 4096.0);
@@ -421,6 +440,7 @@ fn check_from(scenario: &str, exported: bool) {
         SuspensionRulesPlugin,
         VerticalBodyRulesPlugin,
         ContactMotionRulesPlugin,
+        game::vehicle::visual_motion::VehicleVisualMotionPlugin,
     ));
     app.add_systems(
         FixedUpdate,
@@ -428,7 +448,7 @@ fn check_from(scenario: &str, exported: bool) {
             capture::<0>.after(VehicleSystems::Forces).before(VehicleSystems::BuildStep),
             capture::<1>.after(VehicleSystems::Integrate).before(VehicleSystems::SampleRoad),
             capture::<2>.after(VehicleSystems::SampleRoad).before(VehicleSystems::Suspension),
-            capture::<3>.after(VehicleSystems::RefreshContact),
+            capture::<3>.after(game::vehicle::visual_motion::VehicleVisualSystems::Stabilize),
         ),
     );
     let car = initialize(

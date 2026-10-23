@@ -76,12 +76,15 @@ fn headless_render_edit_step_and_query() {
         "moving the road should affect the rendered scene"
     );
 
-    // Stepping runs the fixed tick without a rules controller yet: the scene
-    // stays up and the frame advances.
+    let initial_subject = query(&mut client, "CameraSubject");
+    let initial_x = initial_subject["components"]["Transform"]["translation"][0].as_f64().unwrap();
+    // The retained native controller drives the same subject the camera sees.
     let stepped = client.call("game_step", json!({"frames":12,"buttons":[]}))["structuredContent"].clone();
     assert_eq!(stepped["frame"], 12);
     assert!(query(&mut client, "Road")["components"]["Transform"]["translation"][1].as_f64().unwrap() == 1.0);
     client.screenshot(output.join("after-step.png"));
+    let moved_subject = query(&mut client, "CameraSubject");
+    assert!(moved_subject["components"]["Transform"]["translation"][0].as_f64().unwrap() < initial_x - 5.0);
 
     client.call("game_pause", json!({"paused":false}));
     let running = client.request("tools/call",json!({"name":"game_set_component","arguments":{"name":"Road","component":"Transform","fields":{"translation":[99,1,0]}}}));
@@ -98,23 +101,72 @@ fn headless_render_edit_step_and_query() {
     client.call("game_step", json!({"frames":1,"buttons":["r1"]}));
     let chase = query(&mut client, "RaceCamera");
     let chase_x = chase["components"]["Transform"]["translation"][0].as_f64().unwrap();
-    assert!((chase_x - 407.1747).abs() < 0.01, "near chase: {chase}");
+    let subject_x = query(&mut client, "CameraSubject")["components"]["Transform"]["translation"][0].as_f64().unwrap();
+    assert!((chase_x - subject_x - 5.4).abs() < 0.02, "near chase: {chase}");
     client.screenshot(output.join("chase.png"));
     client.call("game_step", json!({"frames":2,"buttons":["r1"]}));
-    assert_eq!(query(&mut client, "RaceCamera"), chase, "held button must not cycle again");
+    let held = query(&mut client, "RaceCamera");
+    let subject_x = query(&mut client, "CameraSubject")["components"]["Transform"]["translation"][0].as_f64().unwrap();
+    assert!(
+        (held["components"]["Transform"]["translation"][0].as_f64().unwrap() - subject_x - 5.4).abs() < 0.02,
+        "held button must not cycle again"
+    );
     client.call("game_step", json!({"frames":1,"buttons":["l1"]}));
     let rear = query(&mut client, "RaceCamera");
+    let subject_x = query(&mut client, "CameraSubject")["components"]["Transform"]["translation"][0].as_f64().unwrap();
     assert!(
-        (rear["components"]["Transform"]["translation"][0].as_f64().unwrap() - 396.3747).abs() < 0.01,
+        (rear["components"]["Transform"]["translation"][0].as_f64().unwrap() - subject_x + 5.4).abs() < 0.02,
         "rear chase: {rear}"
     );
     client.screenshot(output.join("rear.png"));
     client.call("game_step", json!({"frames":1,"buttons":["r1"]}));
     let far = query(&mut client, "RaceCamera");
+    let subject_x = query(&mut client, "CameraSubject")["components"]["Transform"]["translation"][0].as_f64().unwrap();
     assert!(
-        (far["components"]["Transform"]["translation"][0].as_f64().unwrap() - 408.5747).abs() < 0.01,
+        (far["components"]["Transform"]["translation"][0].as_f64().unwrap() - subject_x - 6.8).abs() < 0.02,
         "far chase: {far}"
     );
     client.screenshot(output.join("far.png"));
+    let wheel_before = query(&mut client, "front left wheel");
+    client.call("game_step", json!({"frames":12,"buttons":["cross","left"]}));
+    let wheel_after = query(&mut client, "front left wheel");
+    assert_ne!(
+        wheel_before["components"]["Transform"]["rotation"], wheel_after["components"]["Transform"]["rotation"],
+        "wheel presentation must follow live steering/spin"
+    );
+    let physics = client.call(
+        "game_query",
+        json!({"name":"CameraSubject","components":["VehiclePose","WheelSteering","ChaseStabilization"]}),
+    );
+    std::fs::write(output.join("physics.json"), serde_json::to_vec_pretty(&physics).unwrap()).unwrap();
+    client.screenshot(output.join("driving.png"));
     std::fs::write(output.join("status.json"), serde_json::to_vec_pretty(&status).unwrap()).unwrap();
+}
+
+#[test]
+#[ignore = "requires local original fixtures and a working offscreen GPU/software adapter"]
+fn native_driving_frame_matches_the_recorded_body_origin() {
+    let output = std::env::temp_dir().join(format!("gt2-live-reference-{}", std::process::id()));
+    std::fs::create_dir_all(&output).unwrap();
+    println!("Driving comparison: {}", output.display());
+    let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
+    command.env("BEVY_ASSET_ROOT", env!("CARGO_MANIFEST_DIR"));
+    let mut client = Client::launch(command, &output.join("game.log"));
+    client.call("game_step", json!({"frames":30,"buttons":["cross","r1"]}));
+    let expected: Value = serde_json::from_str(
+        &std::fs::read_to_string(format!(
+            "{}/tests/data/original/vehicle_presentation/gas.json",
+            env!("CARGO_MANIFEST_DIR")
+        ))
+        .unwrap(),
+    )
+    .unwrap();
+    let body = query(&mut client, "CameraSubject");
+    for i in 0..3 {
+        let actual = body["components"]["Transform"]["translation"][i].as_f64().unwrap();
+        let original = expected["rows"][29]["presented"]["body_position"][i].as_f64().unwrap() / 65536.0;
+        assert!((actual - original).abs() < 0.001, "body axis {i}: {actual} vs original {original}");
+    }
+    client.screenshot(output.join("driving-30.png"));
+    std::fs::write(output.join("body.json"), serde_json::to_vec_pretty(&body).unwrap()).unwrap();
 }

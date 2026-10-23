@@ -1,8 +1,8 @@
 //! A mod using the game's course renderer with a hand-authored circuit.
 //!
 //! Its asset at the game's course path wins over the base game's folder.
-//! There is no driving controller in the port yet; grow this example with
-//! the real controller once its recorded trajectories pass.
+//! This scene currently selects the course-only subject; the next integration
+//! is handmade tuning for the verified live vehicle controller.
 
 /// Layer the base game's assets below this crate's own `assets/`.
 /// Relative to Bevy's asset root (the mod crate when run through Cargo).
@@ -33,4 +33,13 @@ pub fn plugins() -> bevy::app::PluginGroupBuilder {
         .disable::<game::vehicle::suspension::SuspensionRulesPlugin>()
         .disable::<game::vehicle::vertical_body::VerticalBodyRulesPlugin>()
         .disable::<game::vehicle::road_contact::RoadContactRulesPlugin>()
+        .disable::<game::vehicle::visual_motion::VehicleVisualMotionPlugin>()
+        .add_before::<game::race::RacePlugin>(ExampleCourseScene)
+}
+
+struct ExampleCourseScene;
+impl bevy::prelude::Plugin for ExampleCourseScene {
+    fn build(&self, app: &mut bevy::prelude::App) {
+        app.insert_resource(game::race::RaceVehicle { initial_state: None });
+    }
 }

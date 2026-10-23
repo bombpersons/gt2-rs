@@ -51,6 +51,7 @@ pub struct VehicleInitialState {
     pub vertical: VerticalBody,
     pub contact_input: ContactMotionInput,
     pub contact_motion: ContactMotion,
+    pub chase_stabilization: Option<visual_motion::ChaseStabilization>,
 }
 impl VehicleInitialState {
     /// Fill fresh authoring defaults from the pose. Exported retained bases
@@ -132,6 +133,11 @@ impl VehicleInitialState {
             state.vertical,
         ));
         entity.insert((state.contact_input, state.contact_motion));
+        entity.insert(
+            state
+                .chase_stabilization
+                .unwrap_or_else(|| visual_motion::ChaseStabilization::at(state.pose, state.orientation)),
+        );
         entity.insert((
             DigitalPedalInput::default(),
             DigitalSteeringInput::default(),

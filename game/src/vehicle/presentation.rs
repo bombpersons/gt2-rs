@@ -1,5 +1,6 @@
 //! Decoded body and procedural wheels under the rendered vehicle pose.
-//! Wheel animation, reflections and the auxiliary/shadow pass are unported.
+//! Optional live wheel steering, camber, spin and suspension bindings.
+//! Reflections and the auxiliary/shadow pass remain unported.
 //! See `docs/car-model-evidence.md` for scale, axes and selected paint evidence.
 use bevy::prelude::*;
 use engine::{geometry::GeometryData, prelude::load_ron, psx::PsxMaterial};
@@ -56,11 +57,56 @@ pub struct WheelPlacement {
     pub geometry: String,
     pub position_m: [f32; 3],
     pub rotation_xyzw: [f32; 4],
+    #[serde(default)]
+    pub motion: Option<WheelMotionBinding>,
 }
 
-/// A public wheel attachment for future steering/spin/suspension animation.
-/// Its initial transform comes from the layout. Current original wheels are
-/// static at the checkpoint pose until those dynamics are connected.
+/// Bind a canonical Z-axle wheel to one of the simulation's four wheels.
+/// A custom mesh can supply an extra local rotation after the wheel motion.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct WheelMotionBinding {
+    pub wheel: usize,
+    pub suspension_origin_y_m: f32,
+    pub camber_turns: f32,
+    pub mesh_rotation_xyzw: [f32; 4],
+}
+
+impl WheelPlacement {
+    pub fn transform(&self) -> Transform {
+        Transform::from_translation(Vec3::from_array(self.position_m))
+            .with_rotation(Quat::from_array(self.rotation_xyzw))
+    }
+
+    /// 8001356C..588: local height = axle origin - suspension travel.
+    /// 80014578..5A8 / 800671AC..1CC: steering yaw minus a quarter turn,
+    /// opposite camber signs, then rolling spin. Right-side geometry already
+    /// includes the original axial reflection; no negative scale is needed.
+    pub fn animated_transform(
+        &self,
+        steering: &super::WheelSteering,
+        contact: &super::contact_motion::ContactMotion,
+        suspension: &super::suspension::Suspension,
+    ) -> Transform {
+        let Some(binding) = &self.motion else { return self.transform() };
+        let i = binding.wheel;
+        let mut transform = self.transform();
+        transform.translation.y = binding.suspension_origin_y_m - suspension.travel_m[i];
+        let turn = std::f32::consts::TAU;
+        transform.rotation = Quat::from_euler(
+            EulerRot::YXZ,
+            (steering.angle_turns[i] - 0.25) * turn,
+            binding.camber_turns * (if i % 2 == 0 { turn } else { -turn }),
+            contact.spin_turns[i] * turn,
+        ) * Quat::from_array(binding.mesh_rotation_xyzw);
+        transform
+    }
+}
+
+#[derive(Component)]
+struct AnimatedWheel(WheelPlacement);
+
+/// A public wheel attachment. Optional layout bindings follow simulation;
+/// unbound wheels retain their authored static pose.
 #[derive(Component, Clone, Copy, Debug, Reflect)]
 #[reflect(Component)]
 pub struct VehicleWheel {
@@ -75,7 +121,8 @@ pub struct VehiclePresentationPlugin;
 
 impl Plugin for VehiclePresentationPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<VehiclePresentation>().add_systems(Update, (dress_bodies, body_view_visibility).chain());
+        app.init_resource::<VehiclePresentation>()
+            .add_systems(Update, (dress_bodies, animate_wheels, body_view_visibility).chain());
     }
 }
 
@@ -114,6 +161,18 @@ fn dress_bodies(
                     "wheel {} needs a finite position and unit rotation",
                     wheel.name
                 );
+                if let Some(binding) = &wheel.motion {
+                    let mesh_rotation = Quat::from_array(binding.mesh_rotation_xyzw);
+                    assert!(
+                        binding.wheel < 4
+                            && binding.suspension_origin_y_m.is_finite()
+                            && binding.camber_turns.is_finite()
+                            && mesh_rotation.is_finite()
+                            && (mesh_rotation.length_squared() - 1.0).abs() < 0.001,
+                        "wheel {} has an invalid simulation binding",
+                        wheel.name
+                    );
+                }
                 let geometry: GeometryData = load_ron(&wheel.geometry)
                     .unwrap_or_else(|error| panic!("wheel geometry {}: {error}", wheel.geometry));
                 geometry.validate().unwrap_or_else(|error| panic!("wheel geometry {}: {error}", wheel.geometry));
@@ -135,13 +194,26 @@ fn dress_bodies(
                 commands.entity(wheel_root).insert((
                     Name::new(wheel.name.clone()),
                     VehicleWheel { subject, index },
-                    Transform::from_translation(Vec3::from_array(wheel.position_m))
-                        .with_rotation(Quat::from_array(wheel.rotation_xyzw)),
+                    wheel.transform(),
                     ChildOf(root),
                 ));
+                if wheel.motion.is_some() {
+                    commands.entity(wheel_root).insert(AnimatedWheel(wheel.clone()));
+                }
             }
         }
         commands.entity(subject).insert(BodyPresented);
+    }
+}
+
+fn animate_wheels(
+    subjects: Query<(&super::WheelSteering, &super::contact_motion::ContactMotion, &super::suspension::Suspension)>,
+    mut wheels: Query<(&VehicleWheel, &AnimatedWheel, &mut Transform)>,
+) {
+    for (wheel, placement, mut transform) in &mut wheels {
+        if let Ok((steering, contact, suspension)) = subjects.get(wheel.subject) {
+            *transform = placement.0.animated_transform(steering, contact, suspension);
+        }
     }
 }
 

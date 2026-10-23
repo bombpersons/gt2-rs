@@ -9,7 +9,7 @@
 //!
 //! The course is exposed as [`RaceCourse`] so driving rules can read the same
 //! data. Ordinary driving-camera rules are ported in [`camera`]; the subject
-//! remains at the reference pose until full car physics supplies body motion.
+//! uses the retained native vehicle controller at the moving checkpoint.
 //!
 //! A mod can choose the procedural ribbon instead by setting
 //! `RacePresentation::geometry` to `None`, with no original assets required.
@@ -60,6 +60,18 @@ pub fn start_span(course: &CourseData) -> Option<&RoadSpan> {
 #[derive(Resource)]
 pub struct RaceCourse(pub CourseData);
 
+/// Select a native vehicle state, or keep a course-only camera subject.
+/// A mod can supply its own state through the same layered format.
+#[derive(Resource)]
+pub struct RaceVehicle {
+    pub initial_state: Option<String>,
+}
+impl Default for RaceVehicle {
+    fn default() -> Self {
+        Self { initial_state: Some(crate::vehicle::initial::INITIAL_STATE_ASSET.into()) }
+    }
+}
+
 /// The course asset/geometry, temporary background, camera subject and view.
 pub struct RacePlugin;
 
@@ -69,9 +81,15 @@ impl Plugin for RacePlugin {
         if !app.world().contains_resource::<CameraSettings>() {
             app.add_plugins(TuningPlugin::<CameraSettings>::new(camera::CAMERA_SETTINGS));
         }
-        app.init_resource::<RacePresentation>()
-            .add_systems(Startup, load_course)
-            .add_systems(Startup, (spawn_scene, spawn_camera).after(load_course));
+        app.init_resource::<RacePresentation>().init_resource::<RaceVehicle>();
+        if app.world().resource::<RaceVehicle>().initial_state.is_some()
+            && !app.world().contains_resource::<crate::vehicle::visual_motion::VehicleVisualTuning>()
+        {
+            app.add_plugins(TuningPlugin::<crate::vehicle::visual_motion::VehicleVisualTuning>::new(
+                crate::vehicle::visual_motion::VISUAL_TUNING,
+            ));
+        }
+        app.add_systems(Startup, load_course).add_systems(Startup, (spawn_scene, spawn_camera).after(load_course));
     }
 }
 
@@ -138,26 +156,51 @@ fn spawn_scene(
     commands.insert_resource(GlobalAmbientLight { color: Color::WHITE, brightness: 400.0, ..default() });
 }
 
-fn spawn_camera(mut commands: Commands, course: Res<RaceCourse>, camera_settings: Res<CameraSettings>) {
+fn spawn_camera(world: &mut World) {
+    let course = world.resource::<RaceCourse>();
+    let camera_settings = world.resource::<CameraSettings>().clone();
     let start = course.0.point_at(START_DISTANCE_M).expect("the course has a start point");
     let forward = Vec3::from_array(start.direction).normalize_or_zero();
-    let subject_pose = camera_settings.reference_subject.as_ref().map_or_else(
+    let mut subject_pose = camera_settings.reference_subject.as_ref().map_or_else(
         || Transform::from_translation(Vec3::from_array(start.position_m)).looking_to(forward, Vec3::Y),
         |reference| {
             Transform::from_translation(Vec3::from_array(reference.position_m))
                 .with_rotation(Quat::from_array(reference.rotation_xyzw).normalize())
         },
     );
-    let subject_state = camera_settings
+    let mut subject_state = camera_settings
         .reference_subject
         .as_ref()
         .map_or_else(CameraSubject::default, |reference| reference.stabilization);
-    let subject = commands
-        .spawn((Name::new("CameraSubject"), subject_pose, subject_state, crate::vehicle::presentation::VehicleBody))
-        .id();
+    let state = world.resource::<RaceVehicle>().initial_state.as_ref().map(|path| {
+        load_ron::<crate::vehicle::initial::VehicleInitialState>(path)
+            .unwrap_or_else(|error| panic!("vehicle initial state {path}: {error}"))
+    });
+    let subject = if let Some(state) = state {
+        let subject = state.spawn(world);
+        subject_pose = crate::vehicle::visual_motion::body_transform(
+            *world.get::<crate::vehicle::VehiclePose>(subject).unwrap(),
+            world.get::<crate::vehicle::road_contact::RoadContactState>(subject).unwrap(),
+            world.resource::<crate::vehicle::visual_motion::VehicleVisualTuning>(),
+        );
+        subject_state = world
+            .get::<crate::vehicle::visual_motion::ChaseStabilization>(subject)
+            .unwrap()
+            .correction(state.pose, state.orientation);
+        world.entity_mut(subject).insert(crate::vehicle::PlayerPedals);
+        subject
+    } else {
+        world.spawn_empty().id()
+    };
+    world.entity_mut(subject).insert((
+        Name::new("CameraSubject"),
+        subject_pose,
+        subject_state,
+        crate::vehicle::presentation::VehicleBody,
+    ));
     let rig = VehicleCamera { subject, mode: camera_settings.initial_view, split_screen: false };
     let camera_pose = rig.pose(&subject_pose, &subject_state, false, &camera_settings);
-    commands.spawn((
+    world.spawn((
         Name::new("RaceCamera"),
         Camera3d::default(),
         Camera { order: 0, clear_color: ClearColorConfig::Custom(SKY), ..default() },

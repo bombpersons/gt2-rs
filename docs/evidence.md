@@ -7,9 +7,12 @@ engine/drivetrain, movement, road, suspension/body correction and late contact
 motion run together. Four stage boundaries compare sampled physical state
 exactly. The [native initial-state format and spawn hook](vehicle-initial-state.md)
 preserve those trajectories through RON round trips, and the independently
-exported checkpoint reproduces all four sequences. Live presentation, the
-standing start, collision and licence flow
-remain unfinished.
+exported checkpoint reproduces all four sequences.
+[Live body/wheel presentation and chase stabilization](vehicle-presentation-evidence.md)
+now match 180 original poses and 696 consumed wheel matrices, including fresh
+steering, velocity-tracking and nonzero-camber recordings. The application
+drives the rendered car and camera from that native controller. The standing
+start, collision and licence flow remain unfinished.
 
 Current vehicle work: [driving evidence](driving-evidence.md) records digital
 steering limits/spring, wheel steering and velocity-to-step construction.

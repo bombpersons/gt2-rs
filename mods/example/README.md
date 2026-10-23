@@ -39,11 +39,13 @@ or disable the optional wheel layout separately from the body, and keep its
 attachments. These static wheels do not add steering, suspension or rolling
 physics.
 
-The port still lacks the vehicle force/body simulation and a playable driving
-session. This example proves course and body replacement, camera tuning and controller
-reuse. As driving
-rules land, add their trajectory tests and a new vehicle using the real
-controller's documented asset contract. It does not yet demonstrate driving parity.
+The port now drives its Vitz from the moving B-1 checkpoint through the native
+force/body controller and live body/wheel/camera presentation. This example
+still selects `RaceVehicle { initial_state: None }` and disables the numerical
+vehicle features, so it requires no private tuning. It proves course/body
+replacement and camera reuse; the next integration is handmade driving tuning
+and an initial state using the verified controller's public asset contract.
+It does not yet demonstrate a driving mod or a complete licence session.
 
 A code mod can select features with
 `game::GamePlugins.build().disable::<game::race::RacePlugin>()` and add its

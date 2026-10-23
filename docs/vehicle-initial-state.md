@@ -41,9 +41,13 @@ Installing a subset of rules is supported, but only that subset will advance.
 
 Spawning leaves logical input caller-owned through `DigitalPedalInput` and
 `DigitalSteeringInput`. Add `PlayerPedals` to read the player's controller.
+The optional `chase_stabilization` group preserves the camera follower's
+angles, rates and previous yaw acceleration; when omitted it starts at the
+supplied heading/pitch.
 Presentation is separate: this hook does not attach `VehicleBody`, a camera
-subject, a `Transform` or wheel geometry. Live presentation and the handmade
-driving mod are the next integration work.
+subject, a `Transform` or wheel geometry. The
+[live presentation plugin](vehicle-presentation-evidence.md) now consumes
+this state; the handmade driving mod remains integration work.
 
 ## Checkpoint export and verification
 
@@ -64,7 +68,7 @@ retained histories and caller-owned input without private assets.
 
 This verifies an initialization boundary for the moving B-1 sequences in
 `vehicle-loop-evidence.md`. Standing-start behaviour, collision, licence flow,
-broader content parity and live presentation remain unfinished.
+broader content parity and the handmade driving mod remain unfinished.
 
 ## Validation
 

@@ -365,6 +365,18 @@ def export_tuning(ram_path, assets):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text('// Generated locally; do not commit.\n' + ron(camera)[:-1] + ', initial_view: Bumper, reference_subject: Some(' + ron(reference) + '))\n')
     export_initial_vehicle(ram, assets)
+    tracking = read(0x1C9990, 'B')
+    if tracking not in (0, 1):
+        raise ValueError('Unsupported chase tracking option')
+    write('vehicle/visual.ron', dict(
+        body_offset_m=(0.0, 0.0, read(outer + 0x5A, 'h') / 4096),
+        chase_heading=RonVariant(['Body', 'Velocity'][tracking]),
+        velocity_heading_min_mps=immediate(0x3E9C8, 0x2842) / 4096,
+        yaw_stiffness=read(0x46C94 + tracking * 4, 'i') / 4096,
+        yaw_damping=read(0x46C9C + tracking * 4, 'i') / 4096,
+        pitch_stiffness=((immediate(0x3EAA0, 0x3C05) << 16) | immediate(0x3EAA8, 0x34A5)) / 4096,
+        pitch_damping=immediate(0x3EAAC, 0x3405) / 4096,
+    ))
 
 
 def export_initial_vehicle(ram, assets):
@@ -437,6 +449,8 @@ def export_initial_vehicle(ram, assets):
                            wheel_heading_turns=wheels(0xC,a)),
         contact_motion=dict(body_forward_mps=q(0x6A4),body_lateral_mps=q(0x6A8),speed_readout=raw(0x6AE,'H'),
                             maximum_speed_readout=raw(0x6F8,'H'),spin_turns=wheels(0x20,lambda o:raw(o,'H')/4096)),
+        chase_stabilization=RonVariant('Some(' + ron(dict(yaw_turns=a(0x748),yaw_rate_turns_per_second=a(0x74A),
+            pitch_turns=a(0x74C),pitch_rate_turns_per_second=a(0x74E),previous_yaw_acceleration=a(0x752))) + ')'),
     )
     path = assets / 'vehicle/initial.ron'
     path.parent.mkdir(parents=True,exist_ok=True)

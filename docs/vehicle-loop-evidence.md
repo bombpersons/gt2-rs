@@ -11,9 +11,9 @@ engine state or pose is injected.
 This establishes a closed vehicle loop for these moving, single-car B-1
 sequences. It does not establish the standing start, a complete licence test,
 barrier/car collision, other cars/courses or all control modes. The rendered
-reference subject remains static pending live presentation. The verified state
-now exports through an [authorable initial-state format and public spawn
-hook](vehicle-initial-state.md).
+reference subject now follows [live body/wheel and camera
+presentation](vehicle-presentation-evidence.md). The verified state exports
+through an [authorable initial-state format and public spawn hook](vehicle-initial-state.md).
 
 ## Identity and reproduction
 
@@ -111,7 +111,8 @@ standalone/mod tests remain part of the routine suite.
 The full-loop test's raw-field conversion remains reference-test code. It now
 constructs the public `VehicleInitialState` and runs the same spawn path as
 native assets and mods; the exporter independently writes that format.
-Next is live pose/wheel/camera presentation. The example
+Live pose/wheel/camera presentation is now connected and verified separately.
+The example
 mod must drive its handmade car through the same public pieces. Standing-start
 input/gear requests, licence flow/HUD, condition/proximity producers,
 collision, special controllers, analog controls and broad content parity remain

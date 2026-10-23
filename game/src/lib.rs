@@ -66,6 +66,7 @@ impl PluginGroup for GamePlugins {
             .add(vehicle::suspension::SuspensionRulesPlugin)
             .add(vehicle::vertical_body::VerticalBodyRulesPlugin)
             .add(vehicle::road_contact::RoadContactRulesPlugin)
+            .add(vehicle::visual_motion::VehicleVisualMotionPlugin)
             .add(vehicle::presentation::VehiclePresentationPlugin)
     }
 }

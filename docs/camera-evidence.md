@@ -5,8 +5,9 @@ Ordinary driving-camera rules support bumper, near/far chase, cycling on R1
 and rear look on L1. Four original recordings test 192 camera updates,
 including a held-out sequence recorded after implementation. Intro, replay,
 spectator and full split-screen presentation remain unfinished. The scene's
-body subject is still the checkpoint pose until the force/body simulation
-supplies live motion; camera tests supply the actual observed body motion.
+body subject now follows the native controller through the
+[live presentation rules](vehicle-presentation-evidence.md); the isolated
+camera tests described here supply observed body motion.
 
 ## Evidence and cadence
 
@@ -127,8 +128,9 @@ or split-screen views need per-view mesh sets.
 The native B-1 screenshot, chase and rear views were inspected alongside the
 original checkpoint. Sky/background, fog, other primitive refinement, dynamic LOD,
 procedural elements, HUD, mirror and playable car session remain incomplete.
-The reference subject remains static in the application while live body
-motion is verified separately by recorded camera tests.
+The application now drives the subject and stabilization through the native
+vehicle controller; those producer comparisons are documented separately in
+[presentation evidence](vehicle-presentation-evidence.md).
 
 The example mod supplies its own camera.ron, uses the same public camera
 controller on its handmade course, cycles to its authored far view and follows
