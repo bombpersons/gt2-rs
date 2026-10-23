@@ -84,7 +84,7 @@ def main():
     initial=args.state.with_name('ram.bin').read_bytes()
     assert len(initial)==2*1024*1024
     assert initial[0xAF231] == 1, 'single-car checkpoint required (8003EC1C)'
-    assert initial[0xA9520:0xA9522] == b'\0\0', 'unpaused physics required' 
+    assert initial[0xA9520:0xA9522] == b'\0\0', 'unpaused physics required'
     for scenario in args.scenario or SCENARIOS:
         out=Path('game/tests/data/original/vehicle_loop')/scenario
         out.mkdir(parents=True,exist_ok=True)
