@@ -237,6 +237,7 @@ fn initialize(world: &mut World, r: &Original, alternate_locked_step: bool) -> E
             forward_axis: road.forward,
             lateral_axis: road.lateral,
             synchronize_wheels: r.wheels(0x63, |r, o| r.byte(o) == 0),
+            unloaded_wheels: r.wheels(8, |r, o| r.word(o) == 0),
             independent_axles: independent,
             wheel_heading_turns: r.wheels(0xC, Original::angle),
         },
@@ -562,6 +563,12 @@ fn exported_default_scene_reproduces_original_countdown_trajectories() {
 #[cfg_attr(not(gt2_private_data), ignore = "requires original countdown recordings")]
 fn original_countdown_to_idle() {
     check("countdown-coast");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original long steering countdown recording")]
+fn original_standing_start_with_continuous_steering() {
+    check_from("countdown-right-start", true);
 }
 
 #[test]

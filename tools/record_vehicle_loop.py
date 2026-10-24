@@ -19,6 +19,7 @@ PHASES = {0x8003EC24: 'before', 0x8003EC2C: 'forces', 0x8003EC48: 'moved',
           0x8003EC68: 'road', 0x8003EC74: 'end'}
 PREFIX = re.compile(r'^(\d+) (\d+) ([0-9a-f]{8}) ')
 SCENARIOS = {
+    'right-start': [dict(frame=0, buttons=['CROSS','RIGHT'])],
     'gas': [dict(frame=0, buttons=['CROSS'])],
     'brake': [dict(frame=0, buttons=['SQUARE'])],
     'coast': [dict(frame=0, buttons=[])],

@@ -200,7 +200,27 @@ next-tick load carry and the remaining road/orientation/collision boundaries.
 
 When drivetrain output and brake demand are present, contact motion now derives
 its synchronization gate from their current wheel flags/demands, and uses
-current `WheelSteering` angles. Explicit inputs still work without these
+current `WheelSteering` angles. It also retains the pre-force unloaded-wheel
+gate from `8003A250..264`: a zero contact load sets flag bit 0 and prevents
+tread synchronization. The gate is sampled before forces, rather than from
+the new suspension load computed later in the tick. `ContactMotionInput`
+exposes `unloaded_wheels`; the optional suspension bridge supplies it.
+Explicit inputs still work without these
 components. The [retained B-1 loop](vehicle-loop-evidence.md) verifies braking,
 release and turning without injecting late wheel/axle speeds each tick.
 Collision-specific flags remain outside this completed boundary.
+
+A sustained right turn from the standing-start countdown exposed this gate
+at tick 132, when the right rear wheel became unloaded. The original retains
+its tread speed; resetting it changed the retained axle speed and later path.
+`countdown-right-start` now matches all **734** uninterrupted original ticks
+in all four physics stages, stopping just before the off-road result. The
+authored contact test separately changes load between the early and late
+stages to prove that the captured gate belongs to the correct tick.
+
+```sh
+python3 tools/record_vehicle_loop.py --state .psx/default-start-export/start/state.bin \
+  --frames 1468 --prefix countdown- --scenario right-start --session
+cargo test -p gran_turismo_2 --all-features --test vehicle_loop \
+  original_standing_start_with_continuous_steering
+```

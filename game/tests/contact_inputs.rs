@@ -180,6 +180,7 @@ fn check(name: &str, count: usize) {
                     synchronize_wheels: std::array::from_fn(|i| mb(&format!("flags{i}")) == 0.0),
                     independent_axles: two("independent").map(|v| v != 0.0),
                     wheel_heading_turns: four("heading").map(|v| v / 4096.0),
+                    ..default()
                 },
                 VehicleStepDuration(mb("duration") / 65536.0),
                 MotionBoundary {
@@ -340,6 +341,27 @@ fn handmade_contact_refresh_runs_without_force_control_or_render_plugins() {
     assert_eq!(app.world().get::<AxleDrive>(car).unwrap().radians_per_second, [0.75, 1.25]);
     assert_eq!(app.world().get::<TyreContactState>(car).unwrap().body_forward_mps, 2.0);
     assert_eq!(app.world().get::<BodyDynamics>(car).unwrap().local_lateral_mps, 3.0);
+
+    // An unloaded wheel retains its tread speed. The late suspension result
+    // belongs to the next tick, even if its load becomes positive meanwhile.
+    app.world_mut()
+        .entity_mut(car)
+        .insert(game::vehicle::suspension::Suspension { tyre_load: [0.0, 1.0, 1.0, 1.0], ..default() });
+    app.world_mut().get_mut::<VehicleVelocity>(car).unwrap().linear_mps.x = 4.0;
+    app.add_systems(
+        FixedUpdate,
+        (|mut q: Query<&mut game::vehicle::suspension::Suspension>| {
+            for mut s in &mut q {
+                s.tyre_load = [1.0; 4];
+            }
+        })
+        .in_set(game::vehicle::VehicleSystems::Forces),
+    );
+    app.run_tick(&[]);
+    assert_eq!(app.world().get::<WheelSurfaceMotion>(car).unwrap().tread_speed_mps[0], 1.5);
+    assert!(app.world().get::<ContactMotionInput>(car).unwrap().unloaded_wheels[0]);
+    app.run_tick(&[]);
+    assert_eq!(app.world().get::<WheelSurfaceMotion>(car).unwrap().tread_speed_mps[0], 3.5);
 }
 
 #[test]

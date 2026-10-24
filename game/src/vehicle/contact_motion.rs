@@ -10,6 +10,7 @@ use super::{
     drivetrain::DrivetrainOutput,
     longitudinal_slip::{WheelSurfaceMotion, steering_basis},
     slip::WheelLocalVelocities,
+    suspension::Suspension,
     tyre_forces::{TyreContactState, scaled_force},
     wheel_rotation::AxleDrive,
 };
@@ -52,6 +53,9 @@ pub struct ContactMotionInput {
     pub lateral_axis: Vec3,
     /// Wheel+63 ==0, not just the load/contact bit. Other flags block reset.
     pub synchronize_wheels: [bool; 4],
+    /// Contact/load gate sampled before forces, independent of the new load
+    /// computed later by suspension. 8003A250..264 sets wheel flag bit 0.
+    pub unloaded_wheels: [bool; 4],
     /// Physics+37A/+37B ==0: independent differential always refreshes shaft.
     pub independent_axles: [bool; 2],
     /// Wheel+0C steering for the synchronization projection, /4096 turns.
@@ -175,7 +179,16 @@ impl Plugin for ContactMotionRulesPlugin {
                 .in_set(engine::prelude::EngineSet::Control)
                 .in_set(GameSystems::Game),
         )
+        .add_systems(
+            FixedUpdate,
+            capture_load_gate.in_set(VehicleSystems::Prepare).before(VehicleSystems::Forces).in_set(GameSystems::Game),
+        )
         .add_systems(FixedUpdate, refresh.in_set(ContactMotionSystems::Refresh).in_set(VehicleSystems::RefreshContact));
+    }
+}
+fn capture_load_gate(mut cars: Query<(&Suspension, &mut ContactMotionInput)>) {
+    for (suspension, mut input) in &mut cars {
+        input.unloaded_wheels = suspension.tyre_load.map(|load| load == 0.0);
     }
 }
 #[derive(QueryData)]
@@ -204,7 +217,7 @@ fn refresh(tuning: Res<ContactMotionTuning>, mut cars: Query<ContactCar>) {
             input.wheel_heading_turns = steering.angle_turns;
         }
         if let Some(coupling) = car.coupling {
-            // 8003A264 resets wheel flags from current brake demand;
+            // 8003A264 resets wheel flags from contact load and brake demand;
             // 80045BB4/BBC adds the current drive/coupling flags. The late
             // 80030748..750 gate synchronizes only a wheel whose complete flag is zero.
             input.synchronize_wheels = std::array::from_fn(|i| {
@@ -214,6 +227,9 @@ fn refresh(tuning: Res<ContactMotionTuning>, mut cars: Query<ContactCar>) {
             for (i, sync) in input.synchronize_wheels.iter_mut().enumerate() {
                 *sync &= !brakes.is_braking(i);
             }
+        }
+        for (i, sync) in input.synchronize_wheels.iter_mut().enumerate() {
+            *sync &= !input.unloaded_wheels[i];
         }
         let shafts =
             setup.refresh(input, *car.velocity, car.duration.0, &mut car.state, &mut car.local, &mut car.wheels);
