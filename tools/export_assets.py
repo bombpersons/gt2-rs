@@ -15,6 +15,7 @@ from pathlib import Path
 import shutil
 import struct
 import subprocess
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 BASE = 0xA96B4
@@ -474,6 +475,76 @@ def export_scene_setup(start_ram, assets):
     path.write_text('// Generated locally from the supplied checkpoints; do not commit.\n' + ron(setup) + '\n')
 
 
+def export_hud_fonts(ram, font, assets):
+    """Decode ASCII glyphs/kerning (8007DC78/8007DD3C) and the raw font bitmap."""
+    if len(font) != 65536 or len(ram) != 2*1024*1024:
+        raise ValueError('Expected the 512x256 4-bit race font and complete RAM')
+    def word(off): return struct.unpack_from('<I',ram,off)[0]
+    def char(c): return "'"+c.replace('\\','\\\\').replace("'","\\'")+"'"
+    folder=assets/'race/fonts';folder.mkdir(parents=True,exist_ok=True)
+    for name,descriptor in [('small',0x93124),('large',0x9313C)]:
+        table,kern=word(descriptor)&0x1FFFFF,word(descriptor+4)&0x1FFFFF
+        spacing=ram[descriptor+9]
+        header=word(kern);stride=header&255;bits=(header>>16)&255
+        assert bits in (4,5,6) and stride>0
+        def reduction(c,n):
+            a=word(table+ord(c)*8);b=word(table+ord(n)*8+4)
+            if a&0x80000000:return (a>>23)&63
+            if b&0x80000000:return (b>>23)&63
+            row,col=(a>>23)&255,(b>>23)&255
+            offset=kern+4+row*stride+col*bits//8
+            return (word(offset)>>(col*bits%8))&((1<<bits)-1)
+        glyphs=[];pairs=[];width,height=512,192;rgba=bytearray(width*height*4)
+        for slot,c in enumerate(map(chr,range(32,127))):
+            a,b=word(table+ord(c)*8),word(table+ord(c)*8+4);index=(a>>6)&255
+            x,y=(slot%16)*32,(slot//16)*32;w=h=0
+            assert (a>>14)&7==0,'decorated glyphs require their separate layer'
+            if index:
+                t=word(table+0x818+index*4);w=2*((t>>16)&31);h=(t>>21)&63
+                assert w<=32 and h<=32
+                u=(t&255)+(t>>29)*256;v=(t>>8)&255;palette=((t>>27)&3)*16
+                assert u+w<=512 and v+h<=256
+                for dy in range(h):
+                    for dx in range(w):
+                        q=u+dx;packed=font[(v+dy)*256+q//2];idx=(packed>>(4*(q%2)))&15
+                        color=struct.unpack_from('<H',font,(palette+idx)*2)[0]
+                        expand=lambda n:((n&31)<<3)|((n&31)>>2)
+                        alpha=0 if not color else 128 if color&0x8000 else 255
+                        pixel=bytes([expand(color),expand(color>>5),expand(color>>10),alpha])
+                        off=((y+dy)*width+x+dx)*4;rgba[off:off+4]=pixel
+            glyph=dict(rect=(x,y,w,h),bearing_px=(float(b&63),-float((b>>6)&63)),
+                       advance_px=float((a&63)+spacing-reduction(c,'\0')),cell_inset_px=float((a>>17)&63))
+            glyphs.append(char(c)+': '+ron(glyph))
+            for n in map(chr,range(32,127)):
+                adjustment=reduction(c,'\0')-reduction(c,n)
+                if adjustment:pairs.append(dict(pair=RonVariant('('+char(c)+','+char(n)+')'),adjustment_px=float(adjustment)))
+        def chunk(kind,data):return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data))
+        rows=b''.join(b'\0'+rgba[i*width*4:(i+1)*width*4] for i in range(height))
+        png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',width,height,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b'')
+        (folder/f'{name}.png').write_bytes(png)
+        native=dict(image=f'race/fonts/{name}.png',glyphs=RonVariant('{'+','.join(glyphs)+'}'),kerning=pairs)
+        (folder/f'{name}.ron').write_text('// Generated locally; ASCII font metrics and bitmap from the supplied disc.\n'+ron(native)+'\n')
+    def string(off):return ram[off:ram.index(0,off)].decode('ascii')
+    def immediate(off):
+        assert word(off)>>26 in (9,10,13,15),f'expected an immediate instruction at {off:08x}'
+        return word(off)&65535
+    def rgb(hi,lo):
+        assert word(hi)>>26==15 and word(lo)>>26==13
+        n=(immediate(hi)<<16)|immediate(lo)
+        return (n&255,(n>>8)&255,(n>>16)&255)
+    # 8002C76C's ordinary B-1 clock/label; 8002A19C's announcement.
+    origin=(immediate(0x2E7EC),immediate(0x2E7F4))
+    settings=dict(small_font='race/fonts/small.ron',large_font='race/fonts/large.ron',label=string(0x1C6C64),start_text=string(0x1C6C90),
+                  label_baseline=(float(origin[0]+immediate(0x2CB44)),float(origin[1]+immediate(0x2CB34))),
+                  clock_baseline=(float(origin[0]+immediate(0x2CD74)),float(origin[1]+immediate(0x2CB34)+immediate(0x2CB7C))),
+                  announcement_baseline=(float(immediate(0x2A368)),float(immediate(0x2A36C))),
+                  text_rgb=rgb(0x2C928,0x2C92C),digit_rgb=rgb(0x2A260,0x2A264),start_rgb=rgb(0x2A294,0x2A298),
+                  announcement_after_release_fields=65536-immediate(0x2A23C),full_banner_until_fields=immediate(0x2A290),fade_fields=immediate(0x2A2A8),
+                  digit_cell_px=float(immediate(0x2CD7C)),punctuation_cell_px=float(immediate(0x2CD84)),decimal_inset_px=float(immediate(0x2CD8C)),
+                  number_origin_inset_px=ram[0x93124+8]/2,fade_peak=immediate(0x2A340))
+    (assets/'race/hud.ron').write_text('// Generated locally from the B-1 HUD routines; do not commit.\n'+ron(settings)+'\n')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('disc', type=Path, help='USA Simulation Mode Rev 2 .cue/.bin/.iso')
@@ -502,7 +573,8 @@ def main():
         ram, start_ram = capture(disc, args.bios.resolve(strict=True) if args.bios else None, work)
     files = {}
     for name, source in [('course.tro', '/crsobj/TC_lisence.tro.gz'), ('course.trp', '/crsobj/TC_lisence.trp.gz'),
-                         ('t2vzn.cdo', '/carobj/t2vzn.cdo.gz'), ('t2vzn.cdp', '/carobj/t2vzn.cdp.gz')]:
+                         ('t2vzn.cdo', '/carobj/t2vzn.cdo.gz'), ('t2vzn.cdp', '/carobj/t2vzn.cdp.gz'),
+                         ('racefont.dat', '/font/racefont.dat')]:
         path = work / name
         run([importer, 'extract', disc, '--path', source, '--out', path])
         raw = path.read_bytes()
@@ -515,7 +587,9 @@ def main():
     run([importer, 'wheels', '--ram', ram, '--textures', files['t2vzn.cdp'], '--paint', 5, '--out', assets / 'gt2/vehicle/wheels', '--texture-prefix', 'gt2/vehicle/wheels'])
     export_tuning(ram, assets)
     export_scene_setup(start_ram.read_bytes() if start_ram else None, assets)
+    export_hud_fonts(ram.read_bytes(),files['racefont.dat'].read_bytes(),assets)
     manifest = dict(disc=str(disc), ram_sha256=hashlib.sha256(ram.read_bytes()).hexdigest(),
+                    race_font_sha256=hashlib.sha256(files['racefont.dat'].read_bytes()).hexdigest(),
                     start_ram_sha256=hashlib.sha256(start_ram.read_bytes()).hexdigest() if start_ram else None,
                     startup='countdown' if start_ram else 'free-driving checkpoint',
                     psx_version=subprocess.check_output(['psx', '--version'], text=True).strip(),

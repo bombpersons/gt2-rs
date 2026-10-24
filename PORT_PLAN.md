@@ -242,8 +242,15 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   export reproduced both reference RAM dumps byte for byte. Generated startup
   content matches all three countdown trajectories; the default real binary
   matches the launch position exactly without a scene override. Both reuse
-  paths select their intended startup mode. Next: countdown/HUD presentation,
-  licence outcomes/retry flow, collision and broader content.
+  paths select their intended startup mode.
+- Countdown/start and lap-clock presentation now uses decoded native bitmap
+  fonts and ordinary sprites. Nineteen original GPU frames match in glyphs,
+  placement, colours and blending, including a fresh longer-clock holdout.
+  Native opaque-pixel checks use source-derived masks. The engine exposes
+  authorable font metrics/kerning; the handmade mod disables this game's HUD
+  while keeping the shared controller/session. Next: remaining gauges/records/
+  mirror, HUD sounds, licence outcomes/retry, collision and broader content.
+  See docs/hud-evidence.md.
 
 ## Work order
 

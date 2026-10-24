@@ -222,6 +222,46 @@ fn native_default_scene_starts_from_the_original_countdown() {
     replay_start(&mut client, &fixtures, &output);
 }
 
+#[test]
+#[ignore = "requires original HUD frames, exported bitmap fonts and an offscreen GPU"]
+fn native_hud_opaque_glyph_pixels_match_the_original() {
+    let output = std::env::temp_dir().join(format!("gt2-hud-pixels-{}", std::process::id()));
+    std::fs::create_dir_all(&output).unwrap();
+    println!("HUD pixel evidence: {}", output.display());
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    let data: Value =
+        serde_json::from_str(&std::fs::read_to_string(root.join("game/tests/data/original/hud/initial.json")).unwrap())
+            .unwrap();
+    let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
+    command.env("BEVY_ASSET_ROOT", env!("CARGO_MANIFEST_DIR"));
+    let mut client = Client::launch(command, &output.join("game.log"));
+    let mut ticks = 0;
+    let mut total_pixels = 0;
+    let mut maximum_error = 0;
+    for row in data["rows"].as_array().unwrap() {
+        let frame = row["frame"].as_u64().unwrap() as u32;
+        client.call("game_step", json!({"frames":frame/2-ticks,"buttons":[]}));
+        ticks = frame / 2;
+        let native = client.screenshot(output.join(format!("field-{frame}.png")));
+        let original = image::open(root.join(row["screen"].as_str().unwrap())).unwrap().to_rgba8();
+        // This mask comes from the original GPU texture/palette, not the
+        // native atlas: missing native pixels must still fail comparison.
+        let pixels: Vec<[u32; 2]> = serde_json::from_value(row["opaque_pixels"].clone()).unwrap();
+        assert!(pixels.len() > 150, "clock/label pixels must be checked");
+        for [x, y] in pixels {
+            let a = native.get_pixel(x, y);
+            let b = original.get_pixel(x, y);
+            for c in 0..3 {
+                let error = a[c].abs_diff(b[c]);
+                maximum_error = maximum_error.max(error);
+                assert!(error <= 9, "field {frame} pixel {x},{y}: native {a:?} original {b:?}");
+            }
+            total_pixels += 1;
+        }
+    }
+    println!("{total_pixels} source-masked pixels; maximum encoded-channel error {maximum_error}");
+}
+
 fn native_start_replay(scenario: &str, checkpoint: &str, countdown_fields: Option<u16>) {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let output = std::env::temp_dir().join(format!("gt2-start-{scenario}-{}", std::process::id()));

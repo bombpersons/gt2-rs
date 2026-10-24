@@ -1,5 +1,12 @@
 # Evidence
 
+[Countdown/start and lap-clock presentation](hud-evidence.md) now matches 19
+original GPU frames in glyph, position, colour and blend mode, including a
+fresh holdout through source field 1346. Native opaque-glyph pixels are checked
+against the source using masks taken from the original textures. A reusable
+engine bitmap-font format holds decoded metrics; the remaining HUD and licence
+outcome/retry flow remain open.
+
 Normal asset exports now select B-1's actual countdown initial state. A full
 power-on export reproduced the earlier countdown and moving reference RAM
 byte for byte. The generated scene setup reproduces all three countdown

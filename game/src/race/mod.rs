@@ -28,6 +28,7 @@ use bevy::{
 use engine::prelude::*;
 use engine::psx::{PsxMaterial, PsxView};
 pub mod camera;
+pub mod hud;
 pub mod session;
 use camera::{CameraInput, CameraSettings, CameraSubject, PlayerCamera, VehicleCamera};
 

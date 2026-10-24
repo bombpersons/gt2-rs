@@ -8,8 +8,8 @@
 /// Relative to Bevy's asset root (the mod crate when run through Cargo).
 pub const GAME_ASSETS: &str = "../../game/assets";
 
-/// The same public feature group as the game, with the example's asset layer.
+/// Shared driving/session features with the game's licence HUD disabled.
 pub fn plugins() -> bevy::app::PluginGroupBuilder {
     use bevy::prelude::PluginGroup;
-    game::GamePlugins.build()
+    game::GamePlugins.build().disable::<game::race::hud::HudPlugin>()
 }

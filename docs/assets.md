@@ -43,7 +43,11 @@ course/model/paint files, then exports:
   regression reference (see [the public spawn contract](vehicle-initial-state.md));
 - Scene selection in `race/vehicle.ron`, with the observed countdown and clock.
   The normal game now holds at the line, then releases the car; hold Cross to
-  accelerate. Countdown numerals, HUD, sounds and licence outcomes remain open;
+  accelerate. The remaining HUD, sounds and licence outcomes remain open;
+- Small/large bitmap-font atlases and native glyph/kerning metrics from
+  `/font/racefont.dat` and the original program, plus `race/hud.ron` for
+  countdown digits, the start announcement and lap clock. See
+  [HUD evidence and verification](hud-evidence.md);
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
   brake-assistance and ordinary traction/stability tuning, axle tyre curves, low-speed force settings, and
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,
@@ -61,7 +65,8 @@ course/model/paint files, then exports:
 The game reads native RON/PNG files from `game/assets/` and does not use an
 emulator at runtime. The exporter's intermediate files and checkpoints stay
 under `.psx/asset-export/`. `game/assets/export-manifest.json` records hashes
-of generated outputs, both checkpoint identities and the selected startup mode. Unused imported text, sound
+of generated outputs, both checkpoint identities, font-resource identity and
+the selected startup mode. Unused imported text, sound
 and menu archives are not required by the current runtime; their separate
 import commands remain available in `tools/import/`.
 

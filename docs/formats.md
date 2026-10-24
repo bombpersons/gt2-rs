@@ -672,3 +672,34 @@ in the horizontal (x,z) plane; its height uses a centre fan. Cell order is
 significant for overlapping polygons. `engine/assets/sandbox/contact.ron`
 is a complete hand-authored flat floor/ramp example, used by the sandbox's
 ordinary walking controller and rendered at the same vertices.
+
+## Native bitmap fonts
+
+`engine::bitmap_font::BitmapFont` holds a native image path, Unicode-character
+glyph map and pair-spacing adjustments. Rectangles are `(x, y, width, height)`
+in image pixels. Bearings are pixels right/down from a text baseline, and
+advances/kerning are pixels. Zero-size rectangles allow spaces to advance
+without drawing. Missing characters are reported as errors. No original font
+tables or texture-page conventions appear in this format.
+
+An independently authored example:
+
+```ron
+(
+    image: "my-font.png",
+    glyphs: {
+        'A': (rect: (0, 0, 5, 7), bearing_px: (-1.0, -7.0), advance_px: 6.0),
+        'V': (rect: (5, 0, 5, 7), bearing_px: (0.0, -7.0), advance_px: 6.0),
+        ' ': (rect: (0, 0, 0, 0), bearing_px: (0.0, 0.0), advance_px: 3.0),
+    },
+    kerning: [(pair: ('A', 'V'), adjustment_px: -2.0)],
+)
+```
+
+Optional `cell_inset_px` on each glyph supports fixed-width numeric cells.
+`BitmapFont::layout` returns image rectangles, positioned glyphs and text width;
+a renderer uses ordinary sprites. The [B-1 HUD converter](hud-evidence.md)
+currently exports printable ASCII from two original fonts into this format.
+Other games/mods can supply their own image and metrics directly. A native
+font editor remains future work; RON and an image editor already author the
+format without any original-game data.

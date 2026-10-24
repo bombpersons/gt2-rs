@@ -11,6 +11,7 @@
 //! The skeleton is deliberately small. Rename and reshape [`schedule`],
 //! [`objects`], [`triggers`] and [`level`] to match `docs/engine-model.md`:
 //! they are starting points, not a design to fit the original into.
+pub mod bitmap_font;
 pub mod camera;
 pub mod config;
 pub mod course;

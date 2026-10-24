@@ -10,8 +10,9 @@ initialization per recording. Combined with the earlier moving and idle-start
 recordings, this covers **820 unique original physics ticks**.
 
 This is the ordinary, single-car B-1 session on USA Simulation Mode Rev 2.
-Intro cameras, countdown numerals/sounds, HUD clock interpolation, licence
-conditions/outcomes and retry/reset selection remain unported. The normal
+Countdown/start numerals and the displayed lap clock are now covered by
+[HUD presentation evidence](hud-evidence.md). Intro cameras, sounds, remaining
+HUD, licence conditions/outcomes and retry/reset selection remain unported. The normal
 asset export now selects the real countdown initial state through native scene
 setup; the moving initial state remains a separate regression reference.
 
@@ -35,8 +36,8 @@ order rather than adding a second independent launch delay.
 
 The original screenshots at survey fields 300 and 420 show countdown `2` and
 `START` with the clock running. The physics clock is an exact integer count;
-the HUD also adds a small presentation-time interpolation from `8002F864`.
-That display interpolation is not included in the native session clock yet.
+the HUD also adds a small periodic phase from `8002F864`. That display phase
+is now applied by the HUD rules, separately from the session's physics clock.
 Other race-mode gates in `8003D168` are outside this B-1 scope.
 
 ## Reproduction
