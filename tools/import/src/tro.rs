@@ -52,7 +52,8 @@ pub mod render;
 #[derive(Debug, Serialize)]
 pub struct Course {
     /// One lap in metres (the file stores fx16.16).
-    pub lap_length_m: f32,
+    pub lap_length_m: f64,
+    pub distance_sampling: Option<DistanceSampling>,
     /// The original wraps detail levels above this value into `1..=level_wrap`;
     /// 0 disables the wrap (section 3's `level_wrap` word).
     pub level_wrap: u16,
@@ -63,15 +64,20 @@ pub struct Course {
 }
 
 #[derive(Debug, Serialize)]
+pub struct DistanceSampling {
+    pub projection_step_m: f64,
+    pub fraction_step: f64,
+}
+
+#[derive(Debug, Serialize)]
 pub struct Node {
     pub previous: u16,
     pub next: u16,
     /// The original's flags word, preserved verbatim.
     pub flags: u32,
     /// Cumulative distance from the table's origin, metres.
-    pub distance_m: f32,
-    /// Two signed 12-bit-ish values: the file stores 4096 = 1.0, range
-    /// `-4096..=4096`. Meaning still open; preserved.
+    pub distance_m: f64,
+    /// Distance interpolation weights for the far and near boundary planes.
     pub scale: [f32; 2],
     /// Centreline point in world metres. The file stores `(x, y, z)`.
     pub position_m: [f32; 3],
@@ -152,7 +158,8 @@ impl Course {
         let _ = geometry;
         let _ = events;
         Ok(Self {
-            lap_length_m: fx16(road.lap_length as i32),
+            lap_length_m: f64::from(road.lap_length) / 65536.0,
+            distance_sampling: Some(DistanceSampling { projection_step_m: 1.0 / 65536.0, fraction_step: 1.0 / 4096.0 }),
             level_wrap: spans.level_wrap,
             nodes: road.nodes,
             spans: spans.spans,
@@ -382,7 +389,7 @@ impl Road {
                     previous: node.previous,
                     next: node.next,
                     flags: node.flags,
-                    distance_m: fx16(node.distance),
+                    distance_m: f64::from(node.distance) / 65536.0,
                     scale: node.scale,
                     position_m: node.position,
                     direction: node.direction,

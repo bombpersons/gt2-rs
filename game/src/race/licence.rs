@@ -47,6 +47,7 @@ impl Plugin for LicencePlugin {
             app.insert_resource(initial);
         }
         app.register_type::<LicenceDefinition>().register_type::<LicenceRecords>();
+        app.add_plugins(super::licence_stop::LicenceStopPlugin);
     }
 }
 

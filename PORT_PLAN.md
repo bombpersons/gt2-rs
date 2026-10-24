@@ -261,11 +261,19 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   three medal targets. Native licence definitions/record state replace the
   original tables; time-cell layout is shared with the clock. Twenty-one
   original saved-time frames and sixty licence target-row probes match.
-  The original award routine has been located; finish/failure detection,
-  award/attempt updates, results, retry/reset and saving remain unported.
+  The original award routine has been located; B-1 stopping decisions are
+  now covered separately. Award/attempt updates, results, retry/reset and
+  saving remain unported.
   See docs/records-evidence.md.
 
 ## Work order
+
+The B-1 stopping decision slice now matches 5,800 original calls and 22,616
+wheel projections. It latches completed times and overshoot/off-road failures,
+with the finished lap clock retained or hidden as appropriate. Course projection
+is shared engine machinery with authorable sampling. Result presentation,
+post-result driving, awards/attempts, retry/reset and saves remain. See
+docs/licence-stop-evidence.md.
 
 1. Decode and import real course geometry, materials, textures, object
    placements and backgrounds. Render the B-1 reference from its recorded

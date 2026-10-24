@@ -7,7 +7,7 @@ Triangle requests reverse; R2/L2 shift up/down when initial state selects MT.
 The box car starts moving at 7 m/s on a handmade 320 m square circuit.
 
 The mod depends on `game/` and uses `GamePlugins`, with the B-1 HUD and licence
-definition/record plugins disabled through the public feature API. It retains the
+definition, record and stopping-rule plugins disabled through the public feature API. It retains the
 same force, engine, drivetrain, tyre, contact, suspension, body, wheel and
 camera features as the Vitz. It supplies its own data through the ordinary
 asset layer. No edit to `game/` or `engine/` and no disc, BIOS, exported
@@ -109,6 +109,6 @@ It verifies acceleration, body/camera following, wheel rolling, view cycling,
 steering and braking, and captures normal and close oblique views for visual
 inspection. It requires an offscreen software GPU adapter.
 
-The base port still needs collision, licence conditions, the remaining
+The base port still needs collision, other licence conditions, the remaining
 HUD, sound and complete pass/fail/retry flow. This authored example proves
 reuse of the current controller; it does not finish those original-game tasks.

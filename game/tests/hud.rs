@@ -33,6 +33,9 @@ fn check(name: &str) {
     app.insert_resource(settings.clone())
         .insert_resource(DrivingSession::countdown(120))
         .add_plugins((SessionRulesPlugin, HudRulesPlugin));
+    let initial = app.world().resource::<HudDisplay>();
+    assert!(!initial.visible);
+    assert!(layout_display(&small, &large, &settings, initial).is_empty());
     let mut ticks = 0;
     let key = |d: &HudGlyphDraw| (d.large, d.area[0] as i32, d.area[1] as i32, d.character);
     for frame in recording.rows {

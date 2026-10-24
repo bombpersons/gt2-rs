@@ -31,6 +31,7 @@ pub mod camera;
 pub mod gauges;
 pub mod hud;
 pub mod licence;
+pub mod licence_stop;
 pub mod records;
 pub mod session;
 use camera::{CameraInput, CameraSettings, CameraSubject, PlayerCamera, VehicleCamera};
@@ -205,6 +206,13 @@ fn spawn_camera(world: &mut World) {
         let subject = state.spawn(world);
         if world.contains_resource::<session::DrivingSession>() {
             world.entity_mut(subject).insert(session::SessionParticipant);
+        }
+        if world.contains_resource::<licence_stop::LicenceStopSettings>() {
+            world.entity_mut(subject).insert((
+                licence_stop::LicenceParticipant,
+                licence_stop::LicenceStopInput::default(),
+                licence_stop::LicenceRun::default(),
+            ));
         }
         subject_pose = crate::vehicle::visual_motion::body_transform(
             *world.get::<crate::vehicle::VehiclePose>(subject).unwrap(),

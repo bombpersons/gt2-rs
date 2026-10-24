@@ -3,7 +3,8 @@
 The native B-1 HUD now shows its record label/underline, personal best time,
 recorded speed, and gold/silver/bronze target times with coloured markers.
 It reads native licence definitions and personal-record state. This does
-not yet complete finish/failure detection, award progression, saving or retry.
+not yet complete award progression, saving or retry. The B-1 stopping/failure
+decisions are now covered by [stopping evidence](licence-stop-evidence.md).
 
 ## Original data and shared routines
 
@@ -122,7 +123,7 @@ The public-repository history audit passes; all reference data stays private.
 Target decoding also located the original award/update routine at
 `8004DD80..DEF4`. Its comparisons are strict, and it has an attempt-count
 branch associated with the fourth threshold. Neither a display target nor
-the session clock alone proves an original finish condition. Runtime finish,
-stopping/failure gates, the exact award/attempt update, result presentation,
+the session clock alone proves an original finish condition. B-1 stopping
+and failure decisions are now verified separately. The exact award/attempt update, result presentation,
 retry/reset and persistent progression still require original recordings
 and native rules. Mirror and sound work also remain.

@@ -37,6 +37,9 @@ pub struct HudSettings {
 #[derive(Resource, Default, Clone, Debug, PartialEq, Reflect)]
 #[reflect(Resource)]
 pub struct HudDisplay {
+    /// The upload-only opening field is hidden; a failed clock may be empty
+    /// while the rest of the HUD remains visible.
+    pub visible: bool,
     pub clock: String,
     pub announcement: String,
     pub announcement_rgb: [u8; 3],
@@ -64,7 +67,7 @@ pub fn display(session: &DrivingSession, settings: &HudSettings) -> HudDisplay {
                 - i64::from(session.elapsed_ticks) * i64::from(crate::FIELDS_PER_TICK)
         }
     };
-    let mut out = HudDisplay { clock, ..default() };
+    let mut out = HudDisplay { visible: true, clock, ..default() };
     if fields > i64::from(settings.announcement_after_release_fields) {
         // 8002A234..288: integer countdown digit, centered on its baseline.
         out.announcement = ((fields - i64::from(settings.announcement_after_release_fields)) / 60 + 1).to_string();
@@ -99,7 +102,11 @@ impl Plugin for HudRulesPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<HudDisplay>().add_systems(
             FixedUpdate,
-            update_display.after(SessionSystems::Clock).in_set(EngineSet::Objects).in_set(GameSystems::Game),
+            update_display
+                .after(SessionSystems::Clock)
+                .after(super::licence_stop::LicenceStopSystems::Decide)
+                .in_set(EngineSet::Objects)
+                .in_set(GameSystems::Game),
         );
     }
 }
@@ -107,9 +114,21 @@ fn update_display(
     session: Option<Res<DrivingSession>>,
     settings: Option<Res<HudSettings>>,
     mut current: ResMut<HudDisplay>,
+    runs: Query<&super::licence_stop::LicenceRun, With<super::licence_stop::LicenceParticipant>>,
 ) {
     if let (Some(session), Some(settings)) = (session, settings) {
-        let next = display(&session, &settings);
+        let mut next = display(&session, &settings);
+        // 8002CB98..CCEC: a successful licence keeps its recorded time;
+        // a failed attempt has no completed lap time and hides the clock.
+        if let Ok(run) = runs.single() {
+            match run {
+                super::licence_stop::LicenceRun::Passed { time_ms } => {
+                    next.clock = super::licence::format_record_time(Some(*time_ms), "");
+                }
+                super::licence_stop::LicenceRun::Failed { .. } => next.clock.clear(),
+                super::licence_stop::LicenceRun::Active => {}
+            }
+        }
         if *current != next {
             *current = next;
         }
@@ -124,7 +143,8 @@ impl Plugin for HudPlugin {
         if !app.world().contains_resource::<HudSettings>() && engine::config::asset_path(HUD_SETTINGS).is_file() {
             app.add_plugins(TuningPlugin::<HudSettings>::new(HUD_SETTINGS));
         }
-        app.add_plugins((HudRulesPlugin, super::gauges::GaugePlugin, super::records::RecordsPlugin))
+        app.register_type::<HudGlyph>()
+            .add_plugins((HudRulesPlugin, super::gauges::GaugePlugin, super::records::RecordsPlugin))
             .add_systems(Startup, (spawn_hud_camera, spawn_hud))
             .add_systems(Update, render_hud);
     }
@@ -139,8 +159,10 @@ struct HudFonts {
     opaque: Handle<PsxSprite>,
     additive: Handle<PsxSprite>,
 }
-#[derive(Component)]
-struct HudGlyph;
+#[derive(Component, Reflect)]
+#[reflect(Component)]
+/// A HUD font sprite, exposed for inspection and custom presentation.
+pub struct HudGlyph;
 fn spawn_hud_camera(
     mut commands: Commands,
     settings: Option<Res<HudSettings>>,
@@ -208,6 +230,9 @@ pub fn layout_display(
     settings: &HudSettings,
     view: &HudDisplay,
 ) -> Vec<HudGlyphDraw> {
+    if !view.visible {
+        return Vec::new();
+    }
     let label = small.layout(&settings.label).expect("label glyphs").0;
     let clock = number_layout(small, &view.clock, settings);
     let (mut announcement, width) = large.layout(&view.announcement).expect("announcement glyphs");
@@ -241,10 +266,9 @@ fn render_hud(
     glyphs: Query<Entity, With<HudGlyph>>,
 ) {
     let (Some(fonts), Some(settings)) = (fonts, settings) else { return };
-    // The original opening field uploads textures but has no HUD packet.
-    // Wait for the first simulation update instead of previewing a spurious
-    // boundary digit before the countdown has ever been decremented.
-    if !view.is_changed() || view.clock.is_empty() {
+    // The initial hidden display lays out no glyphs until the first rules
+    // tick, matching the original opening field's texture-only upload.
+    if !view.is_changed() {
         return;
     }
     for e in &glyphs {

@@ -152,6 +152,59 @@ impl ContactPolygon {
 }
 
 impl CourseData {
+    /// Project between neighboring boundary planes and interpolate cumulative
+    /// distance (80028588). Imported sampling preserves decisions at exact
+    /// wheel/finish boundaries; authored courses can use continuous distances.
+    pub fn distance_at_position(&self, seed: u16, point_m: [f64; 3]) -> Option<f64> {
+        if !self.lap_length_m.is_finite() || self.lap_length_m <= 0.0 {
+            return None;
+        }
+        if self.distance_sampling.is_some_and(|s| {
+            !s.projection_step_m.is_finite()
+                || s.projection_step_m <= 0.0
+                || !s.fraction_step.is_finite()
+                || s.fraction_step <= 0.0
+        }) {
+            return None;
+        }
+        let node = self.node(self.node_at_position(seed, point_m)?)?;
+        let next = self.node(node.next)?;
+        let project = |n: &super::CourseNode, sign: f64| {
+            let origin = n.contact_search_origin_m.unwrap_or(n.position_m.map(f64::from));
+            let dot = point_m
+                .into_iter()
+                .zip(origin)
+                .zip(n.direction)
+                .map(|((p, o), d)| sign * (p - o) * f64::from(d))
+                .sum::<f64>();
+            self.distance_sampling.map_or(dot, |s| (dot / s.projection_step_m).floor() * s.projection_step_m)
+        };
+        let weight = |value: f64, scale: f32| {
+            let value = value * f64::from(scale);
+            self.distance_sampling.map_or(value, |s| (value / s.projection_step_m).floor() * s.projection_step_m)
+        };
+        let near = weight(project(node, 1.0), node.scale[1]);
+        let far = weight(project(next, -1.0), node.scale[0]);
+        let fraction = if near + far == 0.0 { 0.0 } else { near / (near + far) };
+        let fraction =
+            self.distance_sampling.map_or(fraction, |s| (fraction / s.fraction_step).trunc() * s.fraction_step);
+        // 80028750..7B4 wraps once and retains an exact end-of-lap value.
+        let wrap = |d: f64| {
+            if d > self.lap_length_m {
+                d - self.lap_length_m
+            } else if d < 0.0 {
+                d + self.lap_length_m
+            } else {
+                d
+            }
+        };
+        let length = wrap(next.distance_m - node.distance_m);
+        let delta = length * fraction;
+        let delta =
+            self.distance_sampling.map_or(delta, |s| (delta / s.projection_step_m).floor() * s.projection_step_m);
+        Some(wrap(node.distance_m + delta))
+    }
+
     /// Longitudinal node walk (80028394): equality advances into the next
     /// node, and a full cycle restores the starting candidate.
     pub fn node_at_position(&self, mut node: u16, point_m: [f64; 3]) -> Option<u16> {

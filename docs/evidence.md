@@ -1,9 +1,14 @@
 # Evidence
 
+[B-1 stopping decisions](licence-stop-evidence.md) match 5,800 original calls
+and 22,616 wheel projections, including an independent later braking run.
+Native outcome state latches the finish time or overshoot/off-road failure.
+Result presentation, automatic post-result driving, awards and retry remain open.
+
 [Records and medal targets](records-evidence.md) now match 21 original
 saved-time frames and all 60 original licence target rows. Native definitions
-and in-memory personal records supply the panel. Finish/failure detection,
-award/attempt updates, saving and retry remain open.
+and in-memory personal records supply the panel. Award/attempt updates,
+saving and retry remain open; stopping decisions are covered above.
 
 [Driving gauges](gauge-evidence.md) now match 24 original GPU frames in
 geometry, sprite placement, colour, blend and order, including seven fresh

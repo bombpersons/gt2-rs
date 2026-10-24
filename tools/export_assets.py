@@ -610,6 +610,10 @@ def export_records(ram,assets):
     folder=assets/'race';folder.mkdir(parents=True,exist_ok=True)
     for name,value in [('licence.ron',definition),('records-panel.ron',settings),('records.initial.ron',dict(best=RonVariant(best)))]:
         (folder/name).write_text('// Generated locally from supplied checkpoint data; do not commit.\n'+ron(value)+'\n')
+    assert ram[0x1C98A2]==2,'stopping licence setup required'
+    stop=dict(start_m=float(ram[0x1C98C4]*10),end_m=float(ram[0x1C98C4]*10+ram[0x1C98C5]),
+              stop_speed_mps=float(imm(0x3D6C8))/4096)
+    (folder/'licence-stop.ron').write_text('// Generated locally from selected licence setup; do not commit.\n'+ron(stop)+'\n')
 
 
 def export_hud_fonts(ram, font, assets):

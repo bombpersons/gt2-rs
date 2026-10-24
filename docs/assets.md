@@ -56,6 +56,9 @@ course/model/paint files, then exports:
   `race/records-panel.ron` layout, decoded from GTDT/session data and shared
   numeric/font routines. See [records-panel evidence](records-evidence.md).
   Initial record content is separate from the future native save system;
+- `race/licence-stop.ron` supplies the selected stopping zone in metres and
+  its strict speed threshold. Course distances retain precise metre values
+  and sampling steps for wheel-boundary decisions. See [stopping evidence](licence-stop-evidence.md);
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
   brake-assistance and ordinary traction/stability tuning, axle tyre curves, low-speed force settings, and
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,

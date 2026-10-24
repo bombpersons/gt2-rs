@@ -38,8 +38,9 @@ body, wheels and cameras. Countdown numerals, the start announcement and lap
 clock now render from the original bitmap font. Speed, gear and tachometer
 gauges follow the native vehicle state. The records panel shows personal bests
 and decoded medal targets. The licence test remains
-unfinished: mirror, sound, outcomes and retry flow need work, along with
-menus, races and progression. Re-export existing assets to select the new start.
+unfinished: automatic braking after results, mirror, sound, result presentation,
+awards and retry flow need work, along with
+menus, races and progression. Re-export assets for the current session and stopping setup.
 
 | Area | Status |
 |---|---|
@@ -50,7 +51,7 @@ menus, races and progression. Re-export existing assets to select the new start.
 | Pedals, digital steering, wheel slip and braking | Rules checked against original execution; analog controls remain |
 | Tyre forces, grip, engine, drivetrain and transmission | Moving/idle-launch feedback, reverse and manual requests verified; licence session remains |
 | Road contact, suspension, vertical motion and aerodynamics | Decoded road contact and retained force/body feedback verified together; barrier/car collision remains |
-| Playable B-1 test, HUD, sounds and pass/fail/retry | Not yet complete |
+| Playable B-1 test, HUD, sounds and pass/fail/retry | Stopping/overshoot/off-road decisions verified; result, award and retry flow remain |
 | B-1 start hold, clock, gauges and records | Countdown/release, bitmap glyphs, driving gauges and record/medal targets verified; mirror and sounds remain |
 | Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |
 | Example mod and engine sandbox | Run with handmade assets and no disc data |

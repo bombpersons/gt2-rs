@@ -11,6 +11,152 @@ fn query(client: &mut Client, name: &str) -> Value {
         .clone()
 }
 
+fn licence_drive_case(name: &str) {
+    let output = std::env::temp_dir().join(format!("gt2-licence-stop-{}", std::process::id()));
+    std::fs::create_dir_all(&output).unwrap();
+    println!("Licence stop evidence: {}", output.display());
+    let buttons = |controls: &Value| {
+        let mut buttons = Vec::new();
+        for (key, button) in
+            [("throttle", "cross"), ("brake", "square"), ("handbrake", "circle"), ("reverse", "triangle")]
+        {
+            if controls[key].as_i64().unwrap() != 0 {
+                buttons.push(button);
+            }
+        }
+        let steer = controls["steering"].as_i64().unwrap();
+        if steer != 0 {
+            buttons.push(if steer > 0 { "left" } else { "right" });
+        }
+        let shift = controls["shift"].as_i64().unwrap();
+        if shift != 0 {
+            buttons.push(if shift > 0 { "r2" } else { "l2" });
+        }
+        buttons
+    };
+    let expected = |outcome: &Value| match outcome["state"].as_u64().unwrap() {
+        0 => json!("Active"),
+        1 => json!({"Passed":{"time_ms":outcome["time_ms"]}}),
+        2 => {
+            json!({"Failed":{"reason":match outcome["reason"].as_u64().unwrap(){3=>"Overshot",4=>"OffRoad",5=>"Collision",x=>panic!("unknown reason {x}")}}})
+        }
+        x => panic!("unknown state {x}"),
+    };
+    {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("tests/data/original/licence_stop/{name}.json"));
+        let recording: Value = serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
+        let rows = recording["rows"].as_array().unwrap();
+        let transition = rows.iter().position(|r| r["before"]["state"] != r["after"]["state"]);
+        let mut checkpoints = transition.map_or_else(Vec::new, |i| vec![i, i + 1]);
+        checkpoints.push(rows.len());
+        if name == "offroad" {
+            checkpoints.extend((25..735).step_by(25));
+        }
+        checkpoints.sort_unstable();
+        checkpoints.dedup();
+        let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
+        command.env("BEVY_ASSET_ROOT", env!("CARGO_MANIFEST_DIR"));
+        let mut client = Client::launch(command, &output.join(format!("{name}.log")));
+        let mut cursor = 0;
+        for checkpoint in checkpoints {
+            while cursor < checkpoint {
+                let held = buttons(&rows[cursor]["controls"]);
+                let end =
+                    (cursor + 1..checkpoint).find(|&i| buttons(&rows[i]["controls"]) != held).unwrap_or(checkpoint);
+                client.call("game_step", json!({"frames":end-cursor,"buttons":held}));
+                cursor = end;
+            }
+            let actual = client.call(
+                "game_query",
+                json!({"name":"CameraSubject","components":["LicenceRun","LicenceStopInput","VehiclePose","RoadContactState"],"resources":["HudDisplay"]}),
+            )["structuredContent"]
+                .clone();
+            let run = &actual["entities"][0]["components"]["LicenceRun"];
+            if name == "offroad" && checkpoint < 734 {
+                let at = &actual["entities"][0]["components"]["VehiclePose"]["position_m"];
+                let before = &rows[checkpoint - 1]["pose_m"];
+                for axis in 0..3 {
+                    assert!(
+                        (at[axis].as_f64().unwrap() - before[axis].as_f64().unwrap()).abs() < 0.0001,
+                        "{name} pose tick {checkpoint} expected {before}: {actual}"
+                    );
+                }
+            }
+            assert_eq!(*run, expected(&rows[checkpoint - 1]["after"]), "{name} tick {checkpoint}: {actual}");
+            if let Some(passed) = run.get("Passed") {
+                assert_eq!(
+                    actual["resources"]["HudDisplay"]["clock"],
+                    game::race::licence::format_record_time(Some(passed["time_ms"].as_u64().unwrap() as u32), "")
+                );
+            } else if run.get("Failed").is_some() {
+                assert_eq!(actual["resources"]["HudDisplay"]["clock"], "");
+            }
+        }
+        client.screenshot(output.join(format!("{name}.png")));
+        let actual = client.call(
+            "game_query",
+            json!({"name":"CameraSubject","components":["LicenceRun","LicenceStopInput","VehiclePose"]}),
+        )["structuredContent"]
+            .clone();
+        println!("{name}: {}", actual["entities"][0]["components"]["LicenceRun"]);
+        if actual["entities"][0]["components"]["LicenceRun"].get("Failed").is_some() {
+            let glyphs = client.call("game_query", json!({"with":["HudGlyph"],"components":["Transform"],"limit":256}))
+                ["structuredContent"]
+                .clone();
+            // Count the original label's actual glyph draws; its blank space
+            // advances the cursor without emitting a sprite.
+            let original: Value = serde_json::from_str(
+                &std::fs::read_to_string(
+                    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/original/hud/initial.json"),
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            let label_glyphs = original["rows"][0]["draws"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|d| {
+                    !d["large"].as_bool().unwrap() && d["character"].as_str().unwrap().chars().all(char::is_alphabetic)
+                })
+                .count();
+            assert_eq!(
+                glyphs["entities"].as_array().unwrap().len(),
+                label_glyphs,
+                "{name}: stale clock glyphs: {glyphs}"
+            );
+        }
+        std::fs::write(output.join(format!("{name}.json")), serde_json::to_vec_pretty(&actual).unwrap()).unwrap();
+    }
+}
+
+#[test]
+#[ignore = "requires offscreen GPU and original licence fixtures"]
+fn native_licence_stop_gold() {
+    licence_drive_case("gold");
+}
+#[test]
+#[ignore = "requires offscreen GPU and original licence fixtures"]
+fn native_licence_stop_early() {
+    licence_drive_case("early");
+}
+#[test]
+#[ignore = "requires offscreen GPU and original licence fixtures"]
+fn native_licence_stop_overshoot() {
+    licence_drive_case("overshoot");
+}
+#[test]
+#[ignore = "requires offscreen GPU and original licence fixtures"]
+fn native_licence_stop_offroad() {
+    licence_drive_case("offroad");
+}
+#[test]
+#[ignore = "requires offscreen GPU and fresh original licence fixture"]
+fn native_licence_stop_holdout() {
+    licence_drive_case("holdout");
+}
+
 fn copy_assets(source: &std::path::Path, destination: &std::path::Path) {
     std::fs::create_dir_all(destination).unwrap();
     for entry in std::fs::read_dir(source).unwrap() {

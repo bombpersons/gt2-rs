@@ -454,7 +454,8 @@ The link addresses are zero in the file and are filled from the link indices by
 the loader. `distance` is cumulative along the course in fx16.16 metres; the
 point and direction are 16.16/4096 fixed and use `(x, y, -z)` in the file, i.e.
 the engine negates z. The two `s16` values are in `-4096..=4096` (4096 = 1.0);
-their meaning is still open. Following `linkB` (`+2`) from node 0 visits every
+they weight the far and near boundary-plane distance projections, respectively
+(`80028614..710`). Following `linkB` (`+2`) from node 0 visits every
 node once and returns, so it is driving order; `linkA` is the reverse
 neighbour. This is the table the car's course-distance solver walks
 (`docs/engine-model.md`, "World").
@@ -738,3 +739,16 @@ pixel offsets, marker sizes/colours, underline gradient and numeric spacing.
 It uses the same native font and ordinary 2D sprites/meshes. New content can
 author all these files directly in RON with its own font. See the public
 [records API and evidence](records-evidence.md).
+
+`CourseData::distance_at_position` projects a world-space point to cumulative
+course metres. Node/lap distances use `f64`; the optional `DistanceSampling`
+contains projection-step metres and an interpolation-fraction step. Omit it
+for continuous authored geometry. Imported course RON supplies the source's
+sampling grid, while rendering still uses ordinary `f32` geometry.
+
+`race/licence-stop.ron` is `LicenceStopSettings { start_m, end_m,
+stop_speed_mps }`. `LicenceStopInput` accepts four projected wheel distances,
+world velocity, surface ids, explicit off-road/collision faults and a time
+origin. `LicenceRun` is an active, passed-with-time or failed-with-reason
+component. `LicenceParticipant` opts a native car into deriving those inputs
+from the decoded course and road contact. See [stopping rules](licence-stop-evidence.md).

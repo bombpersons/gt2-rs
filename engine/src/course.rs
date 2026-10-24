@@ -38,10 +38,8 @@
 //! itself. Combined with overlapping level ranges, that selects exactly one
 //! span group per level. [`CourseData::span_at`] does the same.
 //!
-//! The original keeps these in 16.16 fixed point. Importers convert to `f32`
-//! metres: a 16.16 value in this range has a resolution below 0.0003 m, well
-//! under the size of a tick's movement, and the format stays readable. Keep the
-//! integer form in the importer (and in format notes) as the evidence.
+//! Cumulative distances use `f64` metres so a wheel exactly on a licence
+//! boundary retains its imported precision. Rendering converts to `f32`.
 use serde::{Deserialize, Serialize};
 
 mod contact;
@@ -51,7 +49,10 @@ pub use contact::{ContactMesh, ContactPolygon, RoadContact};
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct CourseData {
     /// Length of one lap, metres. Course distances wrap at this value.
-    pub lap_length_m: f32,
+    pub lap_length_m: f64,
+    /// Optional sampled projection/interpolation grid; absent means continuous.
+    #[serde(default)]
+    pub distance_sampling: Option<DistanceSampling>,
     /// Detail levels above this value wrap back into `1..=level_wrap`; 0
     /// disables the wrap. Comes from the original's span table.
     #[serde(default)]
@@ -62,6 +63,12 @@ pub struct CourseData {
     /// Draw spans over the road, in table order.
     #[serde(default)]
     pub spans: Vec<RoadSpan>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct DistanceSampling {
+    pub projection_step_m: f64,
+    pub fraction_step: f64,
 }
 
 /// One road node: a centreline sample and its links.
@@ -75,10 +82,9 @@ pub struct CourseNode {
     /// nothing is silently dropped).
     pub flags: u32,
     /// Cumulative distance from the table's origin, metres.
-    pub distance_m: f32,
-    /// Two per-node values, normalised to 1.0: the original stores signed
-    /// 16-bit values in `-4096..=4096`, 4096 = 1.0. Their meaning is still
-    /// open; preserved so nothing is silently dropped.
+    pub distance_m: f64,
+    /// Weights for distance projection from the far/near boundary planes,
+    /// respectively (80028614..710). Imported values are multiples of 1/4096.
     pub scale: [f32; 2],
     /// Centreline point in world metres, `[x, y, z]`.
     pub position_m: [f32; 3],
@@ -171,7 +177,7 @@ impl CourseData {
         if self.nodes.len() < 2 || self.lap_length_m <= 0.0 {
             return None;
         }
-        let distance_m = distance_m.rem_euclid(self.lap_length_m);
+        let distance_m = f64::from(distance_m).rem_euclid(self.lap_length_m);
         let order = self.lap();
         for (position, &from) in order.iter().enumerate() {
             let to = order[(position + 1) % order.len()];
@@ -185,7 +191,7 @@ impl CourseData {
             if distance_m < start || distance_m >= end {
                 continue;
             }
-            let t = (distance_m - start) / (end - start);
+            let t = ((distance_m - start) / (end - start)) as f32;
             let position_m =
                 std::array::from_fn(|axis| a.position_m[axis] + (b.position_m[axis] - a.position_m[axis]) * t);
             let delta: [f32; 3] = std::array::from_fn(|axis| b.position_m[axis] - a.position_m[axis]);
@@ -216,7 +222,11 @@ impl CourseData {
             if far < node.distance_m {
                 far += self.lap_length_m;
             }
-            quads.push(SurfaceQuad { node: index as u16, corners: [a, b, c, d], distance_m: [node.distance_m, far] });
+            quads.push(SurfaceQuad {
+                node: index as u16,
+                corners: [a, b, c, d],
+                distance_m: [node.distance_m as f32, far as f32],
+            });
         }
         quads
     }
@@ -242,11 +252,11 @@ impl CourseData {
             }
             let mut end = span.end_m;
             if end < span.start_m {
-                end += self.lap_length_m;
+                end += self.lap_length_m as f32;
             }
             let mut at = distance_m;
             if span.min_level < level {
-                at += self.lap_length_m;
+                at += self.lap_length_m as f32;
             }
             span.start_m <= at && at < end
         })
@@ -268,6 +278,7 @@ mod tests {
     fn line() -> CourseData {
         CourseData {
             lap_length_m: 30.0,
+            distance_sampling: None,
             level_wrap: 2,
             nodes: vec![
                 CourseNode { previous: 2, next: 1, distance_m: 0.0, ..default_node([0.0, 0.0, 0.0]) },
@@ -298,6 +309,21 @@ mod tests {
             contact_search_origin_m: None,
             contact: None,
         }
+    }
+
+    #[test]
+    fn authored_course_projects_weighted_distance_with_optional_sampling() {
+        let mut course = line();
+        assert_eq!(course.distance_at_position(0, [5.0, 0.0, 0.0]), Some(5.0));
+        course.nodes[1].distance_m = 30.0;
+        assert_eq!(course.distance_at_position(0, [5.0, 0.0, 0.0]), Some(15.0));
+        course.nodes[1].distance_m = 10.0;
+        course.nodes[0].scale = [2.0, 1.0];
+        assert!((course.distance_at_position(0, [5.0, 0.0, 0.0]).unwrap() - 10.0 / 3.0).abs() < 1e-12);
+        course.distance_sampling = Some(DistanceSampling { projection_step_m: 0.125, fraction_step: 0.25 });
+        assert_eq!(course.distance_at_position(0, [5.0, 0.0, 0.0]), Some(2.5));
+        course.distance_sampling.as_mut().unwrap().fraction_step = 0.0;
+        assert_eq!(course.distance_at_position(0, [5.0, 0.0, 0.0]), None);
     }
 
     #[test]
