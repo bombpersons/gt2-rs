@@ -35,8 +35,9 @@ See [how the screenshots were captured](docs/screenshots.md).
 B-1 can be driven from the original standing-start countdown. Its composed
 vehicle rules match moving, idle-launch and countdown trajectories, with live
 body, wheels and cameras. Countdown numerals, the start announcement and lap
-clock now render from the original bitmap font. The licence test remains
-unfinished: the rest of the HUD, sound, outcomes and retry flow need work, along with
+clock now render from the original bitmap font. Speed, gear and tachometer
+gauges follow the native vehicle state. The licence test remains
+unfinished: records, mirror, sound, outcomes and retry flow need work, along with
 menus, races and progression. Re-export existing assets to select the new start.
 
 | Area | Status |
@@ -49,7 +50,7 @@ menus, races and progression. Re-export existing assets to select the new start.
 | Tyre forces, grip, engine, drivetrain and transmission | Moving/idle-launch feedback, reverse and manual requests verified; licence session remains |
 | Road contact, suspension, vertical motion and aerodynamics | Decoded road contact and retained force/body feedback verified together; barrier/car collision remains |
 | Playable B-1 test, HUD, sounds and pass/fail/retry | Not yet complete |
-| B-1 start hold, announcement and lap clock | Countdown/release and bitmap glyph layouts verified; remaining gauges/records/mirror and sounds remain |
+| B-1 start hold, clock and driving gauges | Countdown/release, bitmap glyphs, speed/gear and tachometer verified; records/mirror and sounds remain |
 | Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |
 | Example mod and engine sandbox | Run with handmade assets and no disc data |
 | Desktop content editor | Placement editor shell; course geometry and tuning editors remain |

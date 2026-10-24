@@ -2,8 +2,9 @@
 
 The native B-1 scene now draws the original countdown digits, `START` banner,
 lap-clock label and running clock through ordinary Bevy sprites. This is a
-partial HUD: tachometer, speed/gear, records, mirror, sounds, intro cameras,
+partial HUD: records, mirror, sounds, intro cameras,
 licence outcomes and retry flow remain unfinished.
+Speed, gear and tachometer are now covered by [driving-gauge evidence](gauge-evidence.md).
 
 ## Sources and decoding
 
@@ -96,8 +97,10 @@ additive pixels over different backgrounds are not claimed equal.
 `HudRulesPlugin` runs headless with public `HudSettings` and `DrivingSession`
 resources. `HudPlugin` adds font loading, sprites and a separate 2D `PsxView`
 camera over the 3D scene. It is independently selectable in `GamePlugins`.
-The session/settings must exist before startup for this presentation to
-spawn. Existing content without `race/hud.ron` keeps its previous presentation.
+The settings must exist before startup for font presentation to spawn, and
+the session supplies its displayed clock/announcement. The shared HUD camera
+also supports gauges in a free-driving scene without a session. Existing
+content without HUD or gauge settings keeps its previous presentation.
 The handmade mod disables this game's HUD plugin while retaining the same
 session and vehicle rules, requiring no original font data.
 

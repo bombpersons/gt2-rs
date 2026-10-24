@@ -262,6 +262,62 @@ fn native_hud_opaque_glyph_pixels_match_the_original() {
     println!("{total_pixels} source-masked pixels; maximum encoded-channel error {maximum_error}");
 }
 
+#[test]
+#[ignore = "requires original gauge frames, exported gauge atlas and an offscreen GPU"]
+fn native_gauges_follow_vehicle_and_match_original_sprite_pixels() {
+    let output = std::env::temp_dir().join(format!("gt2-gauges-{}", std::process::id()));
+    std::fs::create_dir_all(&output).unwrap();
+    println!("Gauge GPU evidence: {}", output.display());
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    let mut rows = Vec::new();
+    for set in ["initial", "fresh"] {
+        let data: Value = serde_json::from_str(
+            &std::fs::read_to_string(root.join(format!("game/tests/data/original/gauges/{set}.json"))).unwrap(),
+        )
+        .unwrap();
+        rows.extend(data["rows"].as_array().unwrap().iter().cloned());
+    }
+    rows.sort_by_key(|row| row["frame"].as_u64().unwrap());
+    let mut pixels = 0;
+    let mut maximum_error = 0;
+    for scenario in ["idle", "gas"] {
+        let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
+        command.env("BEVY_ASSET_ROOT", env!("CARGO_MANIFEST_DIR"));
+        let mut client = Client::launch(command, &output.join(format!("{scenario}.log")));
+        let mut ticks = 0;
+        // Source pad transport delivers CROSS to the second physics tick.
+        // The native controller consumes effective logical inputs directly,
+        // as in the full countdown-gas trajectory recording.
+        if scenario == "gas" {
+            client.call("game_step", json!({"frames":1,"buttons":[]}));
+            ticks = 1;
+        }
+        for row in rows.iter().filter(|r| r["name"].as_str().unwrap().starts_with(scenario)) {
+            let frame = row["frame"].as_u64().unwrap() as u32;
+            let buttons = if scenario == "gas" { json!(["cross"]) } else { json!([]) };
+            client.call("game_step", json!({"frames":frame/2-ticks,"buttons":buttons}));
+            ticks = frame / 2;
+            let actual=client.call("game_query",json!({"resources":["GaugeDisplay"]}))["structuredContent"]["resources"]["GaugeDisplay"].clone();
+            assert_eq!(actual, row["view"], "{} native gauge state", row["name"]);
+            let native = client.screenshot(output.join(format!("{}.png", row["name"].as_str().unwrap())));
+            let original = image::open(root.join(row["screen"].as_str().unwrap())).unwrap().to_rgba8();
+            let mask: Vec<[u32; 2]> = serde_json::from_value(row["opaque_pixels"].clone()).unwrap();
+            assert!(mask.len() > 50);
+            for [x, y] in mask {
+                let a = native.get_pixel(x, y);
+                let b = original.get_pixel(x, y);
+                for c in 0..3 {
+                    let error = a[c].abs_diff(b[c]);
+                    maximum_error = maximum_error.max(error);
+                    assert!(error <= 9, "{} at {x},{y}: native {a:?} original {b:?}", row["name"]);
+                }
+                pixels += 1;
+            }
+        }
+    }
+    println!("{pixels} source-masked gauge pixels; maximum encoded-channel error {maximum_error}");
+}
+
 fn native_start_replay(scenario: &str, checkpoint: &str, countdown_fields: Option<u16>) {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
     let output = std::env::temp_dir().join(format!("gt2-start-{scenario}-{}", std::process::id()));

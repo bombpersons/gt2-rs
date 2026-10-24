@@ -703,3 +703,17 @@ currently exports printable ASCII from two original fonts into this format.
 Other games/mods can supply their own image and metrics directly. A native
 font editor remains future work; RON and an image editor already author the
 format without any original-game data.
+
+## Driving-gauge content
+
+The game's `race/gauges.ron` deserializes to public `GaugeSettings`. It holds
+an ordinary RGBA atlas path and pixel rectangles, centre/offset/colour values,
+maximum and redline RPM, division count, sweep/zero angles in turns, radii in
+pixels, and needle-strip distances, half-widths and edge colours. Sprite slots
+are dial, digits 0–9, units, reverse, then forward gears. Maximum RPM and
+division count must be positive; all referenced sprite slots must exist.
+Coordinates are right/down screen pixels relative to a lower-right anchor.
+An image editor and RON can author replacement artwork/layout without disc
+data. Mark one vehicle `GaugeSubject`; its engine, contact-motion and
+transmission components supply the displayed state. See the complete
+[gauge contract and evidence](gauge-evidence.md).

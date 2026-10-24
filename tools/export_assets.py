@@ -475,6 +475,80 @@ def export_scene_setup(start_ram, assets):
     path.write_text('// Generated locally from the supplied checkpoints; do not commit.\n' + ron(setup) + '\n')
 
 
+def write_rgba_png(path, width, height, rgba):
+    def chunk(kind, data):
+        return struct.pack('>I', len(data))+kind+data+struct.pack('>I', zlib.crc32(kind+data))
+    rows=b''.join(b'\0'+rgba[i*width*4:(i+1)*width*4] for i in range(height))
+    path.write_bytes(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',width,height,8,6,0,0,0))
+                     +chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b''))
+
+
+def export_gauges(ram, pack, assets):
+    """8002BD84/8002E390 select a TIM dial; export ordinary sprites and design values."""
+    def u32(off):return struct.unpack_from('<I',ram,off)[0]
+    def u16(off):return struct.unpack_from('<H',ram,off)[0]
+    def imm(off):
+        assert u32(off)>>26 in (9,10,13,15)
+        return struct.unpack('<h',struct.pack('<H',u32(off)&65535))[0]
+    def rgb(hi,lo):
+        n=((u32(hi)&65535)<<16)|(u32(lo)&65535)
+        return (n&255,(n>>8)&255,(n>>16)&255)
+    def color(n):return (n&255,(n>>8)&255,(n>>16)&255)
+    assert struct.unpack_from('<I',pack)[0]==11
+    offsets=struct.unpack_from('<11I',pack,4)
+    assert offsets[0]==48 and sorted(offsets)==list(offsets)
+    def bitmap(index):
+        begin=offsets[index];end=offsets[index+1] if index<10 else len(pack)
+        magic,flags=struct.unpack_from('<II',pack,begin);assert magic==16 and flags in (0,8)
+        at=begin+8
+        if flags&8:at+=struct.unpack_from('<I',pack,at)[0]
+        length,x,y,w,h=struct.unpack_from('<I4H',pack,at)
+        assert at+length==end and length==12+2*w*h
+        return w,h,pack[at+12:end]
+    w,h,base=bitmap(0);assert (w,h)==(64,234)
+    texels=bytearray(base)
+    maximum=u16(BASE-0x2C+0x134);redline=u16(BASE-0x2C+0x3C2)
+    thousands=(maximum+999)//1000
+    thresholds=struct.unpack_from('<11b',ram,0x2F868)
+    selected=next(i for i,n in enumerate(thresholds) if n<0 or n>=thousands)+1
+    w,h,dial=bitmap(selected);assert (w,h)==(20,80)
+    for y in range(h):texels[y*128:y*128+40]=dial[y*40:(y+1)*40]
+    gears=struct.unpack_from('<7b',ram,0x2F874)
+    descriptors=[0x2F630]+[0x2F678+i*12 for i in range(10)]+[0x2F6FC]+[0x2F708+i*12 for i in gears]
+    atlas_width,atlas_height=480,384;rgba=bytearray(atlas_width*atlas_height*4);sprites=[]
+    for slot,off in enumerate(descriptors):
+        uv_clut,sw,sh,page=struct.unpack_from('<I3H',ram,off)
+        assert page==8 and sw<=96 and sh<=96
+        u,v=uv_clut&255,(uv_clut>>8)&255;clut=uv_clut>>16
+        cx,cy=(clut&63)*16,(clut>>6)
+        assert 512<=cx<576 and cy<234 and u+sw<=256 and v+sh<=234
+        x,y=(slot%5)*96,(slot//5)*96;sprites.append((x,y,sw,sh))
+        for dy in range(sh):
+            for dx in range(sw):
+                q=u+dx;idx=(texels[(v+dy)*128+q//2]>>(4*(q%2)))&15
+                col=struct.unpack_from('<H',texels,cy*128+(cx-512+idx)*2)[0]
+                expand=lambda n:((n&31)<<3)|((n&31)>>2)
+                pixel=bytes([expand(col),expand(col>>5),expand(col>>10),0 if not col else 128 if col&0x8000 else 255])
+                at=((y+dy)*atlas_width+x+dx)*4;rgba[at:at+4]=pixel
+    needles=[]
+    for off in [0x2F898,0x2F880]: # actual draw order is the reverse of packet construction
+        a,b,x0,x1,w0,w1=struct.unpack_from('<II4i',ram,off)
+        needles.append(dict(distance_px=(x0/16,x1/16),half_width_px=(w0/16,w1/16),edge_rgb=(color(a),color(b))))
+    settings=dict(image='race/gauges.png',sprites=sprites,center_px=(float(imm(0x2E754)),float(imm(0x2E75C))),
+                  maximum_rpm=float(thousands*1000),redline_rpm=float(redline),sections_per_1000_rpm=float(4),
+                  sweep_turns=2412/4096,zero_turns=imm(0x2C24C)/4096,
+                  outer_radius_px=imm(0x2BE9C)/16,inner_radius_px=imm(0x2BE48)/16,needles=needles,
+                  band_rgb=rgb(0x2C0CC,0x2C0E4),redline_rgb=rgb(0x2C130,0x2C134),
+                  dial_rgb=rgb(0x2C030,0x2C034),text_rgb=rgb(0x2C3B4,0x2C3BC),
+                  coupled_gear_rgb=rgb(0x2C278,0x2C288),free_gear_rgb=rgb(0x2C28C,0x2C290),
+                  gear_offset_px=(23.0,2.0),units_offset_px=(18.0,40.0),speed_offset_px=(2.0,24.0),
+                  digit_step_px=float(imm(0x2C52C)),gear_shade_offset_px=(float(imm(0x2C38C)),float(imm(0x2C394))),
+                  gear_shade_size_px=(float(imm(0x2C39C)),float(imm(0x2C3A4))),gear_shade_rgb=rgb(0x2C378,0x2C380))
+    folder=assets/'race';folder.mkdir(parents=True,exist_ok=True)
+    write_rgba_png(folder/'gauges.png',atlas_width,atlas_height,rgba)
+    (folder/'gauges.ron').write_text('// Generated locally from disc TIMs and gauge routines; do not commit.\n'+ron(settings)+'\n')
+
+
 def export_hud_fonts(ram, font, assets):
     """Decode ASCII glyphs/kerning (8007DC78/8007DD3C) and the raw font bitmap."""
     if len(font) != 65536 or len(ram) != 2*1024*1024:
@@ -518,10 +592,7 @@ def export_hud_fonts(ram, font, assets):
             for n in map(chr,range(32,127)):
                 adjustment=reduction(c,'\0')-reduction(c,n)
                 if adjustment:pairs.append(dict(pair=RonVariant('('+char(c)+','+char(n)+')'),adjustment_px=float(adjustment)))
-        def chunk(kind,data):return struct.pack('>I',len(data))+kind+data+struct.pack('>I',zlib.crc32(kind+data))
-        rows=b''.join(b'\0'+rgba[i*width*4:(i+1)*width*4] for i in range(height))
-        png=b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',width,height,8,6,0,0,0))+chunk(b'IDAT',zlib.compress(rows))+chunk(b'IEND',b'')
-        (folder/f'{name}.png').write_bytes(png)
+        write_rgba_png(folder/f'{name}.png',width,height,rgba)
         native=dict(image=f'race/fonts/{name}.png',glyphs=RonVariant('{'+','.join(glyphs)+'}'),kerning=pairs)
         (folder/f'{name}.ron').write_text('// Generated locally; ASCII font metrics and bitmap from the supplied disc.\n'+ron(native)+'\n')
     def string(off):return ram[off:ram.index(0,off)].decode('ascii')
@@ -574,7 +645,7 @@ def main():
     files = {}
     for name, source in [('course.tro', '/crsobj/TC_lisence.tro.gz'), ('course.trp', '/crsobj/TC_lisence.trp.gz'),
                          ('t2vzn.cdo', '/carobj/t2vzn.cdo.gz'), ('t2vzn.cdp', '/carobj/t2vzn.cdp.gz'),
-                         ('racefont.dat', '/font/racefont.dat')]:
+                         ('racefont.dat', '/font/racefont.dat'), ('game_status_files', '/arcade/game_status_files.gz')]:
         path = work / name
         run([importer, 'extract', disc, '--path', source, '--out', path])
         raw = path.read_bytes()
@@ -588,8 +659,10 @@ def main():
     export_tuning(ram, assets)
     export_scene_setup(start_ram.read_bytes() if start_ram else None, assets)
     export_hud_fonts(ram.read_bytes(),files['racefont.dat'].read_bytes(),assets)
+    export_gauges(ram.read_bytes(),files['game_status_files'].read_bytes(),assets)
     manifest = dict(disc=str(disc), ram_sha256=hashlib.sha256(ram.read_bytes()).hexdigest(),
                     race_font_sha256=hashlib.sha256(files['racefont.dat'].read_bytes()).hexdigest(),
+                    gauge_pack_sha256=hashlib.sha256(files['game_status_files'].read_bytes()).hexdigest(),
                     start_ram_sha256=hashlib.sha256(start_ram.read_bytes()).hexdigest() if start_ram else None,
                     startup='countdown' if start_ram else 'free-driving checkpoint',
                     psx_version=subprocess.check_output(['psx', '--version'], text=True).strip(),

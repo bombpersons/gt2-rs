@@ -248,9 +248,15 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   placement, colours and blending, including a fresh longer-clock holdout.
   Native opaque-pixel checks use source-derived masks. The engine exposes
   authorable font metrics/kerning; the handmade mod disables this game's HUD
-  while keeping the shared controller/session. Next: remaining gauges/records/
+  while keeping the shared controller/session. Next: remaining records/
   mirror, HUD sounds, licence outcomes/retry, collision and broader content.
   See docs/hud-evidence.md.
+- Driving gauges now use a decoded disc TIM pack, ordinary sprites and
+  shaded 2D meshes. Native RPM, speed and transmission state drive the dial,
+  needle, redline, speed and gear. Twenty-four original GPU frames match
+  geometry, colour, blend and draw order, including controlled boundaries
+  and seven fresh driving frames. Native vehicle-state/pixel replay checks
+  and the handmade mod preserve the feature boundary. See docs/gauge-evidence.md.
 
 ## Work order
 

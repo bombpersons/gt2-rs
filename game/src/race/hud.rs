@@ -124,7 +124,9 @@ impl Plugin for HudPlugin {
         if !app.world().contains_resource::<HudSettings>() && engine::config::asset_path(HUD_SETTINGS).is_file() {
             app.add_plugins(TuningPlugin::<HudSettings>::new(HUD_SETTINGS));
         }
-        app.add_plugins(HudRulesPlugin).add_systems(Startup, spawn_hud).add_systems(Update, render_hud);
+        app.add_plugins((HudRulesPlugin, super::gauges::GaugePlugin))
+            .add_systems(Startup, (spawn_hud_camera, spawn_hud))
+            .add_systems(Update, render_hud);
     }
 }
 
@@ -139,14 +141,28 @@ struct HudFonts {
 }
 #[derive(Component)]
 struct HudGlyph;
+fn spawn_hud_camera(
+    mut commands: Commands,
+    settings: Option<Res<HudSettings>>,
+    gauges: Option<Res<super::gauges::GaugeSettings>>,
+) {
+    if settings.is_none() && gauges.is_none() {
+        return;
+    }
+    commands.spawn((
+        Name::new("Licence HUD camera"),
+        Camera2d,
+        Camera { order: 1, clear_color: ClearColorConfig::None, ..default() },
+        PsxView,
+    ));
+}
 fn spawn_hud(
     mut commands: Commands,
     settings: Option<Res<HudSettings>>,
-    session: Option<Res<DrivingSession>>,
     server: Option<Res<AssetServer>>,
     materials: Option<ResMut<Assets<PsxSprite>>>,
 ) {
-    let (Some(settings), Some(_), Some(server), Some(mut materials)) = (settings, session, server, materials) else {
+    let (Some(settings), Some(server), Some(mut materials)) = (settings, server, materials) else {
         return;
     };
     let small: BitmapFont = load_ron(&settings.small_font).expect("small HUD font");
@@ -159,12 +175,6 @@ fn spawn_hud(
         opaque: materials.add(PsxSprite::default()),
         additive: materials.add(PsxSprite::blend(PsxBlend::Add)),
     });
-    commands.spawn((
-        Name::new("Licence HUD camera"),
-        Camera2d,
-        Camera { order: 1, clear_color: ClearColorConfig::None, ..default() },
-        PsxView,
-    ));
 }
 
 fn number_layout(font: &BitmapFont, text: &str, settings: &HudSettings) -> Vec<PositionedGlyph> {

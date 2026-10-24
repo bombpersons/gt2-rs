@@ -28,6 +28,7 @@ use bevy::{
 use engine::prelude::*;
 use engine::psx::{PsxMaterial, PsxView};
 pub mod camera;
+pub mod gauges;
 pub mod hud;
 pub mod session;
 use camera::{CameraInput, CameraSettings, CameraSubject, PlayerCamera, VehicleCamera};
@@ -221,6 +222,7 @@ fn spawn_camera(world: &mut World) {
         Name::new("CameraSubject"),
         subject_pose,
         subject_state,
+        gauges::GaugeSubject,
         crate::vehicle::presentation::VehicleBody,
     ));
     let rig = VehicleCamera { subject, mode: camera_settings.initial_view, split_screen: false };

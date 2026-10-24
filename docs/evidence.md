@@ -1,5 +1,11 @@
 # Evidence
 
+[Driving gauges](gauge-evidence.md) now match 24 original GPU frames in
+geometry, sprite placement, colour, blend and order, including seven fresh
+driving frames. Native RPM, speed and transmission state drive ordinary
+sprites and shaded meshes; source-masked opaque pixels are checked in the
+real binary. Records, mirror, sounds and licence outcomes remain open.
+
 [Countdown/start and lap-clock presentation](hud-evidence.md) now matches 19
 original GPU frames in glyph, position, colour and blend mode, including a
 fresh holdout through source field 1346. Native opaque-glyph pixels are checked

@@ -48,6 +48,10 @@ course/model/paint files, then exports:
   `/font/racefont.dat` and the original program, plus `race/hud.ron` for
   countdown digits, the start announcement and lap clock. See
   [HUD evidence and verification](hud-evidence.md);
+- Gauge atlas and `race/gauges.ron` from `/arcade/game_status_files.gz`
+  and the original gauge tables: selected tachometer dial, speed and gear
+  sprites, needle shapes, layout, colour and RPM settings. See
+  [driving-gauge evidence](gauge-evidence.md);
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
   brake-assistance and ordinary traction/stability tuning, axle tyre curves, low-speed force settings, and
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,
