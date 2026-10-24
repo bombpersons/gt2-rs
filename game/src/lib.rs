@@ -47,6 +47,7 @@ impl PluginGroup for GamePlugins {
             .add(EnginePlugin)
             .add(race::camera::CameraRulesPlugin)
             .add(race::session::SessionRulesPlugin)
+            .add(race::licence::LicencePlugin)
             .add(race::RacePlugin)
             .add(race::hud::HudPlugin)
             .add(vehicle::VehicleRulesPlugin)

@@ -11,5 +11,5 @@ pub const GAME_ASSETS: &str = "../../game/assets";
 /// Shared driving/session features with the game's licence HUD disabled.
 pub fn plugins() -> bevy::app::PluginGroupBuilder {
     use bevy::prelude::PluginGroup;
-    game::GamePlugins.build().disable::<game::race::hud::HudPlugin>()
+    game::GamePlugins.build().disable::<game::race::hud::HudPlugin>().disable::<game::race::licence::LicencePlugin>()
 }

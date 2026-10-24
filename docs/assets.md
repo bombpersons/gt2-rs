@@ -52,6 +52,10 @@ course/model/paint files, then exports:
   and the original gauge tables: selected tachometer dial, speed and gear
   sprites, needle shapes, layout, colour and RPM settings. See
   [driving-gauge evidence](gauge-evidence.md);
+- Selected native licence definition, initial personal-record state and
+  `race/records-panel.ron` layout, decoded from GTDT/session data and shared
+  numeric/font routines. See [records-panel evidence](records-evidence.md).
+  Initial record content is separate from the future native save system;
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
   brake-assistance and ordinary traction/stability tuning, axle tyre curves, low-speed force settings, and
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,

@@ -30,6 +30,8 @@ use engine::psx::{PsxMaterial, PsxView};
 pub mod camera;
 pub mod gauges;
 pub mod hud;
+pub mod licence;
+pub mod records;
 pub mod session;
 use camera::{CameraInput, CameraSettings, CameraSubject, PlayerCamera, VehicleCamera};
 

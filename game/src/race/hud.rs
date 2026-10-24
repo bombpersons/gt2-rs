@@ -124,7 +124,7 @@ impl Plugin for HudPlugin {
         if !app.world().contains_resource::<HudSettings>() && engine::config::asset_path(HUD_SETTINGS).is_file() {
             app.add_plugins(TuningPlugin::<HudSettings>::new(HUD_SETTINGS));
         }
-        app.add_plugins((HudRulesPlugin, super::gauges::GaugePlugin))
+        app.add_plugins((HudRulesPlugin, super::gauges::GaugePlugin, super::records::RecordsPlugin))
             .add_systems(Startup, (spawn_hud_camera, spawn_hud))
             .add_systems(Update, render_hud);
     }
@@ -145,8 +145,9 @@ fn spawn_hud_camera(
     mut commands: Commands,
     settings: Option<Res<HudSettings>>,
     gauges: Option<Res<super::gauges::GaugeSettings>>,
+    records: Option<Res<super::records::RecordsSettings>>,
 ) {
-    if settings.is_none() && gauges.is_none() {
+    if settings.is_none() && gauges.is_none() && records.is_none() {
         return;
     }
     commands.spawn((
@@ -178,40 +179,17 @@ fn spawn_hud(
 }
 
 fn number_layout(font: &BitmapFont, text: &str, settings: &HudSettings) -> Vec<PositionedGlyph> {
-    // 8006B218/360/3F4: fixed digit cells, narrower cells on both sides
-    // of punctuation, glyph inset, and a right-aligned baseline.
-    let chars: Vec<_> = text.chars().collect();
-    let punctuation = |c: char| matches!(c, ':' | '.');
-    let steps: Vec<_> = chars
-        .iter()
-        .enumerate()
-        .map(|(i, &c)| {
-            if punctuation(c) || chars.get(i + 1).is_some_and(|&n| punctuation(n)) {
-                settings.punctuation_cell_px
-            } else {
-                settings.digit_cell_px
-            }
-        })
-        .collect();
-    let width: f32 = steps.iter().sum();
-    let mut x = -width - settings.number_origin_inset_px; // 8006B264: half the font's nominal cell.
-    chars
-        .into_iter()
-        .zip(steps)
-        .map(|(c, step)| {
-            let g = font.glyphs.get(&c).expect("clock glyph");
-            let placed = PositionedGlyph {
-                character: c,
-                rect: g.rect,
-                top_left_px: [
-                    x + g.bearing_px[0] + g.cell_inset_px + if c == '.' { settings.decimal_inset_px } else { 0.0 },
-                    g.bearing_px[1],
-                ],
-            };
-            x += step;
-            placed
-        })
-        .collect()
+    // Shared source routine 8006B3F4, also used by licence records.
+    font.layout_number(
+        text,
+        engine::bitmap_font::NumberCells {
+            digit_px: settings.digit_cell_px,
+            punctuation_px: settings.punctuation_cell_px,
+            decimal_inset_px: settings.decimal_inset_px,
+            origin_inset_px: settings.number_origin_inset_px,
+        },
+    )
+    .expect("clock glyphs")
 }
 
 /// Ordinary screen-pixel glyph placement, shared with the original-draw checks.

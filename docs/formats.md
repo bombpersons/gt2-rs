@@ -704,6 +704,12 @@ Other games/mods can supply their own image and metrics directly. A native
 font editor remains future work; RON and an image editor already author the
 format without any original-game data.
 
+`BitmapFont::layout_number` accepts `NumberCells` (digit, punctuation, decimal
+inset and origin-inset pixels) for right-aligned fixed cells and narrower
+spacing on both sides of `:`/`.`. The ordinary glyph bearings and cell insets
+still apply; missing characters return errors. The lap clock and licence
+records share this implementation.
+
 ## Driving-gauge content
 
 The game's `race/gauges.ron` deserializes to public `GaugeSettings`. It holds
@@ -717,3 +723,18 @@ An image editor and RON can author replacement artwork/layout without disc
 data. Mark one vehicle `GaugeSubject`; its engine, contact-motion and
 transmission components supply the displayed state. See the complete
 [gauge contract and evidence](gauge-evidence.md).
+
+## Licence definitions and record panels
+
+`race/licence.ron` is a public `LicenceDefinition`: an authored string id and
+four millisecond time limits. The records panel shows the first three in
+gold/silver/bronze order. `LicenceRecords.best` maps ids to `LicenceRecord`
+values (millisecond time and speed readout in hundredths of the selected
+display unit); a missing key means no record. `race/records.initial.ron`
+initializes this resource, independently from any later persistent save.
+
+`RecordsSettings` in `race/records-panel.ron` holds the font path, labels,
+pixel offsets, marker sizes/colours, underline gradient and numeric spacing.
+It uses the same native font and ordinary 2D sprites/meshes. New content can
+author all these files directly in RON with its own font. See the public
+[records API and evidence](records-evidence.md).

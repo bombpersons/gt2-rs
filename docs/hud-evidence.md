@@ -2,9 +2,10 @@
 
 The native B-1 scene now draws the original countdown digits, `START` banner,
 lap-clock label and running clock through ordinary Bevy sprites. This is a
-partial HUD: records, mirror, sounds, intro cameras,
+partial HUD: mirror, sounds, intro cameras,
 licence outcomes and retry flow remain unfinished.
 Speed, gear and tachometer are now covered by [driving-gauge evidence](gauge-evidence.md).
+Personal records and medal targets are covered by [records evidence](records-evidence.md).
 
 ## Sources and decoding
 

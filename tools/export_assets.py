@@ -549,6 +549,69 @@ def export_gauges(ram, pack, assets):
     (folder/'gauges.ron').write_text('// Generated locally from disc TIMs and gauge routines; do not commit.\n'+ron(settings)+'\n')
 
 
+def licence_definitions(ram):
+    """Decode the GTDT licence table and its local length-prefixed key strings."""
+    def u32(off):return struct.unpack_from('<I',ram,off)[0]
+    root=u32(0x92E6C)&0x1FFFFF
+    assert ram[root:root+4]==b'GTDT'
+    tables=struct.unpack_from('<H',ram,root+6)[0]
+    assert tables==64
+    pointer,stride,count=struct.unpack_from('<IHH',ram,root+0xF8)
+    pointer&=0x1FFFFF
+    assert stride==156 and count==60
+    strings=u32(root+0xF8+(tables//2)*8)&0x1FFFFF
+    n=struct.unpack_from('<H',ram,strings)[0];strings+=2;keys=[]
+    for _ in range(n):
+        length=ram[strings];keys.append(ram[strings+1:strings+1+length].decode('ascii'))
+        assert ram[strings+1+length]==0
+        strings+=length+2
+    definitions={}
+    for i in range(count):
+        row=pointer+i*stride;key=keys[struct.unpack_from('<H',ram,row)[0]]
+        limits=[]
+        for tier in range(4):
+            seconds,centis=ram[row+0x6C+tier*2:row+0x6E+tier*2]
+            minutes,seconds=divmod(seconds,100)
+            assert seconds<60 and centis<100
+            limits.append(minutes*60000+seconds*1000+centis*10)
+        assert sorted(limits)==limits and key not in definitions
+        definitions[key]=dict(id=key,time_limits_ms=tuple(limits))
+    return definitions
+
+
+def export_records(ram,assets):
+    def u32(off):return struct.unpack_from('<I',ram,off)[0]
+    def imm(off):
+        assert u32(off)>>26 in (9,10,13,15)
+        return struct.unpack('<h',struct.pack('<H',u32(off)&65535))[0]
+    def string(off):return ram[off:ram.index(0,off)].decode('ascii')
+    def rgb(hi,lo):
+        n=((u32(hi)&65535)<<16)|(u32(lo)&65535)
+        return (n&255,(n>>8)&255,(n>>16)&255)
+    current=0x1D585C
+    assert ram[current+10]==3,'licence records panel required'
+    key=string(current+16)
+    definition=licence_definitions(ram)[key]
+    best_offset=0x1C98E0+0x1418+ram[current+11]*1640+ram[current+12]*164+4
+    time=u32(best_offset)
+    best='{}' if time==0xFFFFFFFF else '{'+json.dumps(key)+': '+ron(dict(time_ms=time,speed_readout=struct.unpack_from('<H',ram,best_offset+16)[0]))+'}'
+    descriptor=0x2F8E0
+    gradient=tuple(tuple(ram[descriptor+8+i*4:descriptor+11+i*4]) for i in range(2))
+    settings=dict(font='race/fonts/small.ron',label=string(0x1C6C72),missing_time=string(0x91AAC),units=string(0x1C6C87),
+        origin_px=(float(imm(0x2E740)),float(imm(0x2E748))),label_offset_px=(0.0,float(imm(0x2D550))),
+        time_offset_px=(float(imm(0x2D094)),float(imm(0x2D430))),speed_offset_px=(0.0,float(imm(0x2D430)+imm(0x2D0F4))),
+        target_offsets_px=tuple((0.0,float(imm(off))) for off in [0x2D4C4,0x2D4F8,0x2D52C]),text_rgb=rgb(0x2D390,0x2D394),
+        underline_offset_px=(float(imm(0x2D574)),float(imm(0x2D584)-imm(0x2D550))),
+        underline_size_extra_px=(float(imm(0x2D57C)),float(struct.unpack_from('<h',ram,descriptor+6)[0])),underline_rgb=gradient,
+        marker_rgb=tuple(rgb(hi,lo) for hi,lo in [(0x2D4AC,0x2D4B0),(0x2D4E0,0x2D4E4),(0x2D514,0x2D518)]),
+        marker_offset_px=(float(imm(0x2D194)),float(imm(0x2D1B0))),marker_inner_px=float(imm(0x2D1B8)),marker_border_px=float(-imm(0x2D1D0)),
+        cells=dict(digit_px=float(imm(0x2D09C)),punctuation_px=float(imm(0x2D0A4)),decimal_inset_px=float(imm(0x2D0AC)),origin_inset_px=ram[0x93124+8]/2),
+        metadata_digit_px=float(ram[0x93124+8]+imm(0x2D100)),metadata_digit_inset_px=float(imm(0x2D0F8)-ram[0x93124+8]/2))
+    folder=assets/'race';folder.mkdir(parents=True,exist_ok=True)
+    for name,value in [('licence.ron',definition),('records-panel.ron',settings),('records.initial.ron',dict(best=RonVariant(best)))]:
+        (folder/name).write_text('// Generated locally from supplied checkpoint data; do not commit.\n'+ron(value)+'\n')
+
+
 def export_hud_fonts(ram, font, assets):
     """Decode ASCII glyphs/kerning (8007DC78/8007DD3C) and the raw font bitmap."""
     if len(font) != 65536 or len(ram) != 2*1024*1024:
@@ -660,6 +723,7 @@ def main():
     export_scene_setup(start_ram.read_bytes() if start_ram else None, assets)
     export_hud_fonts(ram.read_bytes(),files['racefont.dat'].read_bytes(),assets)
     export_gauges(ram.read_bytes(),files['game_status_files'].read_bytes(),assets)
+    export_records(ram.read_bytes(),assets)
     manifest = dict(disc=str(disc), ram_sha256=hashlib.sha256(ram.read_bytes()).hexdigest(),
                     race_font_sha256=hashlib.sha256(files['racefont.dat'].read_bytes()).hexdigest(),
                     gauge_pack_sha256=hashlib.sha256(files['game_status_files'].read_bytes()).hexdigest(),

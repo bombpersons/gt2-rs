@@ -2,8 +2,9 @@
 
 The B-1 HUD now renders speed, selected gear, units, tachometer dial, redline
 band and shaded needle from the native vehicle state. These use ordinary
-Bevy sprites and `Mesh2d` polygons. Records, mirror, boost gauges, sounds,
+Bevy sprites and `Mesh2d` polygons. Mirror, boost gauges, sounds,
 licence outcomes and retry flow remain unfinished.
+Personal records and medal targets are covered by [records evidence](records-evidence.md).
 
 ## Disc conversion
 
