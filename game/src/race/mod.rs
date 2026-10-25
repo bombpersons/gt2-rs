@@ -36,6 +36,7 @@ pub mod licence_results;
 pub mod licence_stop;
 pub mod records;
 pub mod replay;
+pub mod replay_recording;
 pub mod result_presentation;
 pub mod session;
 use camera::{CameraInput, CameraSettings, CameraSubject, PlayerCamera, VehicleCamera};
@@ -239,6 +240,11 @@ fn spawn_camera(world: &mut World) {
                 load_ron(path).unwrap_or_else(|error| panic!("replay inputs {path}: {error}"));
             let playback = replay::ReplayPlayback::new(clip).expect("valid replay input clip");
             world.entity_mut(subject).insert(playback);
+        } else if world.get::<licence_stop::LicenceParticipant>(subject).is_some()
+            && let Some(settings) = world.get_resource::<replay_recording::ReplayRecordingSettings>()
+        {
+            let recorder = replay_recording::ReplayRecorder::new(settings);
+            world.entity_mut(subject).insert(recorder);
         }
         subject
     } else {

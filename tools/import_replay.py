@@ -43,6 +43,11 @@ def decode(ram, offset=None):
         if total>ticks:raise ValueError('Replay packets exceed their recorded duration')
         # Keep original packet boundaries; native recording may coalesce them.
         runs.append(dict(ticks=count,controls=controls))
+    if total+1==ticks and length and length>=capacity-17 and struct.unpack_from('<i',ram,offset+8)[0]==0:
+        # A full flush closes recording AFTER the next input was counted.
+        # That unwritten input is the decoder's neutral terminal call.
+        neutral=dict(throttle=False,brake=False,handbrake=False,steering=0,reverse=False,shift=0)
+        runs.append(dict(ticks=1,controls=neutral));total+=1
     if total!=ticks:raise ValueError(f'Replay duration {total} differs from header {ticks}')
     return dict(runs=runs)
 

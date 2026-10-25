@@ -739,3 +739,58 @@ fn native_original_input_clip_drives_the_complete_licence_attempt() {
     client.screenshot(output.join("finished.png"));
     std::fs::write(output.join("result.json"), serde_json::to_vec_pretty(&actual).unwrap()).unwrap();
 }
+
+#[test]
+#[ignore = "requires original live recording corpus, exported assets and an offscreen GPU"]
+fn native_licence_attempt_records_its_own_replay_track() {
+    let output = std::env::temp_dir().join(format!("gt2-live-recording-{}", std::process::id()));
+    std::fs::create_dir_all(&output).unwrap();
+    println!("Recording evidence: {}", output.display());
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let cases: Value = serde_json::from_str(
+        &std::fs::read_to_string(root.join("tests/data/original/replay_recording/initial.json")).unwrap(),
+    )
+    .unwrap();
+    let case = cases.as_array().unwrap().iter().find(|c| c["name"] == "natural-gold").unwrap();
+    let rows = case["rows"].as_array().unwrap();
+    let buttons = |row: &Value| -> Vec<&str> {
+        [
+            ("throttle", "cross"),
+            ("brake", "square"),
+            ("handbrake", "circle"),
+            ("left", "left"),
+            ("right", "right"),
+            ("reverse", "triangle"),
+            ("shift_up", "r2"),
+            ("shift_down", "l2"),
+        ]
+        .into_iter()
+        .filter_map(|(key, button)| row["requests"][key].as_bool().unwrap().then_some(button))
+        .collect()
+    };
+    let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
+    command.env("BEVY_ASSET_ROOT", root);
+    let mut client = Client::launch(command, &output.join("game.log"));
+    let mut cursor = 0;
+    while cursor < 1250 {
+        let input = buttons(&rows[cursor]);
+        let end = (cursor + 1..1250).find(|&i| buttons(&rows[i]) != input).unwrap_or(1250);
+        client.call("game_step", json!({"frames":end-cursor,"buttons":input}));
+        cursor = end;
+    }
+    let actual=client.call("game_query",json!({"name":"CameraSubject","components":["ReplayRecorder","LicenceRun"]}))["structuredContent"].clone();
+    let components = &actual["entities"][0]["components"];
+    assert!(components["LicenceRun"]["Passed"].is_object(), "{actual}");
+    let recording = &components["ReplayRecorder"]["recording"];
+    let expected = rows.last().unwrap();
+    assert_eq!(recording["phase"], "Complete");
+    assert_eq!(recording["recorded_ticks"], expected["recorded_ticks"]);
+    assert_eq!(recording["storage_bytes"], expected["storage_bytes"]);
+    let clip: game::race::replay::ReplayClip = ron::from_str(
+        &std::fs::read_to_string(root.join("tests/data/original/replay_recording/natural-gold.ron")).unwrap(),
+    )
+    .unwrap();
+    assert_eq!(recording["clip"], serde_json::to_value(clip).unwrap());
+    client.screenshot(output.join("finished.png"));
+    std::fs::write(output.join("result.json"), serde_json::to_vec_pretty(&actual).unwrap()).unwrap();
+}

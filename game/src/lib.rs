@@ -48,6 +48,7 @@ impl PluginGroup for GamePlugins {
             .add(race::camera::CameraRulesPlugin)
             .add(race::session::SessionRulesPlugin)
             .add(race::replay::ReplayInputRulesPlugin)
+            .add(race::replay_recording::ReplayRecordingRulesPlugin)
             .add(race::licence::LicencePlugin)
             .add(race::licence_awards::LicenceAwardsPlugin)
             .add(race::licence_results::LicenceResultRulesPlugin)

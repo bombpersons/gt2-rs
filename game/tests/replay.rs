@@ -18,10 +18,21 @@ struct Case {
     rows: Vec<Row>,
 }
 fn original(name: &str) {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/data/original/replay_inputs");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(if name == "capacity-playback" {
+        "tests/data/original/replay_recording"
+    } else {
+        "tests/data/original/replay_inputs"
+    });
     let cases: Vec<Case> =
         serde_json::from_str(&std::fs::read_to_string(root.join(format!("{name}.json"))).unwrap()).unwrap();
-    assert_eq!(cases.len(), if name == "initial" { 10 } else { 2 });
+    assert_eq!(
+        cases.len(),
+        match name {
+            "initial" => 10,
+            "capacity-playback" => 3,
+            _ => 2,
+        }
+    );
     for case in cases {
         let imported: ReplayClip =
             ron::from_str(&std::fs::read_to_string(root.join(format!("{}.ron", case.name))).unwrap()).unwrap();
@@ -95,4 +106,10 @@ fn authored_replay_overrides_live_pad_then_emits_one_neutral_handoff() {
     app.run_tick(&[engine::controller::Button::Cross]);
     assert!(!app.world().get::<DigitalPedalInput>(car).unwrap().throttle);
     assert_eq!(app.world().resource::<Finished>().0, 1);
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original capacity recording round trips")]
+fn original_capacity_closed_recordings_preserve_the_neutral_terminal_call() {
+    original("capacity-playback");
 }

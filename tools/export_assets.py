@@ -686,6 +686,16 @@ def export_records(ram,assets):
     (folder/'licence-stop.ron').write_text('// Generated locally from selected licence setup; do not commit.\n'+ron(stop)+'\n')
 
 
+def export_replay_recording(ram, assets):
+    """Recording setup (80012EC0), storage reserve and licence end gate."""
+    def imm(off):return struct.unpack_from('<I',ram,off)[0]&65535
+    fields=imm(0x13D78)
+    assert fields%2==0
+    settings=dict(capacity_bytes=imm(0x12EC0),closing_reserve_bytes=65536-imm(0x166AC),post_finish_ticks=fields//2)
+    assets.mkdir(parents=True,exist_ok=True)
+    (assets/'replay-recording.ron').write_text('// Generated locally from original recording setup; do not commit.\n'+ron(settings)+'\n')
+
+
 def export_result_timing(ram, assets):
     """8002A780..87C: timings stay in ticks because the waits are exact."""
     def immediate(off):
@@ -862,6 +872,7 @@ def main():
     export_gauges(ram.read_bytes(),files['game_status_files'].read_bytes(),assets)
     export_records(ram.read_bytes(),assets)
     export_result_timing(ram.read_bytes(),assets/'race')
+    export_replay_recording(ram.read_bytes(),assets/'race')
     export_result_presentation(ram.read_bytes(),files['license_tim.tim'].read_bytes(),assets)
     manifest = dict(disc=str(disc), ram_sha256=hashlib.sha256(ram.read_bytes()).hexdigest(),
                     race_font_sha256=hashlib.sha256(files['racefont.dat'].read_bytes()).hexdigest(),

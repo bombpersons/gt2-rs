@@ -23,7 +23,8 @@ finalized flag, payload bounds, truncation and total duration; analog/special
 selectors are rejected explicitly because the native car's analog request
 producer is not ported. Digital output uses named pedal, steering, reverse and
 shift requests. Native clips can be authored or coalesced with `ReplayClip::record`.
-That authoring API does not claim the original bounded recording-buffer policy.
+The separate [automatic recorder](replay-recording-evidence.md) implements the
+original bounded storage and finalization policy for live digital attempts.
 
 The original decrements its saved duration **before** applying input. Its
 terminal call clears remaining hold state, marks completion and leaves the
@@ -103,8 +104,9 @@ using anything from the disc.
 
 This establishes input-track playback and its vehicle integration. Normal
 result confirmation still reaches `LicenceReplayRequested`; it does not yet
-reset the car or attach a recording from the just-completed attempt. Automatic
-live recording with the original capacity/overflow behavior, restart/reset,
-replay camera/HUD, pause/exit and the return event that commits awards remain.
+reset the car or attach a recording from the just-completed attempt. Analog
+input support, restart/reset, replay camera/HUD, pause/exit and the return
+event that commits awards remain. Live digital recording and the original
+capacity/overflow behavior are covered by the automatic recorder.
 Persistent replay files and saves are also unfinished. Nothing here applies
 awards at race finish or bypasses the original replay/return boundary.

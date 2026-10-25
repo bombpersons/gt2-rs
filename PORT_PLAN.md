@@ -269,10 +269,15 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
 
 ## Work order
 
+Automatic digital licence recording now matches original writer/finalizer
+state across natural attempts, capacity probes and long holds. Native B-1
+records its own matching track and storage count; cancelled recordings expose
+no playback clip. See [recording evidence](docs/replay-recording-evidence.md).
+
 Native recorded replay inputs now match 1,375 original decoder/normalizer
 calls, including complete B-1 playback and fresh schedules. Four retained car
 trajectories pass unchanged through that driver, and the actual binary drives
-the imported track to its original time and final position. Automatic recording,
+the imported track to its original time and final position. Analog recording,
 result-to-replay reset, replay views/menus and return remain. See
 [replay inputs](docs/replay-input-evidence.md).
 

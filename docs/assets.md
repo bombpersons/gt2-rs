@@ -52,6 +52,10 @@ course/model/paint files, then exports:
   `race/result-presentation.ron` supplies Finish/FAIL and prize animation/layout.
   Four prize-logo PNGs come from `/arcade/license_tim.tim`. See
   [result presentation](result-presentation-evidence.md);
+- `race/replay-recording.ron` supplies digital recording capacity, closing
+  reserve and the post-result cutoff. Ordinary live licence attempts record
+  automatically when these settings are available. See
+  [recording evidence](replay-recording-evidence.md);
 - Gauge atlas and `race/gauges.ron` from `/arcade/game_status_files.gz`
   and the original gauge tables: selected tachometer dial, speed and gear
   sprites, needle shapes, layout, colour and RPM settings. See

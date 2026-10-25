@@ -1,8 +1,13 @@
 # Evidence
 
+[Automatic digital replay recording](replay-recording-evidence.md) matches
+original storage, capacity, duration and finalization state, including natural
+success/failure and fresh holdouts. A full native B-1 attempt records the same
+track and storage count. Session reset and the replay/return front end remain.
+
 [Replay input tracks](replay-input-evidence.md) match 1,375 original decoder
 and normalizer calls. Four vehicle trajectories and a full native imported
-B-1 attempt verify the driver integration. Automatic live recording/reset and
+B-1 attempt verify the driver integration. Automatic session reset and
 the replay/return front end remain.
 
 [Licence result presentation](result-presentation-evidence.md) matches 946
