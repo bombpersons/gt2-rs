@@ -66,6 +66,8 @@ struct Tick {
     end: String,
     controls: Controls,
     #[serde(default)]
+    automatic_mode: u8,
+    #[serde(default)]
     session: Option<SessionSample>,
 }
 #[derive(Deserialize)]
@@ -79,6 +81,8 @@ struct Recording {
     alternate_locked_step: bool,
     #[serde(default)]
     session: Option<SessionSample>,
+    #[serde(default)]
+    initial_automatic_mode: u8,
 }
 fn engagement(raw: u8) -> EngineEngagement {
     match raw {
@@ -432,6 +436,9 @@ fn check_from(scenario: &str, exported: bool) {
     let recording: Recording =
         serde_json::from_str(&std::fs::read_to_string(root.join("recording.json")).unwrap()).unwrap();
     let mut app = headless_app(game::tick_rate(game::REGION));
+    if recording.initial_automatic_mode != 0 {
+        app.add_plugins(game::vehicle::automatic_stop::AutomaticStopRulesPlugin);
+    }
     app.add_plugins((
         VehicleRulesPlugin,
         WheelSlipRulesPlugin,
@@ -486,6 +493,17 @@ fn check_from(scenario: &str, exported: bool) {
         car
     };
     app.insert_resource(CarEntity(car));
+    if recording.initial_automatic_mode != 0 {
+        use game::vehicle::automatic_stop::*;
+        app.world_mut().entity_mut(car).insert(AutomaticStop {
+            phase: if recording.initial_automatic_mode == 7 {
+                AutomaticStopPhase::Parked
+            } else {
+                AutomaticStopPhase::Braking
+            },
+            ..default()
+        });
+    }
     if let Some(session) = &recording.session {
         assert_eq!(session.clock % 100, 0, "clock must start at a complete physics tick");
         let mut native = game::race::session::DrivingSession::countdown(session.countdown_fields);
@@ -498,6 +516,12 @@ fn check_from(scenario: &str, exported: bool) {
     }
     for (index, tick) in recording.ticks.iter().enumerate() {
         assert_eq!(tick.run_frame, index as u32 * 2);
+        let before = Original::load(&root.join(&tick.before));
+        assert_eq!(
+            app.world().get::<VehicleStepDuration>(car).unwrap().0,
+            f32::from(before.short(0x6FE)) / 65536.0,
+            "fixed physics duration at tick {index}"
+        );
         assert_eq!(tick.controls.flags, 0);
         *app.world_mut().get_mut::<DigitalPedalInput>(car).unwrap() = DigitalPedalInput {
             throttle: tick.controls.throttle != 0,
@@ -508,6 +532,11 @@ fn check_from(scenario: &str, exported: bool) {
             DigitalGearInput { reverse: tick.controls.reverse != 0, shift_direction: tick.controls.shift };
         app.world_mut().get_mut::<DigitalSteeringInput>(car).unwrap().direction = tick.controls.steering as f32;
         app.run_tick(&[]);
+        if recording.initial_automatic_mode != 0 {
+            let parked = app.world().get::<game::vehicle::automatic_stop::AutomaticStop>(car).unwrap().phase
+                == game::vehicle::automatic_stop::AutomaticStopPhase::Parked;
+            assert_eq!(parked, tick.automatic_mode == 7, "automatic phase tick {index}");
+        }
         if recording.session.is_some() {
             let session = app.world().resource::<game::race::session::DrivingSession>();
             let expected = tick.session.as_ref().expect("session boundary");
@@ -569,6 +598,19 @@ fn original_countdown_to_idle() {
 #[cfg_attr(not(gt2_private_data), ignore = "requires original long steering countdown recording")]
 fn original_standing_start_with_continuous_steering() {
     check_from("countdown-right-start", true);
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original automatic result braking recordings")]
+fn original_automatic_braking_after_success_and_failure() {
+    check("post-gold-gas");
+    check("post-overshoot-gas");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires fresh original automatic braking holdout")]
+fn original_fresh_automatic_braking_ignores_player_controls() {
+    check("post-fresh-stop-holdout");
 }
 
 #[test]

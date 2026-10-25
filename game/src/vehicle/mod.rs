@@ -17,6 +17,7 @@ use engine::shell::GameSystems;
 use serde::{Deserialize, Serialize};
 
 pub mod aerodynamics;
+pub mod automatic_stop;
 pub mod body_dynamics;
 pub mod brake_assist;
 pub mod braking;
@@ -64,6 +65,14 @@ pub const PEDAL_TUNING: &str = "vehicle/pedals.ron";
 /// Original 30 Hz physics duration, car+0x6FE = 2184 in 16.16 seconds.
 /// This differs slightly from 1/30 due to the original duration's precision.
 pub const PHYSICS_STEP_SECONDS: f32 = 2184.0 / 65536.0;
+
+/// 8003C398: sampled three-axis magnitude, largest absolute axis plus a
+/// floored quarter of the other two; preserves speed/settling thresholds.
+pub fn approximate_magnitude(value: Vec3) -> f64 {
+    let mut axes = value.to_array().map(|v| (f64::from(v.abs()) * 4096.0).round() as u32);
+    axes.sort_unstable();
+    f64::from(axes[2] + (axes[0] + axes[1]) / 4) / 4096.0
+}
 
 /// Effective digital requests at the physics boundary, after pad sampling.
 /// Multiple held pedals remain independent, as in `0x8002FB18`.
@@ -266,14 +275,20 @@ impl Plugin for VehicleRulesPlugin {
     }
 }
 
-fn read_player_gears(pad: Res<ControllerState>, mut players: Query<&mut DigitalGearInput, With<PlayerPedals>>) {
+fn read_player_gears(
+    pad: Res<ControllerState>,
+    mut players: Query<&mut DigitalGearInput, (With<PlayerPedals>, Without<automatic_stop::ExternalDriver>)>,
+) {
     for mut input in &mut players {
         input.reverse = pad.held(Button::Triangle);
         input.shift_direction = i8::from(pad.held(Button::R2)) - i8::from(pad.held(Button::L2));
     }
 }
 
-fn read_player_pedals(pad: Res<ControllerState>, mut players: Query<&mut DigitalPedalInput, With<PlayerPedals>>) {
+fn read_player_pedals(
+    pad: Res<ControllerState>,
+    mut players: Query<&mut DigitalPedalInput, (With<PlayerPedals>, Without<automatic_stop::ExternalDriver>)>,
+) {
     // Default pad mapping, verified by original CROSS / SQUARE / CIRCLE runs.
     // Physical key/gamepad rebinding remains at ControllerState's boundary.
     for mut input in &mut players {
@@ -285,15 +300,14 @@ fn read_player_pedals(pad: Res<ControllerState>, mut players: Query<&mut Digital
     }
 }
 
-fn advance_pedals(
-    tuning: Res<PedalTuning>,
-    mut pedals: Query<(
-        &DigitalPedalInput,
-        &mut PedalTravel,
-        Option<&transmission::TransmissionInput>,
-        Option<&DigitalGearInput>,
-    )>,
-) {
+type PedalCar = (
+    &'static DigitalPedalInput,
+    &'static mut PedalTravel,
+    Option<&'static transmission::TransmissionInput>,
+    Option<&'static DigitalGearInput>,
+);
+
+fn advance_pedals(tuning: Res<PedalTuning>, mut pedals: Query<PedalCar, Without<automatic_stop::ExternalDriver>>) {
     for (&input, mut travel, transmission, gears) in &mut pedals {
         // 8002FFD8..80030004: reverse raises the digital throttle only
         // when the first-gear countdown permits the reverse request.

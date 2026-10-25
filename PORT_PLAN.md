@@ -272,7 +272,10 @@ The B-1 stopping decision slice now matches 5,800 original calls and 22,616
 wheel projections. It latches completed times and overshoot/off-road failures,
 with the finished lap clock retained or hidden as appropriate. Course projection
 is shared engine machinery with authorable sampling. Result presentation,
-post-result driving, awards/attempts, retry/reset and saves remain. See
+awards/attempts, retry/reset and saves remain. Shared post-result braking and
+parking now match 510 retained original ticks plus 26 boundary probes, including
+a fresh 180-tick run on the updated core. The complete vehicle corpus covers
+1,330 original ticks. See [automatic stopping](docs/automatic-stop-evidence.md) and
 docs/licence-stop-evidence.md.
 
 1. Decode and import real course geometry, materials, textures, object

@@ -94,7 +94,10 @@ def main():
         out.mkdir(parents=True, exist_ok=True)
         (out/f'{name}.json').write_text(json.dumps(dict(rows=rows, command=command, report=str(run/'report.json'),
             state_sha256=hashlib.sha256(args.state.read_bytes()).hexdigest(),
-            psx_version=subprocess.check_output(['psx', '--version'], text=True).strip()), indent=2)+'\n')
+            # Re-exporting captures after a toolkit update must retain the
+            # build that executed them, rather than the currently installed CLI.
+            psx_version=f"psx {report['build']['version']}+{report['build']['id']}",
+            psx_build=report['build']), indent=2)+'\n')
         print(f'{name}: {len(rows)} original decisions, {sum(len(r["distances_m"]) for r in rows)} wheel projections', flush=True)
 
 

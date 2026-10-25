@@ -16,7 +16,7 @@ exports. The automated checks complement manual provenance review.
 
 Supply your own **Gran Turismo 2 (USA), Simulation Mode, Rev 2** disc dump and
 an NTSC-U PlayStation BIOS. Install Rust/Cargo and the `psx` toolkit locally
-(`psx` 0.3.2 or newer; tested with 0.3.8). The exporter downloads neither
+(`psx` 0.3.2 or newer; tested with 0.3.8 and 0.4.2). The exporter downloads neither
 media nor tools. Python uses only its standard library.
 
 From the project root:
@@ -59,6 +59,9 @@ course/model/paint files, then exports:
 - `race/licence-stop.ron` supplies the selected stopping zone in metres and
   its strict speed threshold. Course distances retain precise metre values
   and sampling steps for wheel-boundary decisions. See [stopping evidence](licence-stop-evidence.md);
+- `vehicle/automatic_stop.ron` supplies shared post-result steering slew,
+  linear/angular settling thresholds and automatic engagement bands. See
+  [automatic stopping evidence](automatic-stop-evidence.md);
 - Pedal, steering, engine, geometric/longitudinal wheel-slip, brake and
   brake-assistance and ordinary traction/stability tuning, axle tyre curves, low-speed force settings, and
   body/wheel mass, surface resistance, differential/wheel-rotation tuning,
@@ -95,6 +98,13 @@ hold expires; other modes and partial clock ticks are rejected. Omitting
 from that checkpoint and writes `session: None`. This replaces a prior scene
 selection too, so a reuse run cannot accidentally keep a stale countdown.
 Without `--checkpoint`, the full power-on replay always captures both states.
+
+`--psx /path/to/psx` selects a particular local toolkit build. With the 0.4
+core the exporter uses a longer menu replay, observes the first initialized
+countdown, and captures immediately before it advances. It rejects loading
+RAM with an uninitialized car. Older 0.3 builds retain their verified replay.
+Emulator save-state formats differ across these core versions; rebuild
+checkpoints from power-on instead of loading an incompatible old state.
 
 `--assets` selects another asset output folder; `--work` selects an
 intermediate folder. Project-local outputs are restricted to the ignored

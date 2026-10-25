@@ -7,11 +7,13 @@ The native game never emulates the original. All outputs are private, ignored by
 only, plus cargo and psx >=0.3.2. See docs/assets.md.
 """
 import argparse
+import csv
 import gzip
 import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import shutil
 import struct
 import subprocess
@@ -30,7 +32,13 @@ def run(command):
     subprocess.run(list(map(str, command)), cwd=ROOT, check=True)
 
 
-def capture(disc, bios, work):
+def capture(disc, bios, work, psx='psx'):
+    version = subprocess.check_output([psx, '--version'], text=True)
+    match = re.search(r'psx (\d+)\.(\d+)\.(\d+)', version)
+    if not match:
+        raise RuntimeError(f'Unrecognized toolkit version: {version}')
+    if tuple(map(int, match.groups())) >= (0, 4, 0):
+        return capture_current(disc, bios, work, psx)
     hops = [
         ('list', 3000, json.loads((ROOT / 'docs/checkpoints/poweron-to-b1-list.json').read_text()), None),
         ('menu', 1800, [{'frame': 10, 'buttons': ['CROSS'], 'until': 16}], 'list'),
@@ -41,7 +49,7 @@ def capture(disc, bios, work):
     ]
     for name, frames, replay, parent in hops:
         folder = work / name
-        command = ['psx', 'run', '--frames', frames, '--input', json.dumps(replay),
+        command = [psx, 'run', '--frames', frames, '--input', json.dumps(replay),
                    '--save-state', '--out', folder, '--summary']
         if bios:
             command += ['--bios', bios]
@@ -50,6 +58,49 @@ def capture(disc, bios, work):
         report = json.loads((folder / 'report.json').read_text())
         if report['status'] != 'complete' or report['frames']['reached'] != frames:
             raise RuntimeError(f'Incomplete original run: {folder}')
+    return work / 'driving/ram.bin', work / 'start/ram.bin'
+
+
+def capture_current(disc, bios, work, psx):
+    """The 0.4 core boots/loads at different field boundaries than 0.3.8.
+
+    Observe the initialized car and countdown rather than capturing black
+    loading RAM. Preserve the moving checkpoint's input offsets from the
+    first ready countdown field, independent of the loading duration.
+    """
+    def hop(name, frames, replay, parent=None, samples=()):
+        folder = work / name
+        command = [psx, 'run', '--frames', frames, '--input', json.dumps(replay),
+                   '--save-state', '--out', folder, '--summary']
+        if bios:
+            command += ['--bios', bios]
+        command += ['--from-state', work / parent / 'state.bin'] if parent else [disc]
+        for sample in samples:
+            command += ['--sample', sample]
+        run(command)
+        report = json.loads((folder / 'report.json').read_text())
+        if report['status'] != 'complete' or report['frames']['reached'] != frames:
+            raise RuntimeError(f'Incomplete original run: {folder}')
+        return folder
+
+    replay = json.loads((ROOT / 'docs/checkpoints/poweron-to-b1-list-current.json').read_text())
+    hop('list', 4800, replay)
+    confirm = [dict(frame=10, buttons=['CROSS'], until=22)]
+    hop('menu', 1800, confirm, 'list')
+    hop('transmission', 1500, confirm, 'menu')
+    probe = hop('start-probe', 900, confirm, 'transmission', (
+        '800A9520:u16:countdown', '800A9A26:u8:engine_source', '800A9DB2:i16:duration'))
+    rows = list(csv.DictReader((probe / 'samples.csv').open()))
+    first_running = next((i for i, row in enumerate(rows) if 0 < int(row['countdown']) < 120), None)
+    if first_running is None or first_running == 0:
+        raise RuntimeError('B-1 never reached its live countdown; inspect start-probe/screen.png')
+    ready = rows[first_running - 1]
+    if int(ready['countdown']) != 120 or int(ready['engine_source']) != 5 or int(ready['duration']) <= 0:
+        raise RuntimeError(f'B-1 car not initialized before countdown: {ready}')
+    start_frame = int(ready['run_frame'])
+    hop('start', start_frame, confirm, 'transmission')
+    hop('driving', start_frame + 950,
+        confirm + [dict(frame=start_frame + 150, buttons=['CROSS'])], 'transmission')
     return work / 'driving/ram.bin', work / 'start/ram.bin'
 
 
@@ -127,6 +178,11 @@ def export_tuning(ram_path, assets):
         extended_limit_turns=car(0x3A) / 4096, inner_wheel_ratio=car(0x64) / 4096,
         outer_wheel_ratio=car(0x66) / 4096, toe_turns=(car(0x36C) / 4096, car(0x36E) / 4096),
         speed_curve=curve(0x3C, 'speed_kph', 'angle_turns', 128, 'h')))
+    write('vehicle/automatic_stop.ron', dict(
+        steering_rate_turns_per_second=car(0x62)/4096,
+        settled_linear_mps=immediate(0x3775C,0x2A10)/4096,
+        settled_angular_turns_per_second=immediate(0x37768,0x2843)/4096,
+        reengage_above_rpm=float(car(0x396,'H')*3//4),disengage_below_rpm=float(car(0x10A,'H'))))
     write('vehicle/engine.ron', dict(
         drag_per_rev_s=car(0x10C, 'i'), redline_rpm=car(0x108, 'H'), idle_rpm=car(0x10A, 'H'),
         fuel_cut_hysteresis_rpm=65536 - immediate(0x3538C, 0x2442),
@@ -687,6 +743,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('disc', type=Path, help='USA Simulation Mode Rev 2 .cue/.bin/.iso')
     parser.add_argument('--bios', type=Path, help='User-supplied NTSC-U BIOS; otherwise psx local discovery')
+    parser.add_argument('--psx', default='psx', help='Toolkit executable used for capture and provenance')
     parser.add_argument('--checkpoint', type=Path, help='Reuse a B-1 ram.bin instead of replaying the original')
     parser.add_argument('--start-checkpoint', type=Path, help='Use this countdown ram.bin for scene startup when reusing --checkpoint')
     parser.add_argument('--assets', type=Path, default=ROOT / 'game/assets')
@@ -695,7 +752,7 @@ def main():
     if args.start_checkpoint and not args.checkpoint:
         parser.error('--start-checkpoint requires --checkpoint; a full replay captures both states automatically')
     disc, assets, work = args.disc.resolve(strict=True), args.assets.resolve(), args.work.resolve()
-    if not shutil.which('cargo') or not shutil.which('psx'):
+    if not shutil.which('cargo') or not shutil.which(args.psx):
         parser.error('cargo and psx must be installed locally; this script downloads neither')
     # Reject alternate paths that would bypass the source-only Git exclusions.
     for folder in [assets, work]:
@@ -708,7 +765,7 @@ def main():
         ram = args.checkpoint.resolve(strict=True)
         start_ram = args.start_checkpoint.resolve(strict=True) if args.start_checkpoint else None
     else:
-        ram, start_ram = capture(disc, args.bios.resolve(strict=True) if args.bios else None, work)
+        ram, start_ram = capture(disc, args.bios.resolve(strict=True) if args.bios else None, work, args.psx)
     files = {}
     for name, source in [('course.tro', '/crsobj/TC_lisence.tro.gz'), ('course.trp', '/crsobj/TC_lisence.trp.gz'),
                          ('t2vzn.cdo', '/carobj/t2vzn.cdo.gz'), ('t2vzn.cdp', '/carobj/t2vzn.cdp.gz'),
@@ -733,7 +790,7 @@ def main():
                     gauge_pack_sha256=hashlib.sha256(files['game_status_files'].read_bytes()).hexdigest(),
                     start_ram_sha256=hashlib.sha256(start_ram.read_bytes()).hexdigest() if start_ram else None,
                     startup='countdown' if start_ram else 'free-driving checkpoint',
-                    psx_version=subprocess.check_output(['psx', '--version'], text=True).strip(),
+                    psx_version=subprocess.check_output([args.psx, '--version'], text=True).strip(),
                     scope='Current B-1 runtime assets; unused text, audio and all-game content are not needed yet',
                     files=[dict(path=str(p.relative_to(assets)), sha256=hashlib.sha256(p.read_bytes()).hexdigest())
                            for p in sorted(assets.rglob('*')) if p.is_file() and p.name != 'export-manifest.json'])

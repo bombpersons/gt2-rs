@@ -69,7 +69,7 @@ fn licence_drive_case(name: &str) {
             }
             let actual = client.call(
                 "game_query",
-                json!({"name":"CameraSubject","components":["LicenceRun","LicenceStopInput","VehiclePose","RoadContactState"],"resources":["HudDisplay"]}),
+                json!({"name":"CameraSubject","components":["LicenceRun","LicenceStopInput","VehiclePose","RoadContactState","AutomaticStop","PedalTravel"],"resources":["HudDisplay"]}),
             )["structuredContent"]
                 .clone();
             let run = &actual["entities"][0]["components"]["LicenceRun"];
@@ -84,6 +84,19 @@ fn licence_drive_case(name: &str) {
                 }
             }
             assert_eq!(*run, expected(&rows[checkpoint - 1]["after"]), "{name} tick {checkpoint}: {actual}");
+            if name != "offroad" {
+                let at = &actual["entities"][0]["components"]["VehiclePose"]["position_m"];
+                let before = &rows[checkpoint - 1]["pose_m"];
+                for axis in 0..3 {
+                    assert!(
+                        (at[axis].as_f64().unwrap() - before[axis].as_f64().unwrap()).abs() < 0.0001,
+                        "{name} pose tick {checkpoint} expected {before}: {actual}"
+                    );
+                }
+            }
+            if *run != json!("Active") {
+                assert!(actual["entities"][0]["components"]["AutomaticStop"].is_object());
+            }
             if let Some(passed) = run.get("Passed") {
                 assert_eq!(
                     actual["resources"]["HudDisplay"]["clock"],

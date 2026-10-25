@@ -21,6 +21,9 @@ PREFIX = re.compile(r'^(\d+) (\d+) ([0-9a-f]{8}) ')
 SCENARIOS = {
     'right-start': [dict(frame=0, buttons=['CROSS','RIGHT'])],
     'gas': [dict(frame=0, buttons=['CROSS'])],
+    'stop-holdout': [dict(frame=0, buttons=['CROSS','LEFT','TRIANGLE','R2']),
+                     dict(frame=40, buttons=['CROSS','CIRCLE','RIGHT','L2']),
+                     dict(frame=100, buttons=['CROSS','SQUARE']), dict(frame=160, buttons=['CROSS','LEFT'])],
     'brake': [dict(frame=0, buttons=['SQUARE'])],
     'coast': [dict(frame=0, buttons=[])],
     'holdout': [dict(frame=0, buttons=['CROSS','LEFT']), dict(frame=8, buttons=['CROSS','RIGHT']),
@@ -53,7 +56,7 @@ def export(run, target, frames, initial):
         if not m: continue
         absolute, cycle, pc = m.groups()
         frame, cycle, pc = int(absolute)-start, int(cycle), int(pc,16)
-        if pc not in PHASES and pc not in (0x8003E2C8,0x8003EC88): continue
+        if pc not in PHASES and pc not in (0x8003E2C8,0x8003EC88,0x8003E310): continue
         while pending and pending['cycle'] <= cycle:
             p, size = pending['address'] & 0x1FFFFF, pending['width']
             ram[p:p+size] = pending['value'].to_bytes(size,'little')
@@ -62,6 +65,11 @@ def export(run, target, frames, initial):
                     initialized_controls.add(p+off-0x1FF750)
             pending = next(writes, None)
         tick = ticks.setdefault(frame,{})
+        if pc==0x8003E310:
+            tick['automatic_mode']=ram[(BASE&0x1FFFFF)+0x786]
+            if tick['automatic_mode'] in (5,6,7):
+                tick['controls']=dict(flags=0,steering=0,throttle=0,brake=0,handbrake=0,reverse=0,shift=0)
+            continue
         if pc == 0x8003EC88:
             tick['session'] = dict(countdown_fields=struct.unpack_from('<H',ram,0xA9520)[0],
                                    clock=struct.unpack_from('<I',ram,0x46F64)[0])
@@ -82,7 +90,7 @@ def export(run, target, frames, initial):
         (target/name).write_bytes(data)
         tick[phase] = name
     assert sorted(ticks) == list(range(0,frames,2))
-    for tick in ticks.values(): assert set(tick) == set(PHASES.values()) | {'controls','session'}
+    for tick in ticks.values(): assert set(tick) == set(PHASES.values()) | {'controls','session','automatic_mode'}
     result = []
     for frame,tick in sorted(ticks.items()):
         assert tick['controls']['flags'] == 0
@@ -92,6 +100,7 @@ def export(run, target, frames, initial):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
+    p.add_argument('--psx', default='psx', help='Toolkit executable used for capture and provenance')
     p.add_argument('--state',type=Path,default=Path('.psx/runs/b1-state1200/state.bin'))
     p.add_argument('--scenario',choices=SCENARIOS,action='append')
     p.add_argument('--frames',type=int,default=60)
@@ -110,18 +119,33 @@ def main():
         out=Path('game/tests/data/original/vehicle_loop')/name
         out.mkdir(parents=True,exist_ok=True)
         run=Path('.psx/runs')/f'vehicle-loop-{name}'
-        command=['psx','run','--from-state',str(args.state),'--frames',str(args.frames),
+        command=[args.psx,'run','--from-state',str(args.state),'--frames',str(args.frames),
                  '--input',json.dumps(SCENARIOS[scenario]),'--trace','--trace-range','8003EC24-8003EC78',
                  '--trace-range','8003E2C8-8003E2CC','--trace-range','8003EC88-8003EC8C',
+                 '--trace-range','8003E310-8003E314',
                  '--watch',f'{BASE:08X}:{SIZE}','--watch','801FF750:12','--watch-reads','801FF750:12',
                  '--watch','800A9520:2','--watch','80046F64:4',
                  '--max-events','2000000','--out',str(run),'--summary']
-        subprocess.run(command,check=True,capture_output=True,text=True)
+        completed = subprocess.run(command,capture_output=True,text=True)
+        if completed.returncode:
+            raise RuntimeError(completed.stderr or completed.stdout)
         ticks=export(run,out,args.frames,initial)
+        if initial[(BASE&0x1FFFFF)+0x786] in (5,6,7):
+            for tick in ticks:
+                buttons = []
+                for event in SCENARIOS[scenario]:
+                    if event['frame'] <= tick['run_frame']:
+                        buttons = event['buttons']
+                # Native tests supply the physical requests too, proving the
+                # automatic driver actually ignores conflicting player input.
+                tick['controls'] = dict(flags=0,steering=int('LEFT' in buttons)-int('RIGHT' in buttons),
+                    throttle=int('CROSS' in buttons),brake=int('SQUARE' in buttons),handbrake=int('CIRCLE' in buttons),
+                    reverse=int('TRIANGLE' in buttons),shift=int('R2' in buttons)-int('L2' in buttons))
         metadata=dict(ticks=ticks,command=command,report=str(run/'report.json'),
+                      initial_automatic_mode=initial[(BASE&0x1FFFFF)+0x786],
                       state_sha256=hashlib.sha256(args.state.read_bytes()).hexdigest(),
                       ram_sha256=hashlib.sha256(initial).hexdigest(),
-                      psx_version=subprocess.check_output(['psx','--version'],text=True).strip(),
+                      psx_version=subprocess.check_output([args.psx,'--version'],text=True).strip(),
                       alternate_locked_step=initial[0x1D5866]==3,
                       scope='Natural complete ticks; native tests may initialize state only once')
         if args.session:

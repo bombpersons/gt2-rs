@@ -2,8 +2,9 @@
 
 The native B-1 car now latches a completed stopping test or an overshoot /
 off-road failure. Its lap clock retains the completed time or clears on
-failure. Awards, result artwork, automatic post-result driving and retry are
-still separate work; this does not yet complete the licence route.
+failure. Shared [automatic post-result braking](automatic-stop-evidence.md)
+now continues through parking. Awards, result artwork and retry remain
+separate work; this does not yet complete the licence route.
 
 ## Original decision boundary
 

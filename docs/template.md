@@ -16,8 +16,8 @@ drop the row if the template now does it), then delete the `.psx-new`.
 ## Current version
 
 The workspace is now on the installed `0.4.2+src-4c4c84345897a7b9-release`.
-This continuation
-preserved the earlier in-progress 0.4.0 template/editor migration, then applied
+This continuation preserved the earlier in-progress 0.4.0 template/editor
+migration, then applied
 the current update: two vendor Cargo metadata changes, no owned-file
 conflicts. Cargo resolved the editor's HTTP/MCP dependencies into the project
 lockfile; the seeded generic lockfile was not copied over the game's lockfile.
@@ -33,10 +33,19 @@ removes the old runtime raw TIM/TMD/model-viewer paths and updates vendored
 offline parsers. GT2's game still reads converted native assets through its
 existing importer. No new local edits were made to template or vendor source.
 
-Workspace tests, formatting and both public-source audits pass. Clippy's
-remaining suggestion is the existing nested condition in
-`game/tests/wheel_rotation.rs`. The editor's stdio and HTTP/MCP tests pass;
-its offscreen UI/MCP verification is recorded under `.psx/`.
+The current core cannot load the old format-9 emulator checkpoints. Fresh
+recordings use a new power-on route; the exporter accepts `--psx` and detects
+the live initialized countdown on the 0.4 core. Old reference RAM/trajectory
+fixtures remain usable by native tests. The new countdown car state matches
+the earlier reference exactly. See [automatic stopping evidence](automatic-stop-evidence.md).
+
+Validation for this update includes the workspace tests, all 26 stopping
+boundary probes and 510 post-result physics ticks. Logs and captures remain
+under `.psx/`; current gameplay evidence is indexed in [evidence.md](evidence.md).
+All five real-binary licence checks pass, and the gold/overshoot frames were
+inspected. The editor's offscreen UI/MCP test also passes, and its screenshot
+was inspected. Formatting and both public-source audits pass. Clippy's remaining
+suggestion is the existing nested condition in `game/tests/wheel_rotation.rs`.
 
 ## Previous 0.3.8 migration
 

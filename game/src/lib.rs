@@ -51,6 +51,7 @@ impl PluginGroup for GamePlugins {
             .add(race::RacePlugin)
             .add(race::hud::HudPlugin)
             .add(vehicle::VehicleRulesPlugin)
+            .add(vehicle::automatic_stop::AutomaticStopRulesPlugin)
             .add(vehicle::aerodynamics::AerodynamicsRulesPlugin)
             .add(vehicle::engine_torque::EngineTorqueRulesPlugin)
             .add(vehicle::slip::WheelSlipRulesPlugin)

@@ -460,7 +460,7 @@ struct DriverEngagementCar {
 fn driver_engagement(
     engine: Res<EngineTorqueTuning>,
     drive: Res<DrivetrainTuning>,
-    mut cars: Query<DriverEngagementCar, With<DigitalGearInput>>,
+    mut cars: Query<DriverEngagementCar, (With<DigitalGearInput>, Without<super::automatic_stop::ExternalDriver>)>,
 ) {
     for mut car in &mut cars {
         let setup = car.setup.map_or(&*drive, |s| &s.0);

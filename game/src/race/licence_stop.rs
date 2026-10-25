@@ -84,9 +84,7 @@ impl LicenceStopSettings {
         }
         // 8003C398: largest absolute axis plus a floored quarter of the other
         // two. This is an approximate speed, rather than a Euclidean norm.
-        let mut axes = input.velocity_mps.to_array().map(|v| (f64::from(v.abs()) * 4096.0).round() as u32);
-        axes.sort_unstable();
-        let speed = axes[2] + (axes[0] + axes[1]) / 4;
+        let speed = (crate::vehicle::approximate_magnitude(input.velocity_mps) * 4096.0).round() as u32;
         let threshold = (f64::from(self.stop_speed_mps) * 4096.0).round() as u32;
         if speed >= threshold {
             return;
@@ -168,12 +166,26 @@ fn derive_vehicle_inputs(
 fn decide(
     settings: Option<Res<LicenceStopSettings>>,
     session: Option<Res<DrivingSession>>,
-    mut cars: Query<(&LicenceStopInput, &mut LicenceRun)>,
+    mut cars: Query<(
+        Entity,
+        &LicenceStopInput,
+        &mut LicenceRun,
+        Option<&crate::vehicle::automatic_stop::AutomaticStopSetup>,
+    )>,
+    stop_tuning: Option<Res<crate::vehicle::automatic_stop::AutomaticStopTuning>>,
+    mut commands: Commands,
 ) {
     let (Some(settings), Some(session)) = (settings, session) else {
         return;
     };
-    for (input, mut run) in &mut cars {
+    for (entity, input, mut run, stop_setup) in &mut cars {
+        let active = *run == LicenceRun::Active;
         settings.decide(input, session.elapsed_ticks, &mut run);
+        if active && *run != LicenceRun::Active && (stop_tuning.is_some() || stop_setup.is_some()) {
+            // Failed runs use the zero target directly (80037878). A valid
+            // ordinary stop is below the AI's +/-2276 speed band, which also
+            // selects zero (80037AB4..7B94), then shares the braking routine.
+            commands.entity(entity).insert(crate::vehicle::automatic_stop::AutomaticStop::default());
+        }
     }
 }

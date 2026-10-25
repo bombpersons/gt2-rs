@@ -1,9 +1,15 @@
 # Evidence
 
+[Automatic post-result braking](automatic-stop-evidence.md) matches 510
+retained original physics ticks and 26 boundary probes, including a fresh
+180-tick capture on the updated core. Player controls relinquish ownership;
+steering, full braking, automatic engagement and parking feed the existing
+vehicle loop. Result presentation, awards, retry and saves remain open.
+
 [B-1 stopping decisions](licence-stop-evidence.md) match 5,800 original calls
 and 22,616 wheel projections, including an independent later braking run.
 Native outcome state latches the finish time or overshoot/off-road failure.
-Result presentation, automatic post-result driving, awards and retry remain open.
+Result presentation, awards and retry remain open; automatic braking is covered above.
 
 [Records and medal targets](records-evidence.md) now match 21 original
 saved-time frames and all 60 original licence target rows. Native definitions

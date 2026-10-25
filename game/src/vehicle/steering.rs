@@ -196,7 +196,7 @@ fn angle_grid(value: f64) -> f32 {
 
 pub(super) fn read_player_steering(
     pad: Res<ControllerState>,
-    mut players: Query<&mut DigitalSteeringInput, With<PlayerPedals>>,
+    mut players: Query<&mut DigitalSteeringInput, (With<PlayerPedals>, Without<super::automatic_stop::ExternalDriver>)>,
 ) {
     for mut input in &mut players {
         input.direction = f32::from(u8::from(pad.held(Button::Left))) - f32::from(u8::from(pad.held(Button::Right)));
@@ -205,7 +205,10 @@ pub(super) fn read_player_steering(
 
 pub(super) fn advance_steering(
     tuning: Res<SteeringTuning>,
-    mut steering: Query<(&DigitalSteeringInput, &SteeringKinematics, &mut SteeringResponse)>,
+    mut steering: Query<
+        (&DigitalSteeringInput, &SteeringKinematics, &mut SteeringResponse),
+        Without<super::automatic_stop::ExternalDriver>,
+    >,
 ) {
     for (&input, &state, mut response) in &mut steering {
         response.advance(input, &tuning, state);
