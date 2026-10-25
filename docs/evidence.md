@@ -1,5 +1,10 @@
 # Evidence
 
+[Replay input tracks](replay-input-evidence.md) match 1,375 original decoder
+and normalizer calls. Four vehicle trajectories and a full native imported
+B-1 attempt verify the driver integration. Automatic live recording/reset and
+the replay/return front end remain.
+
 [Licence result presentation](result-presentation-evidence.md) matches 946
 original glyph draws across 37 cases, animated logo geometry/tints and
 background darkening. Native gold-prize and failure screens also pass source

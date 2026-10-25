@@ -269,6 +269,13 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
 
 ## Work order
 
+Native recorded replay inputs now match 1,375 original decoder/normalizer
+calls, including complete B-1 playback and fresh schedules. Four retained car
+trajectories pass unchanged through that driver, and the actual binary drives
+the imported track to its original time and final position. Automatic recording,
+result-to-replay reset, replay views/menus and return remain. See
+[replay inputs](docs/replay-input-evidence.md).
+
 Licence Finish/FAIL, time/prize labels, animated logos and result darkening
 now match 946 original glyph draws and their associated logo/quad draws
 across 37 cases, including fresh and natural-wait captures. Native gold/failure

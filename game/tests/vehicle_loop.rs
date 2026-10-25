@@ -432,6 +432,9 @@ fn check(scenario: &str) {
     check_from(scenario, false);
 }
 fn check_from(scenario: &str, exported: bool) {
+    check_with_replay(scenario, exported, false);
+}
+fn check_with_replay(scenario: &str, exported: bool, replay: bool) {
     let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/data/original/vehicle_loop").join(scenario);
     let recording: Recording =
         serde_json::from_str(&std::fs::read_to_string(root.join("recording.json")).unwrap()).unwrap();
@@ -514,6 +517,27 @@ fn check_from(scenario: &str, exported: bool) {
         app.add_plugins(game::race::session::SessionRulesPlugin);
         app.world_mut().entity_mut(car).insert(game::race::session::SessionParticipant);
     }
+    if replay {
+        use game::race::replay::*;
+        let mut clip = ReplayClip::default();
+        for tick in &recording.ticks {
+            let c = &tick.controls;
+            clip.record(ReplayControls {
+                throttle: c.throttle != 0,
+                brake: c.brake != 0,
+                handbrake: c.handbrake != 0,
+                steering: c.steering.signum() as i8,
+                reverse: c.reverse != 0,
+                shift: c.shift,
+            })
+            .unwrap();
+        }
+        // Keep this trajectory's last input before the original's neutral
+        // terminal call; that boundary is checked against the decoder corpus.
+        clip.record(ReplayControls::default()).unwrap();
+        app.add_plugins(ReplayInputRulesPlugin);
+        app.world_mut().entity_mut(car).insert((PlayerPedals, ReplayPlayback::new(clip).unwrap()));
+    }
     for (index, tick) in recording.ticks.iter().enumerate() {
         assert_eq!(tick.run_frame, index as u32 * 2);
         let before = Original::load(&root.join(&tick.before));
@@ -523,15 +547,26 @@ fn check_from(scenario: &str, exported: bool) {
             "fixed physics duration at tick {index}"
         );
         assert_eq!(tick.controls.flags, 0);
-        *app.world_mut().get_mut::<DigitalPedalInput>(car).unwrap() = DigitalPedalInput {
-            throttle: tick.controls.throttle != 0,
-            brake: tick.controls.brake != 0,
-            handbrake: tick.controls.handbrake != 0,
-        };
-        *app.world_mut().get_mut::<DigitalGearInput>(car).unwrap() =
-            DigitalGearInput { reverse: tick.controls.reverse != 0, shift_direction: tick.controls.shift };
-        app.world_mut().get_mut::<DigitalSteeringInput>(car).unwrap().direction = tick.controls.steering as f32;
-        app.run_tick(&[]);
+        if !replay {
+            *app.world_mut().get_mut::<DigitalPedalInput>(car).unwrap() = DigitalPedalInput {
+                throttle: tick.controls.throttle != 0,
+                brake: tick.controls.brake != 0,
+                handbrake: tick.controls.handbrake != 0,
+            };
+            *app.world_mut().get_mut::<DigitalGearInput>(car).unwrap() =
+                DigitalGearInput { reverse: tick.controls.reverse != 0, shift_direction: tick.controls.shift };
+            app.world_mut().get_mut::<DigitalSteeringInput>(car).unwrap().direction = tick.controls.steering as f32;
+        }
+        // In replay mode live pad requests conflict with the recorded track.
+        app.run_tick(if replay {
+            &[
+                engine::controller::Button::Cross,
+                engine::controller::Button::Right,
+                engine::controller::Button::Triangle,
+            ]
+        } else {
+            &[]
+        });
         if recording.initial_automatic_mode != 0 {
             let parked = app.world().get::<game::vehicle::automatic_stop::AutomaticStop>(car).unwrap().phase
                 == game::vehicle::automatic_stop::AutomaticStopPhase::Parked;
@@ -670,4 +705,12 @@ fn original_manual_shift_requests_from_idle() {
 #[cfg_attr(not(gt2_private_data), ignore = "requires fresh original B-1 launch holdout")]
 fn fresh_original_brake_rev_reverse_and_turn_launch_holdout() {
     check("standing-launch-holdout");
+}
+
+#[test]
+#[cfg_attr(not(gt2_private_data), ignore = "requires original retained vehicle trajectories")]
+fn recorded_native_inputs_drive_the_unchanged_vehicle_solver() {
+    for scenario in ["holdout", "standing-launch-holdout", "manual-shifts", "countdown-gas"] {
+        check_with_replay(scenario, false, true);
+    }
 }

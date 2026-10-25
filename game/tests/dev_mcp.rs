@@ -688,3 +688,54 @@ fn replay_start(client: &mut Client, fixtures: &std::path::Path, output: &std::p
     client.call("game_step", json!({"frames":1,"buttons":["r1"]}));
     client.screenshot(output.join("after-launch.png"));
 }
+
+#[test]
+#[ignore = "requires exported assets, original input recording and an offscreen GPU"]
+fn native_original_input_clip_drives_the_complete_licence_attempt() {
+    let output = std::env::temp_dir().join(format!("gt2-replay-inputs-{}", std::process::id()));
+    std::fs::create_dir_all(&output).unwrap();
+    println!("Replay input evidence: {}", output.display());
+    let game_root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let asset_root = output.join("source");
+    copy_assets(&game_root.join("assets"), &asset_root.join("assets"));
+    let mut setup: game::race::RaceVehicle =
+        ron::from_str(&std::fs::read_to_string(game_root.join("assets").join(game::race::RACE_VEHICLE_ASSET)).unwrap())
+            .unwrap();
+    setup.replay_inputs = Some("race/replay-inputs.ron".into());
+    std::fs::write(asset_root.join("assets").join(game::race::RACE_VEHICLE_ASSET), ron::to_string(&setup).unwrap())
+        .unwrap();
+    std::fs::copy(
+        game_root.join("tests/data/original/replay_inputs/natural-recording.ron"),
+        asset_root.join("assets/race/replay-inputs.ron"),
+    )
+    .unwrap();
+    let mut command = Command::new(env!(concat!("CARGO_BIN_EXE_", env!("CARGO_PKG_NAME"))));
+    command.env("BEVY_ASSET_ROOT", &asset_root);
+    let mut client = Client::launch(command, &output.join("game.log"));
+    client.call("game_step", json!({"frames":1250,"buttons":["square","left","triangle","l2"]}));
+    let actual = client
+        .call("game_query", json!({"name":"CameraSubject","components":["VehiclePose","LicenceRun","ReplayPlayback"]}))
+        ["structuredContent"]
+        .clone();
+    let source: Value = serde_json::from_str(
+        &std::fs::read_to_string(game_root.join("tests/data/original/replay_inputs/initial.json")).unwrap(),
+    )
+    .unwrap();
+    let row =
+        &source.as_array().unwrap().iter().find(|case| case["name"] == "natural-recording").unwrap()["source_outcome"];
+    let components = &actual["entities"][0]["components"];
+    assert_eq!(components["LicenceRun"]["Passed"]["time_ms"], row["time_ms"]);
+    for axis in 0..3 {
+        assert!(
+            (components["VehiclePose"]["position_m"][axis].as_f64().unwrap()
+                - row["position_m"][axis].as_f64().unwrap())
+            .abs()
+                < 0.0001,
+            "{actual}"
+        );
+    }
+    assert_eq!(components["ReplayPlayback"]["elapsed_ticks"], 1247);
+    assert_eq!(components["ReplayPlayback"]["finished"], true);
+    client.screenshot(output.join("finished.png"));
+    std::fs::write(output.join("result.json"), serde_json::to_vec_pretty(&actual).unwrap()).unwrap();
+}

@@ -83,6 +83,12 @@ course/model/paint files, then exports:
   road-height plane-fit dimensions, procedural
   surface-bump settings and shared direction-curve thresholds.
 
+Recorded digital driver tracks can separately be converted with
+`tools/import_replay.py --ram /path/to/ram.bin --out game/assets/race/replay-inputs.ron`.
+Optional `replay_inputs: Some("race/replay-inputs.ron")` in `race/vehicle.ron`
+drives that scene from the native track; its initial vehicle/session boundary
+must match the recording. See [replay inputs](replay-input-evidence.md).
+
 The game reads native RON/PNG files from `game/assets/` and does not use an
 emulator at runtime. The exporter's intermediate files and checkpoints stay
 under `.psx/asset-export/`. `game/assets/export-manifest.json` records hashes

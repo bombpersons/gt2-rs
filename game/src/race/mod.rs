@@ -35,6 +35,7 @@ pub mod licence_awards;
 pub mod licence_results;
 pub mod licence_stop;
 pub mod records;
+pub mod replay;
 pub mod result_presentation;
 pub mod session;
 use camera::{CameraInput, CameraSettings, CameraSubject, PlayerCamera, VehicleCamera};
@@ -78,12 +79,18 @@ pub struct RaceVehicle {
     pub initial_state: Option<String>,
     /// Optional start-grid hold/clock; independent of vehicle tuning.
     pub session: Option<session::DrivingSession>,
+    /// Optional native driver-input clip, played through the ordinary car rules.
+    pub replay_inputs: Option<String>,
 }
 /// Optional layered scene setup. Existing content without it keeps free driving.
 pub const RACE_VEHICLE_ASSET: &str = "race/vehicle.ron";
 impl Default for RaceVehicle {
     fn default() -> Self {
-        Self { initial_state: Some(crate::vehicle::initial::INITIAL_STATE_ASSET.into()), session: None }
+        Self {
+            initial_state: Some(crate::vehicle::initial::INITIAL_STATE_ASSET.into()),
+            session: None,
+            replay_inputs: None,
+        }
     }
 }
 
@@ -227,6 +234,12 @@ fn spawn_camera(world: &mut World) {
             .unwrap()
             .correction(state.pose, state.orientation);
         world.entity_mut(subject).insert(crate::vehicle::PlayerPedals);
+        if let Some(path) = &world.resource::<RaceVehicle>().replay_inputs {
+            let clip: replay::ReplayClip =
+                load_ron(path).unwrap_or_else(|error| panic!("replay inputs {path}: {error}"));
+            let playback = replay::ReplayPlayback::new(clip).expect("valid replay input clip");
+            world.entity_mut(subject).insert(playback);
+        }
         subject
     } else {
         world.spawn_empty().id()
