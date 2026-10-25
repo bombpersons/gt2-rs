@@ -49,6 +49,7 @@ impl PluginGroup for GamePlugins {
             .add(race::session::SessionRulesPlugin)
             .add(race::licence::LicencePlugin)
             .add(race::licence_awards::LicenceAwardsPlugin)
+            .add(race::licence_results::LicenceResultRulesPlugin)
             .add(race::RacePlugin)
             .add(race::hud::HudPlugin)
             .add(vehicle::VehicleRulesPlugin)

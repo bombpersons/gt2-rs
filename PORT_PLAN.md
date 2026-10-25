@@ -269,6 +269,11 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
 
 ## Work order
 
+Licence result timing now matches 543 original ticks, including fresh
+hold/edge schedules and a natural finish-to-timer boundary. The native result
+state emits one replay request after confirmation; drawing, sounds and the
+automatic replay consumer remain. See [result timing](docs/licence-result-evidence.md).
+
 The licence achievement consumer now matches 110 original executions and
 424 group-completion checks across all sixty definitions, with native grade
 and qualifying-attempt state and a verified importer. It commits at an

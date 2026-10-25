@@ -1,5 +1,10 @@
 # Evidence
 
+[Licence result timing](licence-result-evidence.md) covers 543 original result
+ticks, including a fresh held/edge-input holdout. Success acceleration, distinct
+confirmation waits and the replay handoff are separate native state. Result
+artwork, sound and replay playback remain unfinished.
+
 [Licence achievement rules](licence-award-evidence.md) match 110 original
 menu executions and 424 group-completion predicates, including a fresh
 all-sixty-licence holdout. Saved grades and qualifying-attempt counts commit

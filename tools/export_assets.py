@@ -686,6 +686,18 @@ def export_records(ram,assets):
     (folder/'licence-stop.ron').write_text('// Generated locally from selected licence setup; do not commit.\n'+ron(stop)+'\n')
 
 
+def export_result_timing(ram, assets):
+    """8002A780..87C: timings stay in ticks because the waits are exact."""
+    def immediate(off):
+        instruction=struct.unpack_from('<I',ram,off)[0]
+        assert instruction>>26==9 and (instruction>>21)&31==0
+        return instruction&65535
+    timing=dict(success_wait_ticks=immediate(0x2A7A0),failure_wait_ticks=immediate(0x2A78C),
+                held_updates_per_tick=immediate(0x2A790),prize_after_ticks=immediate(0x2A798))
+    assets.mkdir(parents=True,exist_ok=True)
+    (assets/'licence-results.ron').write_text('// Generated locally from original result timing; do not commit.\n'+ron(timing)+'\n')
+
+
 def export_hud_fonts(ram, font, assets):
     """Decode ASCII glyphs/kerning (8007DC78/8007DD3C) and the raw font bitmap."""
     if len(font) != 65536 or len(ram) != 2*1024*1024:
@@ -799,6 +811,7 @@ def main():
     export_hud_fonts(ram.read_bytes(),files['racefont.dat'].read_bytes(),assets)
     export_gauges(ram.read_bytes(),files['game_status_files'].read_bytes(),assets)
     export_records(ram.read_bytes(),assets)
+    export_result_timing(ram.read_bytes(),assets/'race')
     manifest = dict(disc=str(disc), ram_sha256=hashlib.sha256(ram.read_bytes()).hexdigest(),
                     race_font_sha256=hashlib.sha256(files['racefont.dat'].read_bytes()).hexdigest(),
                     gauge_pack_sha256=hashlib.sha256(files['game_status_files'].read_bytes()).hexdigest(),

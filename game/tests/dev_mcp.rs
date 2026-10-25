@@ -69,7 +69,7 @@ fn licence_drive_case(name: &str) {
             }
             let actual = client.call(
                 "game_query",
-                json!({"name":"CameraSubject","components":["LicenceRun","LicenceStopInput","VehiclePose","RoadContactState","AutomaticStop","PedalTravel"],"resources":["HudDisplay"]}),
+                json!({"name":"CameraSubject","components":["LicenceRun","LicenceStopInput","VehiclePose","RoadContactState","AutomaticStop","PedalTravel"],"resources":["HudDisplay","LicenceResult"]}),
             )["structuredContent"]
                 .clone();
             let run = &actual["entities"][0]["components"]["LicenceRun"];
@@ -84,6 +84,28 @@ fn licence_drive_case(name: &str) {
                 }
             }
             assert_eq!(*run, expected(&rows[checkpoint - 1]["after"]), "{name} tick {checkpoint}: {actual}");
+            let result = &actual["resources"]["LicenceResult"];
+            if *run == json!("Active") {
+                assert_eq!(*result, json!("Driving"));
+            } else {
+                let timing: game::race::licence_results::LicenceResultTiming = ron::from_str(
+                    &std::fs::read_to_string(
+                        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/race/licence-results.ron"),
+                    )
+                    .unwrap(),
+                )
+                .unwrap();
+                // These successful runs brake with Square; failed screens do
+                // not accelerate. The natural source boundary starts at one
+                // in the same tick that stopping latches the outcome.
+                let age = checkpoint - transition.expect("completed attempt");
+                let expected = if let Some(passed) = run.get("Passed") {
+                    json!({"Success":{"time_ms":passed["time_ms"],"age_ticks":age.min(usize::from(timing.success_wait_ticks))}})
+                } else {
+                    json!({"Failure":{"reason":run["Failed"]["reason"],"age_ticks":age.min(usize::from(timing.failure_wait_ticks))}})
+                };
+                assert_eq!(*result, expected, "{name} result tick {checkpoint}: {actual}");
+            }
             if name != "offroad" {
                 let at = &actual["entities"][0]["components"]["VehiclePose"]["position_m"];
                 let before = &rows[checkpoint - 1]["pose_m"];

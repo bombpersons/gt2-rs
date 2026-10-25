@@ -32,6 +32,7 @@ pub mod gauges;
 pub mod hud;
 pub mod licence;
 pub mod licence_awards;
+pub mod licence_results;
 pub mod licence_stop;
 pub mod records;
 pub mod session;
