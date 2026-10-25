@@ -53,6 +53,7 @@ menus, races and progression. Re-export assets for the current session and stopp
 | Road contact, suspension, vertical motion and aerodynamics | Decoded road contact and retained force/body feedback verified together; barrier/car collision remains |
 | Playable B-1 test, HUD, sounds and pass/fail/retry | Stopping/overshoot/off-road decisions and automatic result braking verified; result, award and retry flow remain |
 | B-1 start hold, clock, gauges and records | Countdown/release, bitmap glyphs, driving gauges and record/medal targets verified; mirror and sounds remain |
+| Saved licence achievements | Medal/qualifying-attempt rules verified across all sixty definitions; result/replay/return flow must still invoke them |
 | Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |
 | Example mod and engine sandbox | Run with handmade assets and no disc data |
 | Desktop content editor | Placement editor shell; course geometry and tuning editors remain |

@@ -91,7 +91,11 @@ fn authored_records_rules_run_alone_and_follow_selected_definition() {
     )
     .unwrap();
     app.insert_resource(settings)
-        .insert_resource(LicenceDefinition { id: "hill".into(), time_limits_ms: [10000, 20000, 30000, 40000] })
+        .insert_resource(LicenceDefinition {
+            id: "hill".into(),
+            time_limits_ms: [10000, 20000, 30000, 40000],
+            assisted_pass_attempts: None,
+        })
         .insert_resource(LicenceRecords {
             best: [("circuit".into(), LicenceRecord { time_ms: 12345, speed_readout: 12678 })].into(),
         });

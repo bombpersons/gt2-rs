@@ -262,11 +262,19 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
   original tables; time-cell layout is shared with the clock. Twenty-one
   original saved-time frames and sixty licence target-row probes match.
   The original award routine has been located; B-1 stopping decisions are
-  now covered separately. Award/attempt updates, results, retry/reset and
-  saving remain unported.
+  now covered separately. The award/attempt consumer is verified below;
+  results/replay/return, name entry, record insertion, retry/reset and saving
+  remain unfinished.
   See docs/records-evidence.md.
 
 ## Work order
+
+The licence achievement consumer now matches 110 original executions and
+424 group-completion checks across all sixty definitions, with native grade
+and qualifying-attempt state and a verified importer. It commits at an
+explicit return-to-menu event; the native result/replay front end must still
+produce that event. Name entry, best-record insertion and persistent saves
+remain separate. See [award evidence](docs/licence-award-evidence.md).
 
 The B-1 stopping decision slice now matches 5,800 original calls and 22,616
 wheel projections. It latches completed times and overshoot/off-road failures,

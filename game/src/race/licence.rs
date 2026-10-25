@@ -1,5 +1,5 @@
-//! Native licence definitions and personal records. Finish conditions, award
-//! progression and persistent saves are separate from these content/state types.
+//! Native licence definitions and personal records. Award progression lives
+//! in `licence_awards`; persistent saves and the front-end flow are separate.
 use bevy::prelude::*;
 use engine::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,10 @@ pub struct LicenceDefinition {
     /// Gold, silver, bronze and the fourth original award threshold.
     /// Only the first three are shown by the records panel.
     pub time_limits_ms: [u32; 4],
+    /// GTDT row +0x74: qualifying slow attempts needed for an assisted pass.
+    /// None disables this band for authored/older definitions.
+    #[serde(default)]
+    pub assisted_pass_attempts: Option<u8>,
 }
 
 #[derive(Clone, Debug, PartialEq, Reflect, Serialize, Deserialize)]

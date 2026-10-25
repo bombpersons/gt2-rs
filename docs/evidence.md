@@ -1,5 +1,11 @@
 # Evidence
 
+[Licence achievement rules](licence-award-evidence.md) match 110 original
+menu executions and 424 group-completion predicates, including a fresh
+all-sixty-licence holdout. Saved grades and qualifying-attempt counts commit
+separately from race completion. The native result/replay front end must
+still invoke that boundary; name entry, best-record insertion and saves remain.
+
 [Automatic post-result braking](automatic-stop-evidence.md) matches 510
 retained original physics ticks and 26 boundary probes, including a fresh
 180-tick capture on the updated core. Player controls relinquish ownership;

@@ -94,7 +94,8 @@ supplies native input definitions, while the original's own decoder and GPU
 draws supply expected text. All 180 displayed target times match, as do the
 labels/marker layouts. These are target-table/presentation probes with the
 B-1 scene still loaded, not playable tests of all sixty licences. The fourth
-threshold is structurally decoded but its award behaviour remains unported.
+threshold's qualification behavior is now covered by
+[licence achievement evidence](licence-award-evidence.md).
 
 The real-binary pixel check loads each saved-record case as native RON,
 steps the normal scene to the observed field boundary, and compares all
@@ -124,6 +125,8 @@ Target decoding also located the original award/update routine at
 `8004DD80..DEF4`. Its comparisons are strict, and it has an attempt-count
 branch associated with the fourth threshold. Neither a display target nor
 the session clock alone proves an original finish condition. B-1 stopping
-and failure decisions are now verified separately. The exact award/attempt update, result presentation,
-retry/reset and persistent progression still require original recordings
-and native rules. Mirror and sound work also remain.
+and failure decisions are verified separately. The award/attempt consumer
+is now ported and verified in [achievement evidence](licence-award-evidence.md).
+The native result/replay/return controller must still invoke it at the original
+boundary. Name entry, best-record insertion, retry/reset, persistent saves,
+mirror and sound remain.

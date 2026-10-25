@@ -56,6 +56,9 @@ course/model/paint files, then exports:
   `race/records-panel.ron` layout, decoded from GTDT/session data and shared
   numeric/font routines. See [records-panel evidence](records-evidence.md).
   Initial record content is separate from the future native save system;
+- `race/licence-progress.initial.ron` stores native saved achievements and
+  qualifying-attempt counters. The selected definition also carries its
+  fourth-band qualification setting. See [award rules](licence-award-evidence.md);
 - `race/licence-stop.ron` supplies the selected stopping zone in metres and
   its strict speed threshold. Course distances retain precise metre values
   and sampling steps for wheel-boundary decisions. See [stopping evidence](licence-stop-evidence.md);

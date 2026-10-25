@@ -631,7 +631,7 @@ def licence_definitions(ram):
             assert seconds<60 and centis<100
             limits.append(minutes*60000+seconds*1000+centis*10)
         assert sorted(limits)==limits and key not in definitions
-        definitions[key]=dict(id=key,time_limits_ms=tuple(limits))
+        definitions[key]=dict(id=key,time_limits_ms=tuple(limits),assisted_pass_attempts=ram[row+0x74])
     return definitions
 
 
@@ -647,7 +647,20 @@ def export_records(ram,assets):
     current=0x1D585C
     assert ram[current+10]==3,'licence records panel required'
     key=string(current+16)
-    definition=licence_definitions(ram)[key]
+    definitions=licence_definitions(ram)
+    keys=list(definitions)
+    assert keys[ram[current+11]*10+ram[current+12]]==key,'GTDT and saved licence order disagree'
+    definition=dict(definitions[key])
+    definition['assisted_pass_attempts']=RonVariant(f"Some({definition['assisted_pass_attempts']})")
+    achievements={}
+    grades=['Unpassed','AssistedPass','Bronze','Silver','Gold']
+    for i, licence_id in enumerate(keys):
+        offset=0x1C98E0+0x1418+i*164
+        grade,attempts=ram[offset+1:offset+3]
+        assert grade<len(grades),'unsupported saved licence grade'
+        if grade or attempts:
+            achievements[licence_id]=dict(grade=RonVariant(grades[grade]),assisted_attempts=attempts)
+    progress='{'+', '.join(json.dumps(k)+': '+ron(v) for k,v in achievements.items())+'}'
     best_offset=0x1C98E0+0x1418+ram[current+11]*1640+ram[current+12]*164+4
     time=u32(best_offset)
     best='{}' if time==0xFFFFFFFF else '{'+json.dumps(key)+': '+ron(dict(time_ms=time,speed_readout=struct.unpack_from('<H',ram,best_offset+16)[0]))+'}'
@@ -664,7 +677,8 @@ def export_records(ram,assets):
         cells=dict(digit_px=float(imm(0x2D09C)),punctuation_px=float(imm(0x2D0A4)),decimal_inset_px=float(imm(0x2D0AC)),origin_inset_px=ram[0x93124+8]/2),
         metadata_digit_px=float(ram[0x93124+8]+imm(0x2D100)),metadata_digit_inset_px=float(imm(0x2D0F8)-ram[0x93124+8]/2))
     folder=assets/'race';folder.mkdir(parents=True,exist_ok=True)
-    for name,value in [('licence.ron',definition),('records-panel.ron',settings),('records.initial.ron',dict(best=RonVariant(best)))]:
+    for name,value in [('licence.ron',definition),('records-panel.ron',settings),('records.initial.ron',dict(best=RonVariant(best))),
+                       ('licence-progress.initial.ron',dict(achievements=RonVariant(progress)))]:
         (folder/name).write_text('// Generated locally from supplied checkpoint data; do not commit.\n'+ron(value)+'\n')
     assert ram[0x1C98A2]==2,'stopping licence setup required'
     stop=dict(start_m=float(ram[0x1C98C4]*10),end_m=float(ram[0x1C98C4]*10+ram[0x1C98C5]),
