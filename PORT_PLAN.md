@@ -269,9 +269,15 @@ requested by the user; see `docs/screenshots.md`. Runtime assets stay private.
 
 ## Work order
 
+Licence Finish/FAIL, time/prize labels, animated logos and result darkening
+now match 946 original glyph draws and their associated logo/quad draws
+across 37 cases, including fresh and natural-wait captures. Native gold/failure
+font-pixel checks pass; result sounds and the automatic replay consumer remain.
+See [result presentation](docs/result-presentation-evidence.md).
+
 Licence result timing now matches 543 original ticks, including fresh
 hold/edge schedules and a natural finish-to-timer boundary. The native result
-state emits one replay request after confirmation; drawing, sounds and the
+state emits one replay request after confirmation; sounds and the
 automatic replay consumer remain. See [result timing](docs/licence-result-evidence.md).
 
 The licence achievement consumer now matches 110 original executions and

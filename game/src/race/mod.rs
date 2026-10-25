@@ -35,6 +35,7 @@ pub mod licence_awards;
 pub mod licence_results;
 pub mod licence_stop;
 pub mod records;
+pub mod result_presentation;
 pub mod session;
 use camera::{CameraInput, CameraSettings, CameraSubject, PlayerCamera, VehicleCamera};
 

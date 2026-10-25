@@ -44,10 +44,14 @@ course/model/paint files, then exports:
 - Scene selection in `race/vehicle.ron`, with the observed countdown and clock.
   The normal game now holds at the line, then releases the car; hold Cross to
   accelerate. The remaining HUD, sounds and licence outcomes remain open;
-- Small/large bitmap-font atlases and native glyph/kerning metrics from
+- Small/medium/large bitmap-font atlases and native glyph/kerning metrics from
   `/font/racefont.dat` and the original program, plus `race/hud.ron` for
   countdown digits, the start announcement and lap clock. See
   [HUD evidence and verification](hud-evidence.md);
+- `race/licence-results.ron` supplies exact result confirmation waits;
+  `race/result-presentation.ron` supplies Finish/FAIL and prize animation/layout.
+  Four prize-logo PNGs come from `/arcade/license_tim.tim`. See
+  [result presentation](result-presentation-evidence.md);
 - Gauge atlas and `race/gauges.ron` from `/arcade/game_status_files.gz`
   and the original gauge tables: selected tachometer dial, speed and gear
   sprites, needle shapes, layout, colour and RPM settings. See

@@ -51,7 +51,7 @@ menus, races and progression. Re-export assets for the current session and stopp
 | Pedals, digital steering, wheel slip and braking | Rules checked against original execution; analog controls remain |
 | Tyre forces, grip, engine, drivetrain and transmission | Moving/idle-launch feedback, reverse and manual requests verified; licence session remains |
 | Road contact, suspension, vertical motion and aerodynamics | Decoded road contact and retained force/body feedback verified together; barrier/car collision remains |
-| Playable B-1 test, HUD, sounds and pass/fail/retry | Stopping decisions, automatic braking and result confirmation timing verified; result drawing, replay and retry flow remain |
+| Playable B-1 test, HUD, sounds and pass/fail/retry | Stopping, automatic braking, result timing and Finish/FAIL/prize drawing verified; sounds, replay and retry flow remain |
 | B-1 start hold, clock, gauges and records | Countdown/release, bitmap glyphs, driving gauges and record/medal targets verified; mirror and sounds remain |
 | Saved licence achievements | Medal/qualifying-attempt rules verified across all sixty definitions; result/replay/return flow must still invoke them |
 | Other licences, races, opponents, menus, garage and saves | Not yet ported end to end |

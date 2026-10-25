@@ -92,8 +92,9 @@ for byte from the original RAM checkpoint. Routine validation is
 
 ## Remaining scope
 
-This slice does not render Finish/FAIL, prize logos or text, play result
-sounds, or execute replay. In the current binary, confirmation reaches the
+Finish/FAIL and prize drawing are now covered by
+[result presentation](result-presentation-evidence.md). Result sounds and
+replay playback remain unfinished. In the current binary, confirmation reaches the
 explicit replay request and the car remains parked. Automatic replay,
 replay exit, menu return, name entry, record insertion, retry and persistent
 saves still need their own original-execution checks. Award commitment must

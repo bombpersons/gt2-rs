@@ -698,6 +698,56 @@ def export_result_timing(ram, assets):
     (assets/'licence-results.ron').write_text('// Generated locally from original result timing; do not commit.\n'+ron(timing)+'\n')
 
 
+def export_result_presentation(ram, tim, assets):
+    """8002AB60/8002B170: decoded fonts, logo sprites and animation tuning."""
+    def word(off):return struct.unpack_from('<I',ram,off)[0]
+    def imm(off):return word(off)&65535
+    def text(off):return ram[off:ram.index(0,off)].decode('ascii')
+    def rgb(value):return tuple((value>>shift)&255 for shift in (0,8,16))
+    assert struct.unpack_from('<II',tim)==(16,0)
+    block,x,y,w,h=struct.unpack_from('<I4H',tim,8)
+    assert (block,w,h)==(12+128*170*2,128,170) and len(tim)==8+block
+    texels=tim[20:]
+    # The original uploads this complete TIM to (384,256); runtime output
+    # contains four independent RGBA images, with no VRAM coordinates.
+    (assets/'race/results').mkdir(parents=True,exist_ok=True)
+    logos=[]
+    for slot,descriptor in enumerate((0x5B1B0,0x5B1A4,0x5B198,0x5B18C)):
+        value,sw,sh,page=struct.unpack_from('<I3H',ram,descriptor)
+        u=(value&255)+((page&15)*64-384)*4;v=((page>>4)&1)*256+((value>>8)&255)-256
+        cx=((value>>16)&63)*16-384;cy=(value>>22)-256
+        assert 0<=u and u+sw<=w*4 and 0<=v and v+sh<=168 and 0<=cx and cx+16<=w and 168<=cy<h
+        rgba=bytearray()
+        for dy in range(sh):
+            for dx in range(sw):
+                q=u+dx;index=(texels[(v+dy)*w*2+q//2]>>(4*(q%2)))&15
+                color=struct.unpack_from('<H',texels,(cy*w+cx+index)*2)[0]
+                expand=lambda n:((n&31)<<3)|((n&31)>>2)
+                rgba+=bytes((expand(color),expand(color>>5),expand(color>>10),0 if color==0 else 128 if color&0x8000 else 255))
+        image=f'race/results/prize-{slot}.png'
+        write_rgba_png(assets/image,sw,sh,rgba)
+        logos.append(dict(image=image,size_px=(float(sw),float(sh))))
+    prizes=[]
+    for i,(label,color) in enumerate(((0x1C708B,0x2F62C),(0x1C8488,0x2F628),(0x1C703C,0x2F628),(0x1C7051,0x2F624),(0x1C7065,0x2F620))):
+        prizes.append(dict(text=text(label),rgb=rgb(word(color)),logo=None if i==0 else RonVariant(f'Some({i-1})')))
+    settings=dict(large_font='race/fonts/large.ron',time_font='race/fonts/medium.ron',
+        finish_text=text(0x1C6C99),failure_text=text(0x1C708B),
+        finish_baseline=(float(imm(0x2ACB0)),float(imm(0x2ACB4))),
+        failure_baseline=(float(imm(0x2B63C)),float(imm(0x2B63C))),failure_rgb=rgb(imm(0x2B648)),
+        finish_rgb=rgb(word(0x2F608)),finish_peak=ram[0x2F60C],
+        finish_fade_after_ticks=65536-imm(0x2ABC8),finish_fade_ticks=imm(0x2ABFC),
+        finish_echo_px=8.0,finish_until_ticks=imm(0x2AB74),
+        shade_after_ticks=65536-imm(0x2B610),shade_ticks=imm(0x2B624),shade_peak=64,
+        prize_spacing_px=float(struct.unpack_from('<h',ram,0x2B42C)[0]),prize_fade_ticks=imm(0x2B3F8),prize_initial_rgb=rgb(word(0x2F61C)),
+        prize_baseline=(float(imm(0x2B420)),float(imm(0x2B424))),
+        time_baseline=(float(imm(0x2B460)),float(imm(0x2B464))),
+        time_cells=dict(digit_px=float(imm(0x2B468)),punctuation_px=float(imm(0x2B470)),decimal_inset_px=0.0,origin_inset_px=ram[0x93130+8]/2),
+        logo_center_px=(float(imm(0x2B544)),float(imm(0x2B568))),logo_curve=list(ram[0x2F5E8:0x2F5F9]),
+        logo_initial_rgb=rgb(word(0x2F604)),logo_final_rgb=rgb(word(0x2F5FC)),logo_settled_rgb=rgb(word(0x2F600)),
+        prizes=tuple(prizes),logos=logos)
+    (assets/'race/result-presentation.ron').write_text('// Generated locally from result routines and license_tim.tim; do not commit.\n'+ron(settings)+'\n')
+
+
 def export_hud_fonts(ram, font, assets):
     """Decode ASCII glyphs/kerning (8007DC78/8007DD3C) and the raw font bitmap."""
     if len(font) != 65536 or len(ram) != 2*1024*1024:
@@ -705,7 +755,7 @@ def export_hud_fonts(ram, font, assets):
     def word(off): return struct.unpack_from('<I',ram,off)[0]
     def char(c): return "'"+c.replace('\\','\\\\').replace("'","\\'")+"'"
     folder=assets/'race/fonts';folder.mkdir(parents=True,exist_ok=True)
-    for name,descriptor in [('small',0x93124),('large',0x9313C)]:
+    for name,descriptor in [('small',0x93124),('medium',0x93130),('large',0x9313C)]:
         table,kern=word(descriptor)&0x1FFFFF,word(descriptor+4)&0x1FFFFF
         spacing=ram[descriptor+9]
         header=word(kern);stride=header&255;bits=(header>>16)&255
@@ -795,7 +845,7 @@ def main():
     files = {}
     for name, source in [('course.tro', '/crsobj/TC_lisence.tro.gz'), ('course.trp', '/crsobj/TC_lisence.trp.gz'),
                          ('t2vzn.cdo', '/carobj/t2vzn.cdo.gz'), ('t2vzn.cdp', '/carobj/t2vzn.cdp.gz'),
-                         ('racefont.dat', '/font/racefont.dat'), ('game_status_files', '/arcade/game_status_files.gz')]:
+                         ('racefont.dat', '/font/racefont.dat'), ('license_tim.tim', '/arcade/license_tim.tim'), ('game_status_files', '/arcade/game_status_files.gz')]:
         path = work / name
         run([importer, 'extract', disc, '--path', source, '--out', path])
         raw = path.read_bytes()
@@ -812,6 +862,7 @@ def main():
     export_gauges(ram.read_bytes(),files['game_status_files'].read_bytes(),assets)
     export_records(ram.read_bytes(),assets)
     export_result_timing(ram.read_bytes(),assets/'race')
+    export_result_presentation(ram.read_bytes(),files['license_tim.tim'].read_bytes(),assets)
     manifest = dict(disc=str(disc), ram_sha256=hashlib.sha256(ram.read_bytes()).hexdigest(),
                     race_font_sha256=hashlib.sha256(files['racefont.dat'].read_bytes()).hexdigest(),
                     gauge_pack_sha256=hashlib.sha256(files['game_status_files'].read_bytes()).hexdigest(),

@@ -1,9 +1,14 @@
 # Evidence
 
+[Licence result presentation](result-presentation-evidence.md) matches 946
+original glyph draws across 37 cases, animated logo geometry/tints and
+background darkening. Native gold-prize and failure screens also pass source
+font-pixel checks. Result sounds and replay playback remain.
+
 [Licence result timing](licence-result-evidence.md) covers 543 original result
 ticks, including a fresh held/edge-input holdout. Success acceleration, distinct
 confirmation waits and the replay handoff are separate native state. Result
-artwork, sound and replay playback remain unfinished.
+artwork is covered above; sound and replay playback remain unfinished.
 
 [Licence achievement rules](licence-award-evidence.md) match 110 original
 menu executions and 424 group-completion predicates, including a fresh

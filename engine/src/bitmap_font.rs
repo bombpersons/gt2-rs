@@ -44,6 +44,28 @@ pub struct NumberCells {
 }
 
 impl BitmapFont {
+    /// Center numeric cells on a baseline, retaining the font's origin inset.
+    pub fn layout_number_centered(&self, text: &str, cells: NumberCells) -> Result<Vec<PositionedGlyph>, char> {
+        let chars: Vec<_> = text.chars().collect();
+        let width: f32 = chars
+            .iter()
+            .enumerate()
+            .map(|(i, c)| {
+                if matches!(c, ':' | '.') || chars.get(i + 1).is_some_and(|n| matches!(n, ':' | '.')) {
+                    cells.punctuation_px
+                } else {
+                    cells.digit_px
+                }
+            })
+            .sum();
+        let mut glyphs = self.layout_number(text, cells)?;
+        // Equivalent to a left origin at -floor(width/2), including odd widths.
+        for g in &mut glyphs {
+            g.top_left_px[0] += width - (width / 2.0).floor();
+        }
+        Ok(glyphs)
+    }
+
     pub fn layout_number(&self, text: &str, cells: NumberCells) -> Result<Vec<PositionedGlyph>, char> {
         let chars: Vec<_> = text.chars().collect();
         let punctuation = |c: char| matches!(c, ':' | '.');
@@ -82,6 +104,12 @@ impl BitmapFont {
 
     /// Missing characters are errors so content authors can supply the glyph.
     pub fn layout(&self, text: &str) -> Result<(Vec<PositionedGlyph>, f32), char> {
+        self.layout_with_spacing(text, 0.0)
+    }
+
+    /// Additional advance between characters, including spaces, before
+    /// centering or other alignment is applied.
+    pub fn layout_with_spacing(&self, text: &str, extra_px: f32) -> Result<(Vec<PositionedGlyph>, f32), char> {
         let chars: Vec<_> = text.chars().collect();
         let mut x = 0.0;
         let mut placed = Vec::new();
@@ -95,6 +123,9 @@ impl BitmapFont {
                 });
             }
             x += glyph.advance_px;
+            if index + 1 < chars.len() {
+                x += extra_px;
+            }
             if let Some(&next) = chars.get(index + 1)
                 && let Some(pair) = self.kerning.iter().find(|k| k.pair == (character, next))
             {

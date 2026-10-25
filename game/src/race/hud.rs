@@ -144,7 +144,12 @@ impl Plugin for HudPlugin {
             app.add_plugins(TuningPlugin::<HudSettings>::new(HUD_SETTINGS));
         }
         app.register_type::<HudGlyph>()
-            .add_plugins((HudRulesPlugin, super::gauges::GaugePlugin, super::records::RecordsPlugin))
+            .add_plugins((
+                HudRulesPlugin,
+                super::gauges::GaugePlugin,
+                super::records::RecordsPlugin,
+                super::result_presentation::ResultPresentationPlugin,
+            ))
             .add_systems(Startup, (spawn_hud_camera, spawn_hud))
             .add_systems(Update, render_hud);
     }
@@ -168,8 +173,9 @@ fn spawn_hud_camera(
     settings: Option<Res<HudSettings>>,
     gauges: Option<Res<super::gauges::GaugeSettings>>,
     records: Option<Res<super::records::RecordsSettings>>,
+    results: Option<Res<super::result_presentation::ResultPresentationSettings>>,
 ) {
-    if settings.is_none() && gauges.is_none() && records.is_none() {
+    if settings.is_none() && gauges.is_none() && records.is_none() && results.is_none() {
         return;
     }
     commands.spawn((

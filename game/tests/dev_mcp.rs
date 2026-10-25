@@ -163,6 +163,43 @@ fn licence_drive_case(name: &str) {
             );
         }
         std::fs::write(output.join(format!("{name}.json")), serde_json::to_vec_pretty(&actual).unwrap()).unwrap();
+        if name == "gold" || name == "overshoot" {
+            let fixture = if name == "gold" {
+                // The natural finish above ends at result age 33. Let the
+                // prize settle without using confirm to accelerate it.
+                client.call("game_step", json!({"frames":113,"buttons":["square"]}));
+                "native-gold"
+            } else {
+                "fresh-fail"
+            };
+            let source: Value = serde_json::from_str(
+                &std::fs::read_to_string(
+                    std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                        .join("tests/data/original/result_presentation/fresh.json"),
+                )
+                .unwrap(),
+            )
+            .unwrap();
+            let row = source["rows"].as_array().unwrap().iter().find(|row| row["name"] == fixture).unwrap();
+            let native = client.screenshot(output.join(format!("{name}-result.png")));
+            let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+            // End-of-run scanout includes all of the retained GPU packet,
+            // including glyphs that finish in the following video field.
+            let original = image::open(
+                root.join(std::path::Path::new(row["screens"][0].as_str().unwrap()).with_file_name("screen.png")),
+            )
+            .unwrap()
+            .to_rgba8();
+            let pixels: Vec<[u32; 2]> = serde_json::from_value(row["pixels"].clone()).unwrap();
+            assert!(pixels.len() > 300);
+            for [x, y] in pixels {
+                let a = native.get_pixel(x, y);
+                let b = original.get_pixel(x, y);
+                for c in 0..3 {
+                    assert!(a[c].abs_diff(b[c]) <= 9, "{name} result pixel {x},{y}: native {a:?} original {b:?}");
+                }
+            }
+        }
     }
 }
 
