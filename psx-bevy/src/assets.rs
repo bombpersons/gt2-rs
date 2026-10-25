@@ -23,7 +23,7 @@ static EXTRA_ROOTS: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
 
 /// Adds an asset folder below the running crate's own `assets/`. Call it
 /// before building the app (before the launcher, or before
-/// `engine::testing` apps in tests). Later calls rank lower.
+/// `psx_bevy::testing` apps in tests). Later calls rank lower.
 pub fn add_root(path: impl Into<PathBuf>) {
     let path = FileAssetReader::get_base_path().join(path.into());
     let mut roots = EXTRA_ROOTS.lock().unwrap();

@@ -1,23 +1,24 @@
-# psx-bevy: the template's crate
+# psx-bevy
 
-The psx template's own crate inside a generated project: the PS1 look
+A library for PS1-style games in [Bevy](https://bevyengine.org): the PS1 look
 (`psx`), logic ticks and input (`shell`, `controller`), the controls and
 display menus (`controls`, `display`), headless and trajectory testing
-(`testing`), the `--scene` and
-`--model` viewers, the developer MCP (feature `dev-mcp`) and the `launcher`
-every game's `main.rs` calls. Bevy 0.20.0; Rust 1.97.1+; a desktop GPU driver
-(or Mesa lavapipe with `--software`).
+(`testing`), the `--scene` capture viewer, the developer MCP (feature
+`dev-mcp`) and the `launcher` every game's `main.rs` calls. Bevy 0.20; Rust
+1.97.1+; a desktop GPU driver (or Mesa lavapipe with `--software`).
 
-**Owned by the template.** `psx template update` replaces this directory's
-untouched files with newer versions (it never touches `engine/` or `game/`),
-so build on it where you can. Small, general edits are allowed when a hook or
-option is missing; `AGENTS.md` here has the rules, and each edit is listed in
-the project's `docs/template.md`. Game code reaches it through `engine::` (the engine re-exports
-these modules). See the project's root README for the workspace and commands.
+It comes with the game template of the [psx toolkit](https://github.com/bombpersons/psx)
+(`psx template create`), and this copy belongs to the project: change it to
+suit the game (`AGENTS.md` here). `psx template update` brings in newer
+versions of the files you haven't changed. Bevy is pinned at 0.20 in the
+workspace `Cargo.toml`, so every crate builds against one Bevy.
+
+Game code reaches this crate through `engine::` (the engine re-exports these
+modules).
 
 | Module | Contents |
 |---|---|
-| `psx/` | The PS1 look (materials, screen pass, `.psxscene` loader, TIM/TMD loaders, bitmap font) |
+| `psx/` | The PS1 look (materials, screen pass, `.psxscene` loader, bitmap font) |
 | `shell.rs` | `TickRate`, `GameClock`, `GameSystems`, controller sampling |
 | `controller.rs`, `controller/bindings.rs` | Logical `Button`/`ControllerState`, validated device bindings and settings storage |
 | `controls/` | Controls menu: draft edits, capture, conflict resolution, saving (`mod.rs`), and a built-in PS1-style view a game can replace (`view.rs`) |
@@ -27,7 +28,7 @@ these modules). See the project's root README for the workspace and commands.
 | `launcher.rs` | Window, renderer, headless mode and the shared command-line flags |
 | `testing.rs`, `testing/trajectory.rs` | `headless_app`, `TickApp::run_tick(s)`, replay and per-tick comparison with the original |
 | `testing/mcp.rs` | Stdio developer-MCP client for GPU tests (`dev-mcp`) |
-| `viewer.rs`, `model_viewer.rs` | `--scene` capture viewer, `--model` TMD viewer |
+| `viewer.rs` | `--scene` capture viewer |
 | `dev_mcp.rs` | Developer MCP (feature `dev-mcp`) |
 
 `examples/depth_cue.rs`, `examples/depth_bias.rs`, `examples/screen_size.rs`
@@ -38,7 +39,7 @@ workspace's crates are built at `opt-level = 1`), so they run at close to
 release speed. `--release` builds all of Bevy a second time, which takes
 minutes on a cold target: use it for shipping and profiling, not for iteration.
 Turning `dev-mcp` on for the first time compiles only the MCP crates (rmcp,
-tokio, schemars) and the workspace, about 25 crates: the root `Cargo.toml`
+tokio, schemars) and the workspace, about 25 crates: psx-bevy's `Cargo.toml`
 enables the features those crates would otherwise switch on in shared
 dependencies such as serde, so Bevy resolves identically in both builds.
 Afterwards Cargo keeps both builds, and switching back and forth is free. If
@@ -95,7 +96,13 @@ commands.spawn((
 ```
 
 `PsxMaterial` replaces `StandardMaterial`. For glTF scenes, swap materials when
-the scene spawns, or build meshes from extracted original model data.
+the scene spawns, or build meshes from the game's own model data.
+
+Original files (TIM textures, TMD models, a game's archives) are not loaded
+directly: a port converts them in its importer into ordinary formats (PNG,
+glTF, or the engine's own) that load like any Bevy asset. `psx textures` and
+`psx assets extract` (psx toolkit) convert TIM/TMD to PNG/glTF for a quick
+look.
 
 **Lighting:** 1000 lux of `DirectionalLight::illuminance` is full strength (1.0),
 and so is a `GlobalAmbientLight::brightness` of 1000. Lighting is gathered into
@@ -107,7 +114,7 @@ forward camera depth in scene units, with screen-space interpolation of the
 resulting vertex colours. It works with perspective and orthographic cameras.
 
 ```rust
-use engine::psx::{PsxDepthCue, PsxMaterial};
+use psx_bevy::psx::{PsxDepthCue, PsxMaterial};
 
 let material = PsxMaterial {
     // No cue at depth 20, full cue at 100, using a reciprocal curve.
@@ -279,42 +286,6 @@ You can use that field on your own meshes too: ordered surfaces skip the
 depth buffer and draw in ascending order in Bevy's sorted transparent pass.
 2D elements stay on their background or overlay camera in both modes.
 
-### Original assets (TIM textures, TMD models)
-
-`psx assets extract` (psx toolkit) writes the original `.tim` / `.tmd` bytes
-it finds next to PNG/glTF conversions. Put them under `game/assets/` and load them
-like any asset:
-
-```rust
-// Image, RGBA8 sRGB, nearest sampling; colour 0x0000 has alpha 0.
-let tex: Handle<Image> = asset_server.load("enemy.tim");          // palette 0
-let alt: Handle<Image> = asset_server.load("enemy.tim#Palette2");  // other CLUT rows
-// A TMD: its texture pages are decoded from the TIMs you name, uploaded to a
-// virtual VRAM where their headers place them (default: `car.tim` if present).
-let car: Handle<PsxModel> = asset_server
-    .load_builder()
-    .with_settings(|s: &mut TmdSettings| s.textures = vec!["car.tim".into()])
-    .load("car.tmd");
-commands.spawn((PsxModelRoot(car), Transform::default()));
-```
-
-- `TimSettings { palette, transparency }`: `Cutout` (default; the GPU's
-  rule for opaque polygons), `SemiStp` (STP texels at alpha 0.5) or `Opaque`.
-- `TmdSettings { textures, units_per_metre, cull_back_faces }`: `textures`
-  may also name a game archive; every TIM inside it is uploaded.
-  `units_per_metre` defaults to 64 (as `.psxscene` captures); models are
-  rotated so PS1 y-down becomes y-up. Everything is double-sided unless
-  `cull_back_faces` (PS1 screen-clockwise front faces).
-- `PsxModelRoot` spawns one child per TMD object (`PsxModelObjectIndex`,
-  `Name` "ObjectN") and a `Mesh3d` + `PsxMaterial` per material under it:
-  lit packets use scene lights through `PsxMaterial::lit`, pre-coloured ones
-  do not, semi-transparent packets get the TSB's blend mode. Objects are
-  where the file puts them; games usually position them (limbs, doors).
-- Meshes are labeled sub-assets (`car.tmd#Object0/Part1`), so they can be
-  used with your own materials.
-- Viewer: `cargo run -- --model car.tmd [--texture car.tim]... [--cull]`
-  frames the model and turns it (`game_step` turns it under the dev MCP).
-
 ### Layered asset folders (mods)
 
 `assets/` is found the way Bevy finds it (`BEVY_ASSET_ROOT`, else the running
@@ -329,8 +300,8 @@ launcher::run(Game { /* ... */ });
 
 The launcher then reads every load from the first folder that has the path,
 so the mod finds the game's files and replaces any of them by shipping one at
-the same path. Synchronous loads use `assets::find` (`engine::config::load_ron`
-does). Without added roots, Bevy's own reader is used unchanged.
+the same path. Synchronous loads use `assets::find` (the psx template's
+`engine::config::load_ron` does). Without added roots, Bevy's own reader is used unchanged.
 
 ## Simulation and input
 
@@ -373,7 +344,7 @@ does). Without added roots, Bevy's own reader is used unchanged.
 
 ### Tests
 
-`engine::testing::headless_app(tick_rate)` builds an app without window or GPU;
+`psx_bevy::testing::headless_app(tick_rate)` builds an app without window or GPU;
 `app.run_tick(&[Button::Cross])` runs exactly one tick with those buttons held.
 Add only rules plugins (nothing that loads assets or spawns meshes):
 
@@ -387,7 +358,7 @@ let x = app.world().get::<Transform>(player).unwrap().translation.x;
 
 To check rules against the original, record values with `psx run --sample`
 and a `--replay` file, keep both under `tests/data/`, and compare tick by tick
-with `engine::testing::{Alignment, Replay, Trajectory, compare}`. A mismatch
+with `psx_bevy::testing::{Alignment, Replay, Trajectory, compare}`. A mismatch
 reports the first divergence per column, the values around it and a hint when
 the rebuild is a tick early or late. The [module docs](src/testing/trajectory.rs)
 explain the field/tick alignment; `game/AGENTS.md` has the full recipe.
@@ -456,8 +427,8 @@ The menu is a reusable example, independent of `demo/`. Keep it in a finished ga
 where it fits the options screen, or use the binding API with your own UI:
 
 ```rust
-use engine::controller::{Button, ConflictPolicy, ControllerBindings, PhysicalBinding};
-use engine::controls::{ControlsMenu, ControlsPlugin};
+use psx_bevy::controller::{Button, ConflictPolicy, ControllerBindings, PhysicalBinding};
+use psx_bevy::controls::{ControlsMenu, ControlsPlugin};
 
 // Add beside ShellPlugin and PsxPlugin. Your own menu decides when it opens.
 app.add_plugins(ControlsPlugin { global_shortcuts: false, ..default() });
@@ -483,7 +454,7 @@ that capture. Profiles saved before the MOUSE column existed load unchanged.
 The presentation uses ordinary Bevy UI and its embedded default font, with an
 isolated `PsxView` camera before the screen pass, so it appears in low-resolution
 screenshots and passes through the same framebuffer quantization. If importing
-both Bevy and game preludes, explicitly import `engine::controller::Button` to
+both Bevy and game preludes, explicitly import `psx_bevy::controller::Button` to
 disambiguate Bevy's UI button type.
 
 ### Making the menus the game's own
@@ -499,7 +470,7 @@ screen, without editing this crate:
    shortcuts) off from the launcher's `add` closure:
 
    ```rust
-   use engine::{controls::ControlsUi, display::DisplayUi};
+   use psx_bevy::{controls::ControlsUi, display::DisplayUi};
    app.insert_resource(ControlsUi { view: false, shortcuts: false })
        .insert_resource(DisplayUi { view: false, shortcuts: false });
    ```
@@ -517,7 +488,7 @@ screen, without editing this crate:
    discards.
 
 `a_game_can_replace_the_built_in_view_with_its_own` in each menu's tests is a
-minimal example. Because the logic stays here, later `psx template update`
+minimal example. Because the logic stays here, later psx-bevy
 fixes still reach a port that restyled its menus.
 
 ### Screen size, fullscreen and the example display menu
@@ -638,12 +609,12 @@ waits until pipelines have compiled. In headless mode use `target: "screen"`;
 
 ## Checks
 
-Run from the workspace root (`--all-features` is `dev-mcp` everywhere):
+From the workspace root (`--all-features` turns on `dev-mcp`):
 
 ```sh
 cargo test --workspace --all-features
 cargo build --workspace --all-targets --all-features && \
-  cargo test --workspace --all-features -- --ignored --nocapture  # real offscreen GPU/MCP checks
+  cargo test -p psx-bevy --all-features -- --ignored --nocapture  # real offscreen GPU/MCP checks
 cargo clippy --workspace --all-targets --all-features
 cargo fmt --all --check  # rustfmt.toml: 120 columns
 ```

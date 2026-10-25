@@ -5,10 +5,11 @@
 //! is therefore a map of *named* extents, and [`FileSystem::owner_of`] lets a
 //! runtime sector read be attributed to a named file when one covers it.
 
+use crate::le::{u16le, u32le};
 use std::collections::HashSet;
 
 use crate::disc::{Disc, SectorForm};
-use crate::error::{malformed, MediaError, Result};
+use crate::error::{MediaError, Result, malformed};
 
 pub const SECTOR: u32 = 2048;
 
@@ -70,12 +71,6 @@ pub struct FileSystem {
     pub warnings: Vec<String>,
 }
 
-fn u16le(b: &[u8], o: usize) -> u16 {
-    u16::from_le_bytes([b[o], b[o + 1]])
-}
-fn u32le(b: &[u8], o: usize) -> u32 {
-    u32::from_le_bytes([b[o], b[o + 1], b[o + 2], b[o + 3]])
-}
 fn text(b: &[u8]) -> String {
     String::from_utf8_lossy(b).trim_end_matches([' ', '\0']).to_string()
 }
@@ -100,18 +95,9 @@ fn parse_record(r: &[u8]) -> Result<RawRecord> {
     let name = r[33..33 + name_len].to_vec();
     let su_start = 33 + name_len + (name_len + 1) % 2;
     let su = r.get(su_start..).unwrap_or(&[]);
-    let xa = (su.len() >= 14 && &su[6..8] == b"XA")
-        .then(|| (u16::from_be_bytes([su[4], su[5]]), su[8]));
+    let xa = (su.len() >= 14 && &su[6..8] == b"XA").then(|| (u16::from_be_bytes([su[4], su[5]]), su[8]));
     let d = &r[18..25];
-    let recorded = format!(
-        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
-        1900 + d[0] as u32,
-        d[1],
-        d[2],
-        d[3],
-        d[4],
-        d[5]
-    );
+    let recorded = format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}", 1900 + d[0] as u32, d[1], d[2], d[3], d[4], d[5]);
     Ok(RawRecord { name, lba: u32le(r, 2), size: u32le(r, 10), flags: r[25], recorded, xa })
 }
 

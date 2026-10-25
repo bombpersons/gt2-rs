@@ -14,20 +14,14 @@
 //!   screen (sprites included) is reduced to 15-bit colour after drawing.
 //! - [`PsxSceneRoot`] spawns a captured frame (`.psxscene` from the psx
 //!   toolkit) as ordinary sprites and meshes, for reference layouts.
-//! - Original `.tim` textures load as `Image`s and `.tmd` models as
-//!   [`PsxModel`]s (spawned with [`PsxModelRoot`]); see `assets.rs`.
-mod assets;
+//!
+//! Original files (TIM, TMD, ...) are not loaded here: convert them to
+//! ordinary formats (PNG, glTF, your own) in the game's importer.
 pub mod font;
-pub mod formats;
 mod material;
 mod material2d;
 mod scene;
 mod shaders;
-
-pub use assets::{
-    PsxModel, PsxModelObject, PsxModelObjectIndex, PsxModelPart, PsxModelRoot, TimLoader, TimSettings, TimTransparency,
-    TmdLoader, TmdSettings, rgba_image,
-};
 
 pub use material::{PsxBlend, PsxDepthBias, PsxDepthCue, PsxMaterial, PsxStp};
 pub use material2d::{PsxMaterial2d, PsxSprite, load_indices, psx_indices, psx_palette, rgb15};
@@ -52,6 +46,19 @@ use bevy::{
     shader::ShaderRef,
     sprite_render::{Material2d, Material2dKey, Material2dPipeline, Material2dPlugin},
 };
+
+/// An sRGB RGBA8 image with nearest sampling, as PS1 texels were drawn.
+pub fn rgba_image(width: u32, height: u32, rgba: Vec<u8>) -> Image {
+    let mut image = Image::new(
+        bevy::render::render_resource::Extent3d { width, height, depth_or_array_layers: 1 },
+        bevy::render::render_resource::TextureDimension::D2,
+        rgba,
+        TextureFormat::Rgba8UnormSrgb,
+        bevy::asset::RenderAssetUsages::default(),
+    );
+    image.sampler = bevy::image::ImageSampler::nearest();
+    image
+}
 
 /// Window-only layer used to show the screen texture; keep game entities off it.
 pub const DISPLAY_LAYER: usize = 31;
@@ -221,7 +228,6 @@ impl Plugin for PsxPlugin {
         (screen.image, screen.canvas) = (images.add(screen_target(size)), images.add(screen_target(size)));
 
         scene::plugin(app);
-        assets::plugin(app);
         shaders::plugin(app);
         app.add_plugins((
             MaterialPlugin::<PsxMaterial>::default(),

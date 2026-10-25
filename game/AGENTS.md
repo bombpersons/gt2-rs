@@ -33,9 +33,9 @@ comes from `engine::psx`; everything else is normal Bevy code.
 - Keep gameplay in `FixedUpdate` / `GameSystems::Game`, reading
   `ControllerState`. That is the boundary the developer MCP and the tests step.
 - Keep game assets in `game/assets/`. Do not commit original disc or BIOS data.
-  Original `.tim` textures and `.tmd` models (from `psx assets extract`) load
-  directly: `asset_server.load("x.tim")` is an `Image`, a `.tmd` is a
-  `PsxModel` spawned with `PsxModelRoot` (`psx-bevy/README.md`, "Original assets").
+  The original's files are converted offline by `tools/import` and
+  `tools/export_assets.py` into PNG and engine formats. The game never parses
+  raw TIM/TMD files; see `docs/assets.md` for the current export flow.
 - Read `psx-bevy/README.md` for MCP startup, screenshot targets and input lifetime.
 
 ## Project layout

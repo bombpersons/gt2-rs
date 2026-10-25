@@ -15,6 +15,31 @@ drop the row if the template now does it), then delete the `.psx-new`.
 
 ## Current version
 
+The workspace is now on the installed `0.4.2+src-4c4c84345897a7b9-release`.
+This continuation
+preserved the earlier in-progress 0.4.0 template/editor migration, then applied
+the current update: two vendor Cargo metadata changes, no owned-file
+conflicts. Cargo resolved the editor's HTTP/MCP dependencies into the project
+lockfile; the seeded generic lockfile was not copied over the game's lockfile.
+The template dry run reports 68 unchanged owned files and no pending updates.
+The final switch from the temporary debug build to `~/.local/bin/psx` changes
+only the template version stamp; all 68 owned files are identical. Recording
+scripts use the installed command by default.
+The public-content audit now permits the template's exact `LICENSE-MIT` and
+`LICENSE-APACHE` paths; both match the already approved vendor licences.
+
+The 0.4.0 migration already in the working tree adds editor MCP support,
+removes the old runtime raw TIM/TMD/model-viewer paths and updates vendored
+offline parsers. GT2's game still reads converted native assets through its
+existing importer. No new local edits were made to template or vendor source.
+
+Workspace tests, formatting and both public-source audits pass. Clippy's
+remaining suggestion is the existing nested condition in
+`game/tests/wheel_rotation.rs`. The editor's stdio and HTTP/MCP tests pass;
+its offscreen UI/MCP verification is recorded under `.psx/`.
+
+## Previous 0.3.8 migration
+
 Updated from `0.3.4+src-b72afc8e8efe891f-release` to
 `0.3.8+src-0b26c73b885b1004-release`. The update changed ten files under
 `psx-bevy/`, added the corridor rendering example and vendored psx-media and

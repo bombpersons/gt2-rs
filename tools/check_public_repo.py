@@ -48,7 +48,8 @@ def allowed(name):
     if name.startswith('game/'):
         return name in {'game/AGENTS.md', 'game/Cargo.toml', 'game/build.rs'} or (
             (name.startswith('game/src/') or name.startswith('game/tests/')) and p.suffix == '.rs')
-    if name in {'vendor/LICENSE-MIT', 'vendor/LICENSE-APACHE', 'vendor/README.md'}:
+    if name in {'vendor/LICENSE-MIT', 'vendor/LICENSE-APACHE', 'vendor/README.md',
+                'psx-bevy/LICENSE-MIT', 'psx-bevy/LICENSE-APACHE'}:
         return True
     if name.startswith(('vendor/psx-media/', 'vendor/psx-assets/')):
         return name.endswith('/Cargo.toml') or ('/src/' in name and p.suffix == '.rs')

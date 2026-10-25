@@ -13,6 +13,7 @@
 //! iki, encrypted and other variants (anything whose header is not
 //! `3800h` + version 1..3), and non-MDEC streams that reuse the STR header.
 
+use crate::le::{u16le, u32le};
 use std::fmt;
 
 /// MDEC end-of-block halfword.
@@ -39,14 +40,6 @@ pub struct StrHeader {
 }
 
 pub const STR_HEADER_LEN: usize = 0x20;
-
-fn u16le(b: &[u8], o: usize) -> u16 {
-    u16::from_le_bytes([b[o], b[o + 1]])
-}
-
-fn u32le(b: &[u8], o: usize) -> u32 {
-    u32::from_le_bytes([b[o], b[o + 1], b[o + 2], b[o + 3]])
-}
 
 impl StrHeader {
     /// Parse the header of a sector's user data. Returns `None` unless it has ID
@@ -197,11 +190,7 @@ impl BsHeader {
 /// movies, which put 28h bytes of extra (camera) data before it.
 pub fn bs_offset(frame: &[u8]) -> usize {
     let bs_at = |o: usize| frame.get(o..).and_then(BsHeader::parse).is_some_and(|h| h.id == 0x3800);
-    if !bs_at(0) && bs_at(0x28) {
-        0x28
-    } else {
-        0
-    }
+    if !bs_at(0) && bs_at(0x28) { 0x28 } else { 0 }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -210,11 +199,20 @@ pub enum BsError {
     /// Not a supported BS header; carries [`BsHeader::variant`].
     Unsupported(String),
     /// The bitstream ran out in this macroblock.
-    Truncated { macroblock: usize },
+    Truncated {
+        macroblock: usize,
+    },
     /// An invalid Huffman code.
-    BadCode { macroblock: usize, block: usize, bit: usize },
+    BadCode {
+        macroblock: usize,
+        block: usize,
+        bit: usize,
+    },
     /// More than 63 AC coefficients in a block.
-    BlockOverflow { macroblock: usize, block: usize },
+    BlockOverflow {
+        macroblock: usize,
+        block: usize,
+    },
 }
 
 impl fmt::Display for BsError {
@@ -456,7 +454,8 @@ pub fn decode_bs(frame: &[u8], width: u16, height: u16) -> Result<(BsHeader, Rle
                     return Err(BsError::Truncated { macroblock: mb });
                 }
                 let p = block.min(2);
-                let diff = read_dc_v3(&mut b, block < 2).ok_or(BsError::BadCode { macroblock: mb, block, bit: b.pos })?;
+                let diff =
+                    read_dc_v3(&mut b, block < 2).ok_or(BsError::BadCode { macroblock: mb, block, bit: b.pos })?;
                 prev[p] += diff;
                 (prev[p] & 0x3FF) as u16
             } else {
@@ -642,7 +641,10 @@ mod tests {
     #[test]
     fn unsupported_variants_are_named() {
         let w = Writer::default();
-        assert_eq!(decode_bs(&frame(0x00F0, 0x140, &w), 320, 240).unwrap_err(), BsError::Unsupported("iki_or_encrypted".into()));
+        assert_eq!(
+            decode_bs(&frame(0x00F0, 0x140, &w), 320, 240).unwrap_err(),
+            BsError::Unsupported("iki_or_encrypted".into())
+        );
         let mut f = frame(2, 1, &w);
         f[2] = 0x12;
         assert_eq!(decode_bs(&f, 16, 16).unwrap_err(), BsError::Unsupported("not_bs".into()));

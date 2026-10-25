@@ -21,7 +21,8 @@ the start. Read the guide for the crate you are working in:
   code, keeping it extensible, mods (`mods/example`), tick rate, trajectory
   tests, verification.
 - `editor/AGENTS.md`: the desktop editor for engine formats, depending on
-  `engine/` only. It currently edits object and trigger placements.
+  `engine/` only. It currently edits object and trigger placements; its MCP
+  supports agent edits and UI tests.
 - `vendor/`: template-owned psx-media and psx-assets; fix these upstream
   rather than editing the vendored copies.
 - `psx-bevy/`: the template's crate, updated by `psx template update`. Build

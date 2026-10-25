@@ -131,7 +131,6 @@ fn spawn(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
         });
 }
 
-
 /// Rows, then the binding columns inside them, as screen rectangles.
 fn collect_hitboxes(
     menu: Res<ControlsMenu>,

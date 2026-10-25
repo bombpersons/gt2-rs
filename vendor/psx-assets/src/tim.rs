@@ -11,9 +11,8 @@
 //! Colours are 15-bit BGR with bit 15 as STP. On textured polygons the GPU
 //! treats 0x0000 as fully transparent; any other colour is drawn, and STP
 //! marks the texel semi-transparent when the polygon enables blending.
-//!
-//! This file is dependency-free and shared verbatim with the Bevy template
-//! (`templates/psx-bevy/src/psx/formats/tim.rs`); a test keeps the copies equal.
+
+use crate::le::{u16_at, u32_at};
 
 /// First word of every TIM.
 pub const TIM_ID: u32 = 0x10;
@@ -84,14 +83,6 @@ pub struct Tim {
     pub pixels: Vec<u16>,
     /// Bytes the TIM occupies from its first byte.
     pub size: usize,
-}
-
-fn u16_at(b: &[u8], o: usize) -> Option<u16> {
-    Some(u16::from_le_bytes([*b.get(o)?, *b.get(o + 1)?]))
-}
-
-fn u32_at(b: &[u8], o: usize) -> Option<u32> {
-    Some(u32::from_le_bytes([*b.get(o)?, *b.get(o + 1)?, *b.get(o + 2)?, *b.get(o + 3)?]))
 }
 
 fn rect_at(b: &[u8], o: usize) -> Option<VramRect> {

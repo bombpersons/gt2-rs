@@ -61,7 +61,7 @@ impl From<&[Button]> for TickInput {
     }
 }
 
-/// An app with Bevy's minimal plugins and the template's tick loop. Each
+/// An app with Bevy's minimal plugins and psx-bevy's tick loop. Each
 /// [`TickApp::run_tick`] advances time by exactly one tick.
 pub fn headless_app(tick: TickRate) -> App {
     let mut app = App::new();

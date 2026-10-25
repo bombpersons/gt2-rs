@@ -122,7 +122,12 @@ fn fog_stays_off_floor_triangles_that_cross_the_near_plane() {
             p[0] > p[1] + 40
         })
         .collect();
-    assert!(fogged.is_empty(), "{} fogged pixels beside the camera, e.g. {:?}", fogged.len(), &fogged[..fogged.len().min(8)]);
+    assert!(
+        fogged.is_empty(),
+        "{} fogged pixels beside the camera, e.g. {:?}",
+        fogged.len(),
+        &fogged[..fogged.len().min(8)]
+    );
 }
 
 #[test]

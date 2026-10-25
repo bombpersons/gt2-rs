@@ -47,8 +47,10 @@ bevy_egui = { version = "=0.43.1", default-features = false, features = ["render
 # Available for migrating the offline importers to direct disc reads.
 psx-media = { path = "vendor/psx-media" }
 psx-assets = { path = "vendor/psx-assets" }
-rmcp = { version = "=3.5.1", features = ["transport-io"] }
-tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "io-std"] }
+rmcp = { version = "=3.5.1", features = ["transport-io", "transport-streamable-http-server"] }
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "io-std", "net"] }
+tokio-util = "0.7"
+axum = { version = "0.8", default-features = false, features = ["http1", "tokio"] }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["alloc"] }
 # Hand-editable tables and tuning (the version Bevy already uses).

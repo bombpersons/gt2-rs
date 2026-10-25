@@ -1,5 +1,5 @@
 //! The executable's side of a game: window, renderer, headless mode and the
-//! command line every game built on the template shares. A game's `main.rs`
+//! command line every game built on psx-bevy shares. A game's `main.rs`
 //! describes itself with [`Game`] and calls [`run`]:
 //!
 //! ```no_run
@@ -20,14 +20,13 @@
 //!
 //! Flags: `--mcp` (developer MCP, needs the `dev-mcp` feature), `--headless`,
 //! `--software`, `--region ntsc|pal`, `--scene PATH` [`--painter`],
-//! `--model PATH.tmd [--texture PATH.tim]... [--cull]`, `--controls`,
+//! `--controls`,
 //! `--bindings PATH`, `--display`, `--display-settings PATH`, `--fullscreen`,
 //! `--aspect fixed|window`, `--no-dither`, `--no-quantize`. F11 toggles
 //! borderless fullscreen.
 use crate::controller::BindingStore;
 use crate::controls::ControlsPlugin;
 use crate::display::{self, DisplayOverrides, DisplayPlugin, DisplayStore};
-use crate::model_viewer::ModelViewerPlugin;
 use crate::psx::{PsxAspect, PsxLook, PsxPlugin, PsxSceneDepth, PsxScreen, Region};
 use crate::shell::{ShellPlugin, TickRate};
 use crate::viewer::SceneViewerPlugin;
@@ -49,7 +48,7 @@ pub struct Game<F: FnOnce(&mut App)> {
     /// the original's display setup (the GPU's display range and mode).
     /// The display menu also offers [`screen_choices`] of it.
     pub screen: UVec2,
-    /// Adds the game's plugins. Not called for `--scene` or `--model`.
+    /// Adds the game's plugins. Not called for `--scene`.
     pub add: F,
 }
 
@@ -116,9 +115,6 @@ pub fn app<F: FnOnce(&mut App)>(game: Game<F>, args: &Args) -> App {
     let depth = if args.flag("--painter") { PsxSceneDepth::Painter } else { default() };
     // --no-dither / --no-quantize: switch PsxLook effects off (e.g. to compare against a capture).
     let look = PsxLook { dither: !args.flag("--no-dither"), quantize: !args.flag("--no-quantize"), ..default() };
-    // --model PATH.tmd [--texture PATH.tim]... [--cull] (under assets/): view an extracted original model.
-    let model = args.value("--model");
-    let textures = args.values("--texture");
     let screen = PsxScreen { width: game.screen.x, height: game.screen.y, region, ..default() };
     // --fullscreen: start in borderless fullscreen (F11 toggles).
     let fullscreen = args.flag("--fullscreen");
@@ -178,14 +174,11 @@ pub fn app<F: FnOnce(&mut App)>(game: Game<F>, args: &Args) -> App {
     if !headless {
         app.add_systems(Update, display::fullscreen_shortcut);
     }
-    match (scene, model) {
-        (Some(path), _) => {
+    match scene {
+        Some(path) => {
             app.add_plugins(SceneViewerPlugin { path, depth });
         }
-        (None, Some(path)) => {
-            app.add_plugins(ModelViewerPlugin { path, textures, cull: args.flag("--cull") });
-        }
-        (None, None) => {
+        None => {
             app.add_plugins(ControlsPlugin {
                 path: args
                     .value("--bindings")

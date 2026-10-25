@@ -19,6 +19,7 @@
 use serde::Serialize;
 
 use crate::adpcm;
+use crate::le::{u16le, u32le};
 
 pub const VAG_MAGIC: &[u8; 4] = b"VAGp";
 pub const VAB_MAGIC: &[u8; 4] = b"pBAV";
@@ -28,14 +29,6 @@ pub const VB_SEARCH: usize = 0x10000;
 
 fn be32(b: &[u8], o: usize) -> u32 {
     u32::from_be_bytes([b[o], b[o + 1], b[o + 2], b[o + 3]])
-}
-
-fn le16(b: &[u8], o: usize) -> u16 {
-    u16::from_le_bytes([b[o], b[o + 1]])
-}
-
-fn le32(b: &[u8], o: usize) -> u32 {
-    u32::from_le_bytes([b[o], b[o + 1], b[o + 2], b[o + 3]])
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -62,7 +55,11 @@ impl Vag {
         if data_size == 0 || !data_size.is_multiple_of(16) || data_size > 16 << 20 {
             return Err(format!("implausible VAG data size {data_size}"));
         }
-        let name = b[32..48].iter().take_while(|&&c| c != 0).map(|&c| if c.is_ascii_graphic() || c == b' ' { c as char } else { '?' }).collect();
+        let name = b[32..48]
+            .iter()
+            .take_while(|&&c| c != 0)
+            .map(|&c| if c.is_ascii_graphic() || c == b' ' { c as char } else { '?' })
+            .collect();
         let avail = b.len() - VAG_HEADER;
         let data_size = data_size.min(avail);
         Ok(Vag { version: be32(b, 4), rate, name, data_size, size: VAG_HEADER + data_size })
@@ -127,7 +124,7 @@ impl Vab {
         if b.len() < 32 || &b[..4] != VAB_MAGIC {
             return Err("not a VAB header (no pBAV)".into());
         }
-        let (programs, tones, vags) = (le16(b, 18) as usize, le16(b, 20) as usize, le16(b, 22) as usize);
+        let (programs, tones, vags) = (u16le(b, 18) as usize, u16le(b, 20) as usize, u16le(b, 22) as usize);
         if programs == 0 || programs > 128 || vags > 254 || tones > programs * 16 {
             return Err(format!("implausible VAB counts: {programs} programs, {tones} tones, {vags} waveforms"));
         }
@@ -137,9 +134,9 @@ impl Vab {
         }
         let tone_base = 32 + 128 * 16;
         let size_base = tone_base + programs * 16 * 32;
-        let vag_sizes: Vec<usize> = (1..=vags).map(|i| le16(b, size_base + 2 * i) as usize * 8).collect();
+        let vag_sizes: Vec<usize> = (1..=vags).map(|i| u16le(b, size_base + 2 * i) as usize * 8).collect();
         let body_size: usize = vag_sizes.iter().sum();
-        let file_size = le32(b, 12);
+        let file_size = u32le(b, 12);
         // A VH's size field covers the VB too. Some tools pad the VB, so
         // require it to cover at least the waveform sum.
         if (file_size as usize) < header_size + body_size {
@@ -170,12 +167,17 @@ impl Vab {
                     min_note: b[o + 6],
                     max_note: b[o + 7],
                     pitch_bend: [b[o + 12], b[o + 13]],
-                    adsr1: le16(b, o + 16),
-                    adsr2: le16(b, o + 18),
-                    program: le16(b, o + 20) as i16,
-                    vag: le16(b, o + 22) as i16,
+                    adsr1: u16le(b, o + 16),
+                    adsr2: u16le(b, o + 18),
+                    program: u16le(b, o + 20) as i16,
+                    vag: u16le(b, o + 22) as i16,
                 };
-                if tone.vag < 0 || tone.vag as usize > vags || tone.min_note > 127 || tone.max_note > 127 || tone.center > 127 {
+                if tone.vag < 0
+                    || tone.vag as usize > vags
+                    || tone.min_note > 127
+                    || tone.max_note > 127
+                    || tone.center > 127
+                {
                     return Err(format!("program {p} tone {k}: implausible fields (vag {})", tone.vag));
                 }
                 t.push(tone);
@@ -184,8 +186,8 @@ impl Vab {
             progs.push(Program { index: p, volume: b[pa + 1], pan: b[pa + 4], tones: t });
         }
         Ok(Vab {
-            version: le32(b, 4),
-            id: le32(b, 8),
+            version: u32le(b, 4),
+            id: u32le(b, 8),
             file_size,
             volume: b[24],
             pan: b[25],
@@ -212,7 +214,8 @@ impl Vab {
             let Some(body) = b.get(at..at + self.body_size) else { return false };
             ranges.iter().all(|r| adpcm::plausible_sample(&body[r.clone()]))
         };
-        let prefixed = b.get(h..h + 4).is_some_and(|w| u32::from_le_bytes([w[0], w[1], w[2], w[3]]) as usize == self.body_size);
+        let prefixed =
+            b.get(h..h + 4).is_some_and(|w| u32::from_le_bytes([w[0], w[1], w[2], w[3]]) as usize == self.body_size);
         if prefixed && fits(h + 4) {
             return Some(h + 4);
         }
@@ -273,7 +276,7 @@ pub fn levels(pcm: &[i16]) -> (f64, f64) {
 #[cfg(test)]
 pub(crate) mod tests {
     use super::*;
-    use crate::adpcm::{block, FLAG_END};
+    use crate::adpcm::{FLAG_END, block};
 
     pub fn vag_bytes(rate: u32) -> Vec<u8> {
         let mut b = Vec::new();

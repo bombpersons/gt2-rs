@@ -270,8 +270,6 @@ pub fn value(row: Row, settings: &DisplaySettings, windowed: bool) -> String {
     }
 }
 
-
-
 /// The rows, top to bottom.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Row {

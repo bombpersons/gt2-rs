@@ -151,7 +151,9 @@ impl ControlsMenu {
             Mode::Browse => {
                 "Arrows/D-pad/mouse: select  Enter/click: edit\nDel/West: clear  Esc/East/right click: discard"
             }
-            Mode::Listen { .. } => "Press one key or button; the next row follows.\nEsc or right click: cancel this binding",
+            Mode::Listen { .. } => {
+                "Press one key or button; the next row follows.\nEsc or right click: cancel this binding"
+            }
             Mode::Conflict(_) => "Enter/click: swap  Esc/East/right click: keep\nNothing changes until Save and close.",
         }
     }
